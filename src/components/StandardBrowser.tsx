@@ -44,10 +44,19 @@ export const StandardBrowser: React.FC<StandardBrowserProps> = ({
   // 현재 기준서 내에서 검색어로 필터링된 문단 목록
   const filteredParagraphs = useMemo(() => {
     if (!currentStandard) return [];
-    if (!searchTerm.trim()) return currentStandard.paragraphs;
+    
+    // 각 문단 객체에 기준서 정보(standardId, standardCode, standardTitle)를 보장
+    const paragraphsWithMeta = currentStandard.paragraphs.map(p => ({
+      ...p,
+      standardId: p.standardId || currentStandard.id,
+      standardCode: p.standardCode || currentStandard.code,
+      standardTitle: p.standardTitle || currentStandard.title
+    }));
+
+    if (!searchTerm.trim()) return paragraphsWithMeta;
 
     const term = searchTerm.toLowerCase().trim();
-    return currentStandard.paragraphs.filter(p => {
+    return paragraphsWithMeta.filter(p => {
       const matchNum = p.number.toLowerCase().includes(term);
       const matchContent = p.content.toLowerCase().includes(term);
       const matchSection = (p.sectionTitle || '').toLowerCase().includes(term);

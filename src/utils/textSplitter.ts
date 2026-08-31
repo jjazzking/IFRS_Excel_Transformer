@@ -175,51 +175,51 @@ export function generateFormattedCells(
  */
 function getThemeStyles(theme: TableTheme) {
   switch (theme) {
-    case 'audit_gray': // 전통 감사조서 스타일 (연한 회색 헤더 + 얇은 격자)
+    case 'audit_gray': // 전통 감사조서 스타일 (연한 회색 헤더 + 얇은 회색 격자 테두리)
       return {
-        tableStyle: 'border-collapse: collapse; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt;',
-        titleTd: 'border: 1px solid #7F7F7F; background-color: #D9D9D9; font-weight: bold; padding: 4px 8px; text-align: left;',
-        sectionTd: 'border: 1px solid #7F7F7F; background-color: #F2F2F2; font-weight: bold; padding: 4px 8px; text-align: left;',
-        colATd: 'border: 1px solid #BFBFBF; background-color: #FAFAFA; text-align: center; vertical-align: top; font-weight: 600; padding: 3px 6px; width: 60px;',
-        colBTd: 'border: 1px solid #BFBFBF; text-align: left; vertical-align: top; padding: 3px 8px; mso-number-format:"\\@";',
-        emptyRowTd: 'border: 1px solid #E0E0E0; height: 12px;'
+        tableStyle: 'border-collapse: collapse; border: 1px solid #7F7F7F; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt; width: 100%;',
+        titleTd: 'border: 1px solid #7F7F7F; background-color: #D9D9D9; font-weight: bold; padding: 5px 8px; text-align: left; mso-border-alt: solid #7F7F7F .5pt;',
+        sectionTd: 'border: 1px solid #7F7F7F; background-color: #F2F2F2; font-weight: bold; padding: 4px 8px; text-align: left; mso-border-alt: solid #7F7F7F .5pt;',
+        colATd: 'border: 1px solid #A6A6A6; background-color: #F2F2F2; text-align: center; vertical-align: top; font-weight: bold; padding: 4px 6px; width: 55pt; mso-border-alt: solid #A6A6A6 .5pt;',
+        colBTd: 'border: 1px solid #A6A6A6; background-color: #FFFFFF; text-align: left; vertical-align: top; padding: 4px 8px; mso-number-format:"\\@"; mso-border-alt: solid #A6A6A6 .5pt;',
+        emptyRowTd: 'border: 1px solid #D9D9D9; background-color: #FFFFFF; height: 14px; mso-border-alt: solid #D9D9D9 .5pt;'
       };
     case 'audit_blue': // 회계법인 블루 톤앤매너
       return {
-        tableStyle: 'border-collapse: collapse; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt;',
-        titleTd: 'border: 1px solid #2B579A; background-color: #1F4E78; color: #FFFFFF; font-weight: bold; padding: 5px 8px; text-align: left;',
-        sectionTd: 'border: 1px solid #8EA9DB; background-color: #D9E1F2; font-weight: bold; color: #1F4E78; padding: 4px 8px; text-align: left;',
-        colATd: 'border: 1px solid #B4C6E7; background-color: #F2F5F9; text-align: center; vertical-align: top; font-weight: 600; color: #1F4E78; padding: 3px 6px; width: 60px;',
-        colBTd: 'border: 1px solid #D9D9D9; text-align: left; vertical-align: top; padding: 3px 8px; mso-number-format:"\\@";',
-        emptyRowTd: 'border: 1px solid #E0E0E0; height: 12px;'
+        tableStyle: 'border-collapse: collapse; border: 1px solid #1F4E78; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt; width: 100%;',
+        titleTd: 'border: 1px solid #1F4E78; background-color: #1F4E78; color: #FFFFFF; font-weight: bold; padding: 5px 8px; text-align: left; mso-border-alt: solid #1F4E78 .5pt;',
+        sectionTd: 'border: 1px solid #2F5597; background-color: #D9E1F2; font-weight: bold; color: #1F4E78; padding: 4px 8px; text-align: left; mso-border-alt: solid #2F5597 .5pt;',
+        colATd: 'border: 1px solid #8EA9DB; background-color: #F2F5F9; text-align: center; vertical-align: top; font-weight: bold; color: #1F4E78; padding: 4px 6px; width: 55pt; mso-border-alt: solid #8EA9DB .5pt;',
+        colBTd: 'border: 1px solid #8EA9DB; background-color: #FFFFFF; text-align: left; vertical-align: top; padding: 4px 8px; mso-number-format:"\\@"; mso-border-alt: solid #8EA9DB .5pt;',
+        emptyRowTd: 'border: 1px solid #D9D9D9; background-color: #FFFFFF; height: 14px; mso-border-alt: solid #D9D9D9 .5pt;'
       };
     case 'classic_accounting': // 굵은 상하 테두리 회계 조서
       return {
-        tableStyle: 'border-collapse: collapse; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt;',
-        titleTd: 'border-top: 2px solid #000000; border-bottom: 1px solid #000000; font-weight: bold; padding: 4px 8px; text-align: left; background-color: #FFFFFF;',
-        sectionTd: 'border-bottom: 1px solid #000000; font-weight: bold; padding: 4px 8px; text-align: left; background-color: #F9F9F9;',
-        colATd: 'border-bottom: 1px solid #E0E0E0; text-align: center; vertical-align: top; font-weight: 600; padding: 3px 6px; width: 60px;',
-        colBTd: 'border-bottom: 1px solid #E0E0E0; text-align: left; vertical-align: top; padding: 3px 8px; mso-number-format:"\\@";',
-        emptyRowTd: 'border-bottom: 1px solid #E0E0E0; height: 12px;'
+        tableStyle: 'border-collapse: collapse; border-top: 2px solid #000000; border-bottom: 2px solid #000000; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt; width: 100%;',
+        titleTd: 'border-top: 2px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; font-weight: bold; padding: 5px 8px; text-align: left; background-color: #FFFFFF;',
+        sectionTd: 'border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; font-weight: bold; padding: 4px 8px; text-align: left; background-color: #F9F9F9;',
+        colATd: 'border-top: 1px solid #D9D9D9; border-bottom: 1px solid #D9D9D9; border-left: none; border-right: 1px solid #D9D9D9; text-align: center; vertical-align: top; font-weight: bold; padding: 4px 6px; width: 55pt;',
+        colBTd: 'border-top: 1px solid #D9D9D9; border-bottom: 1px solid #D9D9D9; border-left: none; border-right: none; background-color: #FFFFFF; text-align: left; vertical-align: top; padding: 4px 8px; mso-number-format:"\\@";',
+        emptyRowTd: 'border-top: 1px solid #D9D9D9; border-bottom: 1px solid #D9D9D9; border-left: none; border-right: none; height: 14px;'
       };
-    case 'minimal': // 테두리 없음, 순수 내용 전달
+    case 'minimal': // 테두리 최소화
       return {
-        tableStyle: 'border-collapse: collapse; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt;',
-        titleTd: 'font-weight: bold; padding: 3px 6px; text-align: left;',
-        sectionTd: 'font-weight: bold; padding: 3px 6px; text-align: left; color: #4A5568;',
-        colATd: 'text-align: center; vertical-align: top; font-weight: 600; padding: 2px 6px; width: 50px;',
-        colBTd: 'text-align: left; vertical-align: top; padding: 2px 6px; mso-number-format:"\\@";',
-        emptyRowTd: 'height: 10px;'
+        tableStyle: 'border-collapse: collapse; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt; width: 100%;',
+        titleTd: 'font-weight: bold; padding: 4px 6px; text-align: left; border-bottom: 1px solid #D9D9D9;',
+        sectionTd: 'font-weight: bold; padding: 4px 6px; text-align: left; color: #4A5568; border-bottom: 1px solid #E0E0E0;',
+        colATd: 'text-align: center; vertical-align: top; font-weight: bold; padding: 3px 6px; width: 50pt; border-bottom: 1px solid #F0F0F0;',
+        colBTd: 'text-align: left; vertical-align: top; padding: 3px 6px; mso-number-format:"\\@"; border-bottom: 1px solid #F0F0F0;',
+        emptyRowTd: 'height: 12px; border-bottom: 1px solid #F0F0F0;'
       };
     case 'standard':
-    default: // 기본 표준 (중립 그레이 테두리)
+    default: // 기본 표준 (완전한 상하좌우 격자 테두리)
       return {
-        tableStyle: 'border-collapse: collapse; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt;',
-        titleTd: 'border: 1px solid #A6A6A6; background-color: #E7E6E6; font-weight: bold; padding: 4px 8px; text-align: left;',
-        sectionTd: 'border: 1px solid #A6A6A6; background-color: #F2F2F2; font-weight: bold; padding: 4px 8px; text-align: left;',
-        colATd: 'border: 1px solid #D9D9D9; background-color: #F9F9F9; text-align: center; vertical-align: top; font-weight: 600; padding: 3px 6px; width: 60px;',
-        colBTd: 'border: 1px solid #D9D9D9; text-align: left; vertical-align: top; padding: 3px 8px; mso-number-format:"\\@";',
-        emptyRowTd: 'border: 1px solid #EEEEEE; height: 12px;'
+        tableStyle: 'border-collapse: collapse; border: 1px solid #A6A6A6; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 10pt; width: 100%;',
+        titleTd: 'border: 1px solid #A6A6A6; background-color: #E7E6E6; font-weight: bold; padding: 5px 8px; text-align: left; mso-border-alt: solid #A6A6A6 .5pt;',
+        sectionTd: 'border: 1px solid #A6A6A6; background-color: #F2F2F2; font-weight: bold; padding: 4px 8px; text-align: left; mso-border-alt: solid #A6A6A6 .5pt;',
+        colATd: 'border: 1px solid #BFBFBF; background-color: #F8F9FA; text-align: center; vertical-align: top; font-weight: bold; padding: 4px 6px; width: 55pt; mso-border-alt: solid #BFBFBF .5pt;',
+        colBTd: 'border: 1px solid #BFBFBF; background-color: #FFFFFF; text-align: left; vertical-align: top; padding: 4px 8px; mso-number-format:"\\@"; mso-border-alt: solid #BFBFBF .5pt;',
+        emptyRowTd: 'border: 1px solid #D9D9D9; background-color: #FFFFFF; height: 14px; mso-border-alt: solid #D9D9D9 .5pt;'
       };
   }
 }
@@ -230,32 +230,68 @@ function getThemeStyles(theme: TableTheme) {
 export function generateClipboardData(cells: FormattedCell[], config: ExportConfig): ClipboardExportResult {
   // 1. TSV 생성 (Excel이 기본 탭/개행 파싱으로 붙여넣는 방식)
   const tsvLines = cells.map(cell => {
-    // 텍스트 내 탭, 개행 이스케이프
     const colA = (cell.colA || '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
     const colB = (cell.colB || '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
     return `${colA}\t${colB}`;
   });
   const tsv = tsvLines.join('\r\n');
 
-  // 2. HTML Table 생성 (Excel에 붙여넣을 때 셀 서식, 테두리, 배경색이 유지되는 방식)
+  // 2. HTML Table 생성 (Excel에 붙여넣을 때 테두리, 배경색, 열 너비가 완벽하게 유지되는 MS Office 호환 HTML)
   const theme = getThemeStyles(config.theme);
   
-  let html = `<table style="${theme.tableStyle}"><tbody>`;
+  let tableRows = '';
 
   cells.forEach(cell => {
     if (cell.isStandardTitle) {
-      html += `<tr><td colspan="2" style="${theme.titleTd}">${escapeHtml(cell.colA)}</td></tr>`;
+      tableRows += `<tr><td colspan="2" style="${theme.titleTd}">${escapeHtml(cell.colA)}</td></tr>`;
     } else if (cell.isSectionTitle) {
-      html += `<tr><td colspan="2" style="${theme.sectionTd}">${escapeHtml(cell.colA)}</td></tr>`;
+      tableRows += `<tr><td colspan="2" style="${theme.sectionTd}">${escapeHtml(cell.colA)}</td></tr>`;
     } else if (!cell.colA && !cell.colB) {
-      html += `<tr><td style="${theme.emptyRowTd}"></td><td style="${theme.emptyRowTd}"></td></tr>`;
+      tableRows += `<tr><td style="${theme.emptyRowTd}">&nbsp;</td><td style="${theme.emptyRowTd}">&nbsp;</td></tr>`;
     } else {
-      const colAStyle = cell.colA ? theme.colATd : `${theme.colATd} background-color: transparent;`;
-      html += `<tr><td style="${colAStyle}">${escapeHtml(cell.colA)}</td><td style="${theme.colBTd}">${escapeHtml(cell.colB)}</td></tr>`;
+      const colAVal = cell.colA ? escapeHtml(cell.colA) : '&nbsp;';
+      const colBVal = cell.colB ? escapeHtml(cell.colB) : '&nbsp;';
+      tableRows += `<tr><td style="${theme.colATd}">${colAVal}</td><td style="${theme.colBTd}">${colBVal}</td></tr>`;
     }
   });
 
-  html += `</tbody></table>`;
+  // MS Excel 전용 클립보드 HTML 래퍼 구조
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<!--[if gte mso 9]>
+<xml>
+ <x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+   <x:ExcelWorksheet>
+    <x:Name>조서추출</x:Name>
+    <x:WorksheetOptions>
+     <x:DisplayGridlines/>
+    </x:WorksheetOptions>
+   </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+ </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style>
+  table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  td { mso-number-format: "\\@"; white-space: normal; }
+</style>
+</head>
+<body>
+<!--StartFragment-->
+<table border="1" cellpadding="0" cellspacing="0" style="${theme.tableStyle}">
+<colgroup>
+  <col width="75" style="width: 55pt; mso-width-source: userset; mso-width-alt: 2400;">
+  <col width="650" style="width: 480pt; mso-width-source: userset; mso-width-alt: 18000;">
+</colgroup>
+<tbody>
+${tableRows}
+</tbody>
+</table>
+<!--EndFragment-->
+</body>
+</html>`;
 
   return {
     tsv,

@@ -53,15 +53,24 @@ export const ImportCustomDbModal: React.FC<ImportCustomDbModalProps> = ({
         throw new Error('데이터는 기준서 배열([ ... ]) 형식이어야 합니다.');
       }
 
-      // 간단 유효성 검사
-      for (const item of parsed) {
+      // 간단 유효성 검사 및 문단에 기준서 메타데이터 자동 보강
+      const normalizedStandards: AccountingStandard[] = parsed.map(item => {
         if (!item.id || !item.code || !item.title || !Array.isArray(item.paragraphs)) {
           throw new Error('각 기준서 객체는 id, code, title, paragraphs 필드를 포함해야 합니다.');
         }
-      }
+        return {
+          ...item,
+          paragraphs: item.paragraphs.map((p: any) => ({
+            ...p,
+            standardId: p.standardId || item.id,
+            standardCode: p.standardCode || item.code,
+            standardTitle: p.standardTitle || item.title
+          }))
+        };
+      });
 
-      onImportStandards(parsed);
-      setSuccessMsg(`성공적으로 ${parsed.length}개의 기준서 데이터를 불러왔습니다!`);
+      onImportStandards(normalizedStandards);
+      setSuccessMsg(`성공적으로 ${normalizedStandards.length}개의 기준서 데이터를 불러왔습니다!`);
       setTimeout(() => {
         onClose();
         setJsonText('');

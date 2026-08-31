@@ -1,6 +1,9 @@
 export interface StandardParagraph {
   id: string; // e.g. "1115-31"
   number: string; // e.g. "31", "35", "B34", "AG1"
+  standardId?: string; // e.g. "k-ifrs-1115"
+  standardCode?: string; // e.g. "K-IFRS 제1115호"
+  standardTitle?: string; // e.g. "고객과의 계약에서 생기는 수익"
   sectionTitle?: string; // e.g. "수행의무의 이행 (문단 31~38)"
   subTitle?: string; // e.g. "기간에 걸쳐 이행하는 수행의무"
   content: string; // 원문 텍스트

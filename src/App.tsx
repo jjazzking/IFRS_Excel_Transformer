@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { StandardBrowser } from './components/StandardBrowser';
-import { SelectedList } from './components/SelectedList';
-import { ExportSettings } from './components/ExportSettings';
 import { ExcelPreviewGrid } from './components/ExcelPreviewGrid';
 import { VbaSnippetModal } from './components/VbaSnippetModal';
 import { ImportCustomDbModal } from './components/ImportCustomDbModal';
@@ -10,6 +8,7 @@ import { ImportCustomDbModal } from './components/ImportCustomDbModal';
 import { AccountingStandard, StandardParagraph, ExportConfig } from './types';
 import { INITIAL_STANDARDS } from './data/standardsData';
 import { generateFormattedCells } from './utils/textSplitter';
+import { sortParagraphsByStandardAndNumber } from './utils/paragraphSorter';
 
 export default function App() {
   // 기준서 데이터베이스 상태
@@ -49,7 +48,13 @@ export default function App() {
       if (exists) {
         return prev.filter(p => p.id !== paragraph.id);
       } else {
-        return [...prev, paragraph];
+        const enriched: StandardParagraph = {
+          ...paragraph,
+          standardId: paragraph.standardId || currentStandard?.id,
+          standardCode: paragraph.standardCode || currentStandard?.code,
+          standardTitle: paragraph.standardTitle || currentStandard?.title,
+        };
+        return [...prev, enriched];
       }
     });
   };
@@ -58,7 +63,14 @@ export default function App() {
   const handleSelectAllVisible = (paragraphs: StandardParagraph[]) => {
     setSelectedParagraphs(prev => {
       const existingIds = new Set(prev.map(p => p.id));
-      const toAdd = paragraphs.filter(p => !existingIds.has(p.id));
+      const toAdd = paragraphs
+        .filter(p => !existingIds.has(p.id))
+        .map(p => ({
+          ...p,
+          standardId: p.standardId || currentStandard?.id,
+          standardCode: p.standardCode || currentStandard?.code,
+          standardTitle: p.standardTitle || currentStandard?.title,
+        }));
       return [...prev, ...toAdd];
     });
   };
@@ -74,28 +86,9 @@ export default function App() {
     setSelectedParagraphs(prev => prev.filter(p => p.id !== id));
   };
 
-  // 문단 순서 위로 이동
-  const handleMoveUp = (index: number) => {
-    if (index === 0) return;
-    setSelectedParagraphs(prev => {
-      const next = [...prev];
-      const temp = next[index];
-      next[index] = next[index - 1];
-      next[index - 1] = temp;
-      return next;
-    });
-  };
-
-  // 문단 순서 아래로 이동
-  const handleMoveDown = (index: number) => {
-    if (index === selectedParagraphs.length - 1) return;
-    setSelectedParagraphs(prev => {
-      const next = [...prev];
-      const temp = next[index];
-      next[index] = next[index + 1];
-      next[index + 1] = temp;
-      return next;
-    });
+  // 기준서별 문단 번호 정렬
+  const handleSortParagraphs = (direction: 'asc' | 'desc' = 'asc') => {
+    setSelectedParagraphs(prev => sortParagraphsByStandardAndNumber(prev, direction));
   };
 
   // 전체 선택 비우기
@@ -147,12 +140,12 @@ export default function App() {
         totalParagraphs={totalParagraphCount}
       />
 
-      {/* 메인 3컬럼 워크스페이스 레이아웃 */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[700px]">
+      {/* 메인 2컬럼 레이아웃: 좌측(기준서 탐색 및 선택) vs 우측(서식 설정 툴바 & 엑셀 시뮬레이션) */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-5 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100vh-130px)] min-h-[720px]">
           
-          {/* 컬럼 1: 기준서 탐색 및 문단 선택 (4 cols) */}
-          <div className="lg:col-span-4 h-full flex flex-col">
+          {/* 컬럼 1 (좌측 5 cols): 기준서 탐색, 필터 및 문단 체크 */}
+          <div className="lg:col-span-5 h-full flex flex-col min-h-0">
             <StandardBrowser
               standards={standards}
               selectedStandardId={selectedStandardId}
@@ -164,33 +157,17 @@ export default function App() {
             />
           </div>
 
-          {/* 컬럼 2: 선택된 문단 관리 & 서식 설정 (3.5 cols) */}
-          <div className="lg:col-span-3 h-full flex flex-col space-y-4 overflow-y-auto pr-1">
-            <div className="flex-1 min-h-[300px]">
-              <SelectedList
-                selectedParagraphs={selectedParagraphs}
-                onRemoveParagraph={handleRemoveParagraph}
-                onMoveUp={handleMoveUp}
-                onMoveDown={handleMoveDown}
-                onClearAll={handleClearAll}
-                config={config}
-              />
-            </div>
-            <div className="shrink-0">
-              <ExportSettings
-                config={config}
-                onChangeConfig={setConfig}
-                defaultStandardTitle={currentStandard ? `${currentStandard.code} ${currentStandard.title}` : ''}
-              />
-            </div>
-          </div>
-
-          {/* 컬럼 3: 실시간 엑셀 그리드 미리보기 및 복사 (4.5 cols) */}
-          <div className="lg:col-span-5 h-full flex flex-col">
+          {/* 컬럼 2 (우측 7 cols): 상시 서식 설정 툴바 + 실시간 엑셀 시뮬레이터 & 원클릭 복사 */}
+          <div className="lg:col-span-7 h-full flex flex-col min-h-0">
             <ExcelPreviewGrid
               cells={formattedCells}
               config={config}
+              onChangeConfig={setConfig}
               standardTitle={currentStandard ? currentStandard.title : '기준서'}
+              selectedParagraphs={selectedParagraphs}
+              onRemoveParagraph={handleRemoveParagraph}
+              onClearAll={handleClearAll}
+              onSortParagraphs={handleSortParagraphs}
             />
           </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUp, ArrowDown, Trash2, Layers, ListOrdered, Sparkles } from 'lucide-react';
+import { ArrowUp, ArrowDown, Trash2, Layers, ListOrdered, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import { StandardParagraph, ExportConfig } from '../types';
 import { splitContentSmart, formatParagraphNumber } from '../utils/textSplitter';
 
@@ -8,6 +8,7 @@ interface SelectedListProps {
   onRemoveParagraph: (id: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
+  onSortParagraphs?: (direction?: 'asc' | 'desc') => void;
   onClearAll: () => void;
   config: ExportConfig;
 }
@@ -17,29 +18,44 @@ export const SelectedList: React.FC<SelectedListProps> = ({
   onRemoveParagraph,
   onMoveUp,
   onMoveDown,
+  onSortParagraphs,
   onClearAll,
   config
 }) => {
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* 헤더 */}
-      <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+      <div className="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
-          <ListOrdered className="w-4 h-4 text-emerald-600" />
+          <ListOrdered className="w-4 h-4 text-emerald-600 shrink-0" />
           <h2 className="text-sm font-bold text-slate-800">조서 추출 대기 목록</h2>
           <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
             {selectedParagraphs.length}개
           </span>
         </div>
+        
         {selectedParagraphs.length > 0 && (
-          <button
-            id="btn-clear-selection"
-            onClick={onClearAll}
-            className="text-xs text-rose-600 hover:text-rose-800 hover:underline flex items-center space-x-1 cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>전체 비우기</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            {onSortParagraphs && (
+              <button
+                id="btn-sort-paragraphs"
+                onClick={() => onSortParagraphs('asc')}
+                className="text-xs text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 px-2 py-1 rounded-md flex items-center space-x-1 shadow-2xs font-medium cursor-pointer transition"
+                title="기준서별 문단 번호 순서(오름차순)로 정렬"
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5 text-emerald-600" />
+                <span>문단번호 정렬</span>
+              </button>
+            )}
+            <button
+              id="btn-clear-selection"
+              onClick={onClearAll}
+              className="text-xs text-rose-600 hover:text-rose-800 hover:underline flex items-center space-x-1 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>비우기</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -69,24 +85,29 @@ export const SelectedList: React.FC<SelectedListProps> = ({
                 className="p-3 bg-slate-50/70 rounded-lg border border-slate-200 hover:border-slate-300 transition"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center justify-center">
+                  <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center justify-center shrink-0">
                       {index + 1}
                     </span>
+                    {p.standardCode && (
+                      <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0">
+                        {p.standardCode}
+                      </span>
+                    )}
                     <span className="text-xs font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-300">
                       문단 {formattedNum}
                     </span>
                     {p.subTitle && (
-                      <span className="text-xs font-semibold text-slate-700 truncate max-w-[160px]">
+                      <span className="text-xs font-semibold text-slate-700 truncate max-w-[130px]" title={p.subTitle}>
                         {p.subTitle}
                       </span>
                     )}
                   </div>
 
                   {/* 제어 버튼: 위/아래 이동 및 삭제 */}
-                  <div className="flex items-center space-x-1">
-                    <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mr-1">
-                      {splitLines.length}행 차지
+                  <div className="flex items-center space-x-1 shrink-0 ml-1">
+                    <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mr-0.5">
+                      {splitLines.length}행
                     </span>
                     <button
                       onClick={() => onMoveUp(index)}
@@ -138,3 +159,4 @@ export const SelectedList: React.FC<SelectedListProps> = ({
     </div>
   );
 };
+
