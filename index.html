@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,10 +9,58 @@
     <meta property="og:description" content="사내 회계기준서 DB를 검색 및 선택하여 엑셀 조서 양식에 맞게 텍스트 분할 및 클립보드/엑셀 자동 추출을 지원하는 도구" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      #boot-fallback {
+        font-family: system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+        max-width: 46rem;
+        margin: 4rem auto;
+        padding: 0 1.5rem;
+        color: #0f172a;
+        line-height: 1.6;
+      }
+      #boot-fallback h1 {font-size: 1.15rem; margin: 0 0 .5rem;}
+      #boot-fallback p {margin: .25rem 0; color: #475569; font-size: .9rem;}
+      #boot-fallback pre {
+        background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: .5rem;
+        padding: .75rem 1rem; overflow-x: auto; font-size: .8rem; color: #b91c1c;
+        white-space: pre-wrap; word-break: break-all;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- 스크립트가 로드/실행되지 못하면 이 내용이 그대로 남아 흰 화면 대신 원인이 보인다. -->
+    <div id="root">
+      <div id="boot-fallback">
+        <h1>앱을 불러오는 중입니다…</h1>
+        <p>이 화면이 계속 보이면 자바스크립트 번들을 불러오지 못한 것입니다. 브라우저 개발자도구(F12)의 Network 탭에서 <code>assets/index-*.js</code> 요청이 404인지 확인해 주세요.</p>
+      </div>
+    </div>
+    <script>
+      // 번들 파싱/실행 단계에서 터진 에러는 콘솔에만 남고 화면은 비어 버린다.
+      // 흰 화면 대신 원인을 화면에 직접 표시한다.
+      (function () {
+        function show(title, detail) {
+          var el = document.getElementById('boot-fallback');
+          if (!el) return;
+          el.innerHTML =
+            '<h1>앱을 시작하지 못했습니다</h1>' +
+            '<p>' + title + '</p>' +
+            '<pre></pre>';
+          el.querySelector('pre').textContent = detail;
+        }
+        window.addEventListener('error', function (e) {
+          if (e.target && e.target !== window && e.target.tagName) {
+            show('리소스를 불러오지 못했습니다. 배포 경로(base) 설정을 확인하세요.',
+                 e.target.tagName + ': ' + (e.target.src || e.target.href));
+            return;
+          }
+          show('실행 중 오류가 발생했습니다.', (e.error && e.error.stack) || e.message);
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          show('처리되지 않은 오류가 발생했습니다.', String((e.reason && e.reason.stack) || e.reason));
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
