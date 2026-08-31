@@ -1,0 +1,6 @@
+{
+  "name": "회계기준서 조서 추출기",
+  "description": "사내 회계기준서 DB를 검색 및 선택하여 엑셀 조서 양식에 맞게 텍스트 분할 및 클립보드/엑셀 자동 추출을 지원하는 도구",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
