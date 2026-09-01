@@ -91,6 +91,16 @@ python3 scripts/parse_kifrs_hwp.py 기업회계기준서_제1001호.hwp --dump-t
 
 ### 산출물
 
-- `src/data/standards/k-ifrs-1001.json` — 기업회계기준서 제1001호 '재무제표 표시' (2023.10.13. 의결본), 문단 207건
-- 이 파일은 `src/data/standardsData.ts` 의 `ALL_STANDARDS` 로 앱에 자동 병합되며,
-  **사내 DB 가져오기** 모달에 그대로 붙여넣어도 동작하는 형식(기준서 배열)입니다.
+`src/data/standards/` 아래의 JSON은 `src/data/standardsData.ts` 의 `ALL_STANDARDS` 로
+앱에 자동 병합되며, **사내 DB 가져오기** 모달에 그대로 붙여넣어도 동작하는 형식(기준서 배열)입니다.
+
+| 파일 | 기준서 | 문단 수 |
+| --- | --- | --- |
+| `k-ifrs-1001.json` | 제1001호 재무제표 표시 (+ 실무적용지침) | 207 + 12 |
+| `k-ifrs-1002.json` | 제1002호 재고자산 | 51 |
+| `k-ifrs-1007.json` | 제1007호 현금흐름표 | 79 |
+| `k-ifrs-1008.json` | 제1008호 회계정책, 회계추정치 변경과 오류 | 70 |
+| `k-ifrs-1010.json` | 제1010호 보고기간후사건 | 29 |
+
+기준서를 추가할 때는 `src/data/standards/k-ifrs-XXXX.json` 을 넣고
+`standardsData.ts` 의 `PARSED_STANDARDS` 배열에 import 한 줄을 추가하면 됩니다.

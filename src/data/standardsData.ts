@@ -1,5 +1,9 @@
 import { AccountingStandard } from '../types';
 import kifrs1001 from './standards/k-ifrs-1001.json';
+import kifrs1002 from './standards/k-ifrs-1002.json';
+import kifrs1007 from './standards/k-ifrs-1007.json';
+import kifrs1008 from './standards/k-ifrs-1008.json';
+import kifrs1010 from './standards/k-ifrs-1010.json';
 
 export const INITIAL_STANDARDS: AccountingStandard[] = [
   {
@@ -261,9 +265,13 @@ export const INITIAL_STANDARDS: AccountingStandard[] = [
 // HWP 원문에서 파싱한 기준서(scripts/parse_kifrs_hwp.py 산출물)를 DB에 합친다.
 // JSON 은 구조상 AccountingStandard 와 동일하지만 리터럴 타입(category 등)이
 // 넓혀지므로 단언으로 좁혀준다.
-const PARSED_STANDARDS = [
-  ...(kifrs1001 as unknown as AccountingStandard[])
-];
+const PARSED_STANDARDS = ([
+  kifrs1001,
+  kifrs1002,
+  kifrs1007,
+  kifrs1008,
+  kifrs1010
+] as unknown as AccountingStandard[][]).flat();
 
 export const ALL_STANDARDS: AccountingStandard[] = [
   ...INITIAL_STANDARDS,
