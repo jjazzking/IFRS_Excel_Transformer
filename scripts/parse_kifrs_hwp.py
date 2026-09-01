@@ -134,6 +134,9 @@ PARA_NO = (
 )
 PARA_START_RE = re.compile(rf"^({PARA_NO})[ \t]+(?=\S)(.*)$")
 
+# 본문의 첫 문단으로 인정할 번호: 1 / 1A / 1.1 / 한1.1 / B1 ...
+FIRST_PARA_RE = re.compile(r"한?[A-Z]{0,2}1(?:\.\d+)*[A-Z]*")
+
 # 하위 항목: ⑴ ⒜ ① (1) 가. 등
 SUBITEM_RE = re.compile(r"^\s*(?:[⑴-⒇]|[①-⑳]|[㈎-㈜]|[⒜-⒵]|\(\d+\)|\d+\)|[가-힣]\.)\s")
 
@@ -213,7 +216,7 @@ def parse_toc(lines: list[str]) -> list[TocEntry]:
         return []
     try:
         num_head = next(
-            i for i, ln in enumerate(lines[toc_start:], toc_start) if _norm(ln) == "문단번호"
+            i for i, ln in enumerate(lines[toc_start:], toc_start) if _key(ln) == "문단번호"
         )
     except StopIteration:
         return []
@@ -275,16 +278,17 @@ def parse_body(lines: list[str], toc: list[TocEntry]) -> list[Paragraph]:
 
     # 본문 시작: 목차의 범위 목록이 끝난 뒤 첫 번째 최상위 제목
     try:
-        num_head = next(i for i, ln in enumerate(lines) if _norm(ln) == "문단번호")
+        num_head = next(i for i, ln in enumerate(lines) if _key(ln) == "문단번호")
     except StopIteration:
         num_head = 0
 
     body_start = num_head
     for i in range(num_head + 1, len(lines)):
         m = PARA_START_RE.match(lines[i].strip())
-        # 목차 뒤 첫 문단이 본문 시작. 제1109호처럼 '1' 이 아니라 '1.1' 로
-        # 시작하는 기준서도 있으므로 번호를 특정하지 않는다.
-        if m:
+        # 본문의 첫 문단(1 / 1.1 / 한1.1 / 1A ...)을 본문 시작으로 본다.
+        # 번호를 특정하지 않으면 저작권 안내의 '7 Westferry Circus...' 같은
+        # 줄을 문단으로 오인해 본문 전체를 놓친다(제1101호에서 실제 발생).
+        if m and FIRST_PARA_RE.fullmatch(m.group(1)):
             body_start = i
             # 문단 1 바로 앞의 제목(예: '목적')부터 읽어야 계층이 유실되지 않는다
             seen = 0
@@ -489,6 +493,7 @@ def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: 
 
         if not started or current is None:
             continue
+
         if len(current["content"]) >= MAX_CONTENT:
             continue
         if len(line) >= 400 or re.fullmatch(r"[\d,.\s()▲△%-]+", line):
