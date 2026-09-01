@@ -120,8 +120,18 @@ def _decode_para_text(payload: bytes) -> str:
 # 2. 문서 구조 파싱
 # ---------------------------------------------------------------------------
 
-# 문단번호: 1 / 8A / 30A / 76ZA / 한2.1 / 한138.6 / IG5A / BC13T / 한BC104.1
-PARA_NO = r"(?:한?BC\d+[A-Z]*(?:\.\d+)?|IG\d+[A-Z]*|한?\d+(?:\.\d+)?[A-Z]*)"
+# 문단번호 예시:
+#   1 / 8A / 30A / 76ZA / 한2.1 / 한138.6            (제1001호 등 일반 기준서)
+#   5.7.5 / 3.2.4 / B3.1.1 / BA.1                    (제1109호처럼 다단계 번호를 쓰는 기준서)
+#   IG5A / BC13T / 한BC104.1                          (실무적용지침 · 결론도출근거)
+PARA_NO = (
+    r"(?:"
+    r"한?BC\d+[A-Z]*(?:\.\d+)*"          # BC13T, 한BC104.1
+    r"|IG\d+[A-Z]*"                       # IG5A
+    r"|한?[A-Z]{0,2}\d+(?:\.\d+)*[A-Z]*"  # 1, 8A, 76ZA, 한2.1, 5.7.5, B3.1.1
+    r"|[A-Z]{1,2}\.\d+(?:\.\d+)*"       # BA.1
+    r")"
+)
 PARA_START_RE = re.compile(rf"^({PARA_NO})[ \t]+(?=\S)(.*)$")
 
 # 하위 항목: ⑴ ⒜ ① (1) 가. 등
@@ -272,7 +282,9 @@ def parse_body(lines: list[str], toc: list[TocEntry]) -> list[Paragraph]:
     body_start = num_head
     for i in range(num_head + 1, len(lines)):
         m = PARA_START_RE.match(lines[i].strip())
-        if m and m.group(1) == "1":
+        # 목차 뒤 첫 문단이 본문 시작. 제1109호처럼 '1' 이 아니라 '1.1' 로
+        # 시작하는 기준서도 있으므로 번호를 특정하지 않는다.
+        if m:
             body_start = i
             # 문단 1 바로 앞의 제목(예: '목적')부터 읽어야 계층이 유실되지 않는다
             seen = 0
@@ -432,22 +444,40 @@ def build_standard(text: str, include_ig: bool = False) -> list[dict]:
 
 
 def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: str) -> dict:
-    """실무적용지침(IG) 문단을 별도 기준서 항목으로 수집한다."""
+    """실무적용지침(IG) 문단을 별도 기준서 항목으로 수집한다.
+
+    일부 기준서(예: 제1101호)는 실무적용지침 본문이 문서 안에 두 번 실려 있고,
+    그 사이에 대조표 같은 대형 표가 끼어 있다. 이미 나온 IG 번호가 다시 등장하면
+    두 번째 사본이 시작된 것으로 보고 수집을 멈춘다. 또한 표가 문단 본문으로
+    빨려 들어가지 않도록 이어붙이는 분량에 상한을 둔다.
+    """
+    # 한 문단이 표를 통째로 삼키는 것을 막는 상한.
+    # 정상적인 예시 문단(제1001호 IG6 ≈ 7,800자)은 보존하면서
+    # 제1101호 IG206 이 삼킨 4만 자짜리 대조표 같은 경우만 잘라낸다.
+    MAX_CONTENT = 15000
+
     paragraphs: list[dict] = []
+    seen: set[str] = set()
     current: dict | None = None
     started = False
+
     for raw in lines:
         line = raw.strip()
         if not line:
             continue
         if re.fullmatch(r"결론도출근거", line):
             break
+
         m = PARA_START_RE.match(line)
         if m and m.group(1).startswith("IG") and not SUBITEM_RE.match(line):
+            number = m.group(1)
+            if number in seen:
+                break  # 같은 지침이 다시 시작됨 → 중복 사본이므로 여기서 종료
+            seen.add(number)
             started = True
             current = {
-                "id": f"{code_no}-{m.group(1)}",
-                "number": m.group(1),
+                "id": f"{code_no}-{number}",
+                "number": number,
                 "standardId": f"{std_id}-ig",
                 "standardCode": std_code,
                 "standardTitle": f"{title} (실무적용지침)",
@@ -455,8 +485,15 @@ def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: 
                 "content": m.group(2).strip(),
             }
             paragraphs.append(current)
-        elif started and current is not None and len(line) < 400 and not re.match(r"^[\d,.\s()▲△%-]+$", line):
-            current["content"] += "\n" + re.sub(r"\t+", " ", line).strip()
+            continue
+
+        if not started or current is None:
+            continue
+        if len(current["content"]) >= MAX_CONTENT:
+            continue
+        if len(line) >= 400 or re.fullmatch(r"[\d,.\s()▲△%-]+", line):
+            continue  # 표의 숫자 행 등은 본문으로 보지 않는다
+        current["content"] += "\n" + re.sub(r"\t+", " ", line).strip()
 
     for p in paragraphs:
         p["content"] = p["content"].strip()
