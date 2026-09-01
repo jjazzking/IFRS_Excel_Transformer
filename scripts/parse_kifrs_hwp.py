@@ -134,6 +134,10 @@ PARA_NO = (
 )
 PARA_START_RE = re.compile(rf"^({PARA_NO})[ \t]+(?=\S)(.*)$")
 
+# 부록 표제(예: '부록 A. 용어의 정의'). 목차의 문단번호 범위와 짝이 맞지 않아
+# 목차 기반 제목 목록에서 빠지는 경우가 있어 본문에서 직접 최상위 제목으로 잡는다.
+APPENDIX_RE = re.compile(r"^부\s*록\s*[A-Z]\b")
+
 # 본문의 첫 문단으로 인정할 번호: 1 / 1A / 1.1 / 한1.1 / B1 ...
 FIRST_PARA_RE = re.compile(r"한?[A-Z]{0,2}1(?:\.\d+)*[A-Z]*")
 
@@ -240,6 +244,27 @@ def parse_toc(lines: list[str]) -> list[TocEntry]:
         else:
             break
 
+    # 목차의 긴 제목은 줄바꿈으로 쪼개져 제목 수가 범위 수보다 많아진다.
+    # 쪼개진 조각은 본문에 그대로 나타나지 않으므로, 다음 줄과 이어붙였을 때
+    # 본문의 제목 줄과 일치하면 하나의 제목으로 합친다.
+    body_lines = {_key(ln) for ln in lines[num_head:] if ln.strip()}
+    merged: list[str] = []
+    i = 0
+    while i < len(titles):
+        t = titles[i]
+        if (
+            len(merged) + (len(titles) - i) > len(ranges)
+            and i + 1 < len(titles)
+            and _key(t) not in body_lines
+            and _key(f"{t} {titles[i + 1]}") in body_lines
+        ):
+            merged.append(f"{t} {titles[i + 1]}")
+            i += 2
+            continue
+        merged.append(t)
+        i += 1
+    titles = merged
+
     entries: list[TocEntry] = []
     for title, rng in zip(titles, ranges):
         parts = re.split(r"\s*[~∼～-]\s*", rng)
@@ -313,6 +338,11 @@ def parse_body(lines: list[str], toc: list[TocEntry]) -> list[Paragraph]:
             continue
         if BODY_END_RE.search(line):
             break
+
+        if APPENDIX_RE.match(line):
+            path = [_norm(line)]
+            current = None
+            continue
 
         hit = headings.get(_key(line))
         if hit is not None:
