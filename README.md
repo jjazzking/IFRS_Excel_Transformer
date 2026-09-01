@@ -102,5 +102,11 @@ python3 scripts/parse_kifrs_hwp.py 기업회계기준서_제1001호.hwp --dump-t
 | `k-ifrs-1008.json` | 제1008호 회계정책, 회계추정치 변경과 오류 | 70 |
 | `k-ifrs-1010.json` | 제1010호 보고기간후사건 | 29 |
 
-기준서를 추가할 때는 `src/data/standards/k-ifrs-XXXX.json` 을 넣고
-`standardsData.ts` 의 `PARSED_STANDARDS` 배열에 import 한 줄을 추가하면 됩니다.
+#### 기준서 추가 방법
+
+`src/data/standards/` 폴더에 **JSON 파일만 넣으면 됩니다.** 코드 수정은 필요 없습니다.
+`standardsData.ts` 가 `import.meta.glob` 으로 해당 폴더의 `*.json` 을 전부 자동으로 읽어들입니다.
+
+- 파일명 규칙: `k-ifrs-XXXX.json` (파일명 오름차순으로 목록에 표시됨)
+- 파일 형식: 기준서 **배열** `[{ "id": ..., "paragraphs": [...] }]`
+- `id` 는 다른 기준서와 겹치지 않아야 합니다 (겹치면 목록에 중복 표시됨)
