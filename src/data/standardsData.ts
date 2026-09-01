@@ -1,4 +1,9 @@
 import { AccountingStandard } from '../types';
+import kifrs1001 from './standards/k-ifrs-1001.json';
+import kifrs1002 from './standards/k-ifrs-1002.json';
+import kifrs1007 from './standards/k-ifrs-1007.json';
+import kifrs1008 from './standards/k-ifrs-1008.json';
+import kifrs1010 from './standards/k-ifrs-1010.json';
 
 export const INITIAL_STANDARDS: AccountingStandard[] = [
   {
@@ -254,36 +259,21 @@ export const INITIAL_STANDARDS: AccountingStandard[] = [
         keywords: ['개발비', '자산화', '기술적 실현가능성', '개발단계', '6가지 요건']
       }
     ]
-  },
-  {
-    id: 'k-ifrs-1001',
-    code: 'K-IFRS 제1001호',
-    title: '재무제표 표시',
-    category: '표시/공시',
-    effectiveDate: '2011.01.01',
-    paragraphs: [
-      {
-        id: '1001-10',
-        number: '10',
-        standardId: 'k-ifrs-1001',
-        standardCode: 'K-IFRS 제1001호',
-        standardTitle: '재무제표 표시',
-        sectionTitle: '전체 재무제표',
-        subTitle: '재무제표의 구성요소',
-        content: '전체 재무제표는 다음을 포함한다:\n(1) 기말 재무상태표\n(2) 기간의 포괄손익계산서\n(3) 기간의 자본변동표\n(4) 기간의 현금흐름표\n(5) 유의적인 회계정책 정보 및 그 밖의 설명으로 구성된 주석\n(6) 전기 비교정보',
-        keywords: ['재무상태표', '포괄손익계산서', '자본변동표', '현금흐름표', '주석']
-      },
-      {
-        id: '1001-25',
-        number: '25',
-        standardId: 'k-ifrs-1001',
-        standardCode: 'K-IFRS 제1001호',
-        standardTitle: '재무제표 표시',
-        sectionTitle: '일반원칙',
-        subTitle: '계속기업 가정',
-        content: '경영진은 재무제표를 작성할 때 기업의 계속기업으로서의 존속능력을 평가해야 한다. 경영진이 기업을 청산하거나 경영활동을 중단할 의도를 가지고 있지 않거나, 청산 또는 경영중단 외에 다른 현실적 대안이 없는 경우가 아니면 계속기업을 전제로 재무제표를 작성한다.',
-        keywords: ['계속기업', '존속능력', '청산', '가정']
-      }
-    ]
   }
+];
+
+// HWP 원문에서 파싱한 기준서(scripts/parse_kifrs_hwp.py 산출물)를 DB에 합친다.
+// JSON 은 구조상 AccountingStandard 와 동일하지만 리터럴 타입(category 등)이
+// 넓혀지므로 단언으로 좁혀준다.
+const PARSED_STANDARDS = ([
+  kifrs1001,
+  kifrs1002,
+  kifrs1007,
+  kifrs1008,
+  kifrs1010
+] as unknown as AccountingStandard[][]).flat();
+
+export const ALL_STANDARDS: AccountingStandard[] = [
+  ...INITIAL_STANDARDS,
+  ...PARSED_STANDARDS
 ];

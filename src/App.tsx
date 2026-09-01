@@ -6,14 +6,14 @@ import { VbaSnippetModal } from './components/VbaSnippetModal';
 import { ImportCustomDbModal } from './components/ImportCustomDbModal';
 
 import { AccountingStandard, StandardParagraph, ExportConfig } from './types';
-import { INITIAL_STANDARDS } from './data/standardsData';
+import { ALL_STANDARDS, INITIAL_STANDARDS } from './data/standardsData';
 import { generateFormattedCells } from './utils/textSplitter';
 import { sortParagraphsByStandardAndNumber } from './utils/paragraphSorter';
 
 export default function App() {
   // 기준서 데이터베이스 상태
-  const [standards, setStandards] = useState<AccountingStandard[]>(INITIAL_STANDARDS);
-  const [selectedStandardId, setSelectedStandardId] = useState<string>(INITIAL_STANDARDS[0].id);
+  const [standards, setStandards] = useState<AccountingStandard[]>(ALL_STANDARDS);
+  const [selectedStandardId, setSelectedStandardId] = useState<string>(ALL_STANDARDS[0].id);
 
   // 선택된 문단들
   const [selectedParagraphs, setSelectedParagraphs] = useState<StandardParagraph[]>([
