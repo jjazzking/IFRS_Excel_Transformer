@@ -120,9 +120,26 @@ def _decode_para_text(payload: bytes) -> str:
 # 2. 문서 구조 파싱
 # ---------------------------------------------------------------------------
 
-# 문단번호: 1 / 8A / 30A / 76ZA / 한2.1 / 한138.6 / IG5A / BC13T / 한BC104.1
-PARA_NO = r"(?:한?BC\d+[A-Z]*(?:\.\d+)?|IG\d+[A-Z]*|한?\d+(?:\.\d+)?[A-Z]*)"
+# 문단번호 예시:
+#   1 / 8A / 30A / 76ZA / 한2.1 / 한138.6            (제1001호 등 일반 기준서)
+#   5.7.5 / 3.2.4 / B3.1.1 / BA.1                    (제1109호처럼 다단계 번호를 쓰는 기준서)
+#   IG5A / BC13T / 한BC104.1                          (실무적용지침 · 결론도출근거)
+PARA_NO = (
+    r"(?:"
+    r"한?BC\d+[A-Z]*(?:\.\d+)*"          # BC13T, 한BC104.1
+    r"|IG\d+[A-Z]*"                       # IG5A
+    r"|한?[A-Z]{0,2}\d+(?:\.\d+)*[A-Z]*"  # 1, 8A, 76ZA, 한2.1, 5.7.5, B3.1.1
+    r"|[A-Z]{1,2}\.\d+(?:\.\d+)*"       # BA.1
+    r")"
+)
 PARA_START_RE = re.compile(rf"^({PARA_NO})[ \t]+(?=\S)(.*)$")
+
+# 부록 표제(예: '부록 A. 용어의 정의'). 목차의 문단번호 범위와 짝이 맞지 않아
+# 목차 기반 제목 목록에서 빠지는 경우가 있어 본문에서 직접 최상위 제목으로 잡는다.
+APPENDIX_RE = re.compile(r"^부\s*록\s*[A-Z]\b")
+
+# 본문의 첫 문단으로 인정할 번호: 1 / 1A / 1.1 / 한1.1 / B1 ...
+FIRST_PARA_RE = re.compile(r"한?[A-Z]{0,2}1(?:\.\d+)*[A-Z]*")
 
 # 하위 항목: ⑴ ⒜ ① (1) 가. 등
 SUBITEM_RE = re.compile(r"^\s*(?:[⑴-⒇]|[①-⑳]|[㈎-㈜]|[⒜-⒵]|\(\d+\)|\d+\)|[가-힣]\.)\s")
@@ -203,7 +220,7 @@ def parse_toc(lines: list[str]) -> list[TocEntry]:
         return []
     try:
         num_head = next(
-            i for i, ln in enumerate(lines[toc_start:], toc_start) if _norm(ln) == "문단번호"
+            i for i, ln in enumerate(lines[toc_start:], toc_start) if _key(ln) == "문단번호"
         )
     except StopIteration:
         return []
@@ -226,6 +243,27 @@ def parse_toc(lines: list[str]) -> list[TocEntry]:
             ranges.append(t)
         else:
             break
+
+    # 목차의 긴 제목은 줄바꿈으로 쪼개져 제목 수가 범위 수보다 많아진다.
+    # 쪼개진 조각은 본문에 그대로 나타나지 않으므로, 다음 줄과 이어붙였을 때
+    # 본문의 제목 줄과 일치하면 하나의 제목으로 합친다.
+    body_lines = {_key(ln) for ln in lines[num_head:] if ln.strip()}
+    merged: list[str] = []
+    i = 0
+    while i < len(titles):
+        t = titles[i]
+        if (
+            len(merged) + (len(titles) - i) > len(ranges)
+            and i + 1 < len(titles)
+            and _key(t) not in body_lines
+            and _key(f"{t} {titles[i + 1]}") in body_lines
+        ):
+            merged.append(f"{t} {titles[i + 1]}")
+            i += 2
+            continue
+        merged.append(t)
+        i += 1
+    titles = merged
 
     entries: list[TocEntry] = []
     for title, rng in zip(titles, ranges):
@@ -265,14 +303,17 @@ def parse_body(lines: list[str], toc: list[TocEntry]) -> list[Paragraph]:
 
     # 본문 시작: 목차의 범위 목록이 끝난 뒤 첫 번째 최상위 제목
     try:
-        num_head = next(i for i, ln in enumerate(lines) if _norm(ln) == "문단번호")
+        num_head = next(i for i, ln in enumerate(lines) if _key(ln) == "문단번호")
     except StopIteration:
         num_head = 0
 
     body_start = num_head
     for i in range(num_head + 1, len(lines)):
         m = PARA_START_RE.match(lines[i].strip())
-        if m and m.group(1) == "1":
+        # 본문의 첫 문단(1 / 1.1 / 한1.1 / 1A ...)을 본문 시작으로 본다.
+        # 번호를 특정하지 않으면 저작권 안내의 '7 Westferry Circus...' 같은
+        # 줄을 문단으로 오인해 본문 전체를 놓친다(제1101호에서 실제 발생).
+        if m and FIRST_PARA_RE.fullmatch(m.group(1)):
             body_start = i
             # 문단 1 바로 앞의 제목(예: '목적')부터 읽어야 계층이 유실되지 않는다
             seen = 0
@@ -297,6 +338,11 @@ def parse_body(lines: list[str], toc: list[TocEntry]) -> list[Paragraph]:
             continue
         if BODY_END_RE.search(line):
             break
+
+        if APPENDIX_RE.match(line):
+            path = [_norm(line)]
+            current = None
+            continue
 
         hit = headings.get(_key(line))
         if hit is not None:
@@ -432,22 +478,40 @@ def build_standard(text: str, include_ig: bool = False) -> list[dict]:
 
 
 def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: str) -> dict:
-    """실무적용지침(IG) 문단을 별도 기준서 항목으로 수집한다."""
+    """실무적용지침(IG) 문단을 별도 기준서 항목으로 수집한다.
+
+    일부 기준서(예: 제1101호)는 실무적용지침 본문이 문서 안에 두 번 실려 있고,
+    그 사이에 대조표 같은 대형 표가 끼어 있다. 이미 나온 IG 번호가 다시 등장하면
+    두 번째 사본이 시작된 것으로 보고 수집을 멈춘다. 또한 표가 문단 본문으로
+    빨려 들어가지 않도록 이어붙이는 분량에 상한을 둔다.
+    """
+    # 한 문단이 표를 통째로 삼키는 것을 막는 상한.
+    # 정상적인 예시 문단(제1001호 IG6 ≈ 7,800자)은 보존하면서
+    # 제1101호 IG206 이 삼킨 4만 자짜리 대조표 같은 경우만 잘라낸다.
+    MAX_CONTENT = 15000
+
     paragraphs: list[dict] = []
+    seen: set[str] = set()
     current: dict | None = None
     started = False
+
     for raw in lines:
         line = raw.strip()
         if not line:
             continue
         if re.fullmatch(r"결론도출근거", line):
             break
+
         m = PARA_START_RE.match(line)
         if m and m.group(1).startswith("IG") and not SUBITEM_RE.match(line):
+            number = m.group(1)
+            if number in seen:
+                break  # 같은 지침이 다시 시작됨 → 중복 사본이므로 여기서 종료
+            seen.add(number)
             started = True
             current = {
-                "id": f"{code_no}-{m.group(1)}",
-                "number": m.group(1),
+                "id": f"{code_no}-{number}",
+                "number": number,
                 "standardId": f"{std_id}-ig",
                 "standardCode": std_code,
                 "standardTitle": f"{title} (실무적용지침)",
@@ -455,8 +519,16 @@ def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: 
                 "content": m.group(2).strip(),
             }
             paragraphs.append(current)
-        elif started and current is not None and len(line) < 400 and not re.match(r"^[\d,.\s()▲△%-]+$", line):
-            current["content"] += "\n" + re.sub(r"\t+", " ", line).strip()
+            continue
+
+        if not started or current is None:
+            continue
+
+        if len(current["content"]) >= MAX_CONTENT:
+            continue
+        if len(line) >= 400 or re.fullmatch(r"[\d,.\s()▲△%-]+", line):
+            continue  # 표의 숫자 행 등은 본문으로 보지 않는다
+        current["content"] += "\n" + re.sub(r"\t+", " ", line).strip()
 
     for p in paragraphs:
         p["content"] = p["content"].strip()

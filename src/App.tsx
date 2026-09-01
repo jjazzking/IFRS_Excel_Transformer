@@ -6,19 +6,21 @@ import { VbaSnippetModal } from './components/VbaSnippetModal';
 import { ImportCustomDbModal } from './components/ImportCustomDbModal';
 
 import { AccountingStandard, StandardParagraph, ExportConfig } from './types';
-import { ALL_STANDARDS, INITIAL_STANDARDS } from './data/standardsData';
+import { ALL_STANDARDS } from './data/standardsData';
 import { generateFormattedCells } from './utils/textSplitter';
 import { sortParagraphsByStandardAndNumber } from './utils/paragraphSorter';
+
+// 첫 화면에서 미리 선택해 둘 문단(첫 기준서의 앞 두 문단). 기준서 DB 가 비어 있어도 안전하다.
+const DEFAULT_PARAGRAPHS: StandardParagraph[] = ALL_STANDARDS[0]?.paragraphs.slice(0, 2) ?? [];
 
 export default function App() {
   // 기준서 데이터베이스 상태
   const [standards, setStandards] = useState<AccountingStandard[]>(ALL_STANDARDS);
-  const [selectedStandardId, setSelectedStandardId] = useState<string>(ALL_STANDARDS[0].id);
+  const [selectedStandardId, setSelectedStandardId] = useState<string>(ALL_STANDARDS[0]?.id ?? '');
 
   // 선택된 문단들
   const [selectedParagraphs, setSelectedParagraphs] = useState<StandardParagraph[]>([
-    INITIAL_STANDARDS[0].paragraphs[0], // 기본으로 제1115호 문단 31 선택
-    INITIAL_STANDARDS[0].paragraphs[3], // 문단 38 선택
+    ...DEFAULT_PARAGRAPHS,
   ]);
 
   // 서식 및 추출 설정
@@ -98,7 +100,7 @@ export default function App() {
 
   // 전체 초기화
   const handleResetAll = () => {
-    setSelectedParagraphs([INITIAL_STANDARDS[0].paragraphs[0], INITIAL_STANDARDS[0].paragraphs[3]]);
+    setSelectedParagraphs([...DEFAULT_PARAGRAPHS]);
     setConfig({
       maxCharsPerLine: 45,
       includeStandardTitle: true,

@@ -91,16 +91,30 @@ python3 scripts/parse_kifrs_hwp.py 기업회계기준서_제1001호.hwp --dump-t
 
 ### 산출물
 
-`src/data/standards/` 아래의 JSON은 `src/data/standardsData.ts` 의 `ALL_STANDARDS` 로
-앱에 자동 병합되며, **사내 DB 가져오기** 모달에 그대로 붙여넣어도 동작하는 형식(기준서 배열)입니다.
+`src/data/standards/` 아래 JSON 40개 파일에 **기준서 45건 / 문단 3,645건**이 들어 있습니다
+(제1001·1101·1102·1107·1108호는 실무적용지침을 별도 항목으로 포함).
 
-| 파일 | 기준서 | 문단 수 |
-| --- | --- | --- |
-| `k-ifrs-1001.json` | 제1001호 재무제표 표시 (+ 실무적용지침) | 207 + 12 |
-| `k-ifrs-1002.json` | 제1002호 재고자산 | 51 |
-| `k-ifrs-1007.json` | 제1007호 현금흐름표 | 79 |
-| `k-ifrs-1008.json` | 제1008호 회계정책, 회계추정치 변경과 오류 | 70 |
-| `k-ifrs-1010.json` | 제1010호 보고기간후사건 | 29 |
+아직 반영되지 않은 기준서: 제1109호 '금융상품'(다단계 문단번호 대응 후 재파싱 필요).
 
-기준서를 추가할 때는 `src/data/standards/k-ifrs-XXXX.json` 을 넣고
-`standardsData.ts` 의 `PARSED_STANDARDS` 배열에 import 한 줄을 추가하면 됩니다.
+#### 기준서 추가 방법
+
+`src/data/standards/` 폴더에 **JSON 파일만 넣으면 됩니다.** 코드 수정은 필요 없습니다.
+`standardsData.ts` 가 `import.meta.glob` 으로 해당 폴더의 `*.json` 을 전부 자동으로 읽어들입니다.
+
+- 파일명 규칙: `k-ifrs-XXXX.json` (파일명 오름차순으로 목록에 표시됨)
+- 파일 형식: 기준서 **배열** `[{ "id": ..., "paragraphs": [...] }]`
+- `id` 는 다른 기준서와 겹치지 않아야 합니다
+
+검증까지 함께 하려면 배치용 스크립트를 쓰면 됩니다. 문제가 하나라도 있으면
+아무 파일도 복사하지 않고 무엇이 잘못됐는지 알려줍니다.
+
+```bash
+# 디렉터리째 검증 + 배치
+python3 scripts/ingest_standards.py ~/parsed_json/
+
+# 검증만
+python3 scripts/ingest_standards.py ~/parsed_json/ --check-only
+```
+
+검사 항목: 배열 형식 / 기준서·문단 필수 필드 / `category` 유효값 /
+기준서·문단 id 중복 / 빈 `content` / 문단의 `standardId`·`standardCode`·`standardTitle` 일치.
