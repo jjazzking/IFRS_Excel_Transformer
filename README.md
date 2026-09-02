@@ -79,6 +79,10 @@ python3 scripts/parse_kifrs_hwp.py 기업회계기준서_제1001호.hwp --includ
 
 # 추출된 원문 텍스트를 확인하고 싶을 때
 python3 scripts/parse_kifrs_hwp.py 기업회계기준서_제1001호.hwp --dump-text raw.txt
+
+# 폴더 통째로 변환 — 기준서 번호를 읽어 k-ifrs-<번호>.json 으로 자동 저장한다.
+# 한 파일이 실패해도 나머지는 계속 진행하고, 끝에 실패 목록을 보여준다.
+python3 scripts/parse_kifrs_hwp.py ~/기준서_HWP/ --include-ig -o parsed_json/
 ```
 
 ### 파싱 방식

@@ -16,7 +16,9 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import json
+import os
 import re
 import struct
 import sys
@@ -546,12 +548,20 @@ def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: 
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="K-IFRS 기준서 HWP → 기준서 DB JSON 변환기")
-    ap.add_argument("hwp", help="입력 HWP 파일 경로")
-    ap.add_argument("-o", "--output", help="출력 JSON 경로 (미지정 시 stdout)")
+    ap = argparse.ArgumentParser(
+        description="K-IFRS 기준서 HWP → 기준서 DB JSON 변환기",
+        epilog="폴더를 주면 그 안의 *.hwp 를 모두 변환한다. "
+               "이때 -o 는 출력 폴더로 해석되고 파일명은 k-ifrs-<번호>.json 으로 자동 결정된다.",
+    )
+    ap.add_argument("hwp", help="입력 HWP 파일 또는 HWP 가 들어있는 폴더")
+    ap.add_argument("-o", "--output", help="출력 JSON 경로(파일 입력) 또는 출력 폴더(폴더 입력)")
     ap.add_argument("--include-ig", action="store_true", help="실무적용지침(IG)도 별도 기준서로 포함")
-    ap.add_argument("--dump-text", help="추출한 원문 텍스트를 저장(디버깅용)")
+    ap.add_argument("--dump-text", help="추출한 원문 텍스트를 저장(파일 입력일 때만, 디버깅용)")
     args = ap.parse_args()
+
+    if os.path.isdir(args.hwp):
+        convert_directory(args.hwp, args.output, args.include_ig)
+        return
 
     text = extract_hwp_text(args.hwp)
     if args.dump_text:
@@ -568,6 +578,42 @@ def main() -> None:
         print(f"{args.output} 저장 완료 — 기준서 {len(data)}건 / 문단 {total}건", file=sys.stderr)
     else:
         print(payload)
+
+
+def convert_directory(src_dir: str, out_dir: str | None, include_ig: bool) -> None:
+    """폴더 안의 HWP 를 모두 변환한다. 한 건이 실패해도 나머지는 계속 진행한다."""
+    out_dir = out_dir or "parsed_json"
+    os.makedirs(out_dir, exist_ok=True)
+
+    files = sorted(
+        f for f in glob.glob(os.path.join(src_dir, "*"))
+        if f.lower().endswith((".hwp", ".hwpx"))
+    )
+    if not files:
+        sys.exit(f"{src_dir} 에서 HWP 파일을 찾지 못했습니다.")
+
+    ok = 0
+    failed: list[tuple[str, str]] = []
+    for path in files:
+        name = os.path.basename(path)
+        try:
+            data = build_standard(extract_hwp_text(path), include_ig=include_ig)
+            code_no = re.sub(r"\D", "", data[0]["code"])[:4]
+            dst = os.path.join(out_dir, f"k-ifrs-{code_no}.json")
+            with open(dst, "w", encoding="utf-8") as fp:
+                fp.write(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+            total = sum(len(s["paragraphs"]) for s in data)
+            print(f"  OK   {os.path.basename(dst):<20} 기준서 {len(data)}건 / 문단 {total:>4}건  ← {name[:40]}")
+            ok += 1
+        except Exception as e:  # 한 파일의 실패가 전체를 막지 않도록 한다
+            print(f"  실패 {name[:60]}: {e}")
+            failed.append((name, str(e)))
+
+    print(f"\n{ok}/{len(files)}건 변환 완료 → {out_dir}/")
+    if failed:
+        print("실패 목록:")
+        for name, err in failed:
+            print(f"  - {name}: {err}")
 
 
 if __name__ == "__main__":
