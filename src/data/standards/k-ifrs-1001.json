@@ -4,6 +4,7 @@
     "code": "K-IFRS 제1001호",
     "title": "재무제표 표시",
     "category": "표시/공시",
+    "effectiveDate": "2023.10.13",
     "paragraphs": [
       {
         "id": "1001-1",
@@ -3578,8 +3579,7 @@
           "기준서 등의 대체"
         ]
       }
-    ],
-    "effectiveDate": "2023.10.13"
+    ]
   },
   {
     "id": "k-ifrs-1001-ig",

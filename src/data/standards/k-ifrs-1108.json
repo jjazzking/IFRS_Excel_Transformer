@@ -4,6 +4,7 @@
     "code": "K-IFRS 제1108호",
     "title": "영업부문",
     "category": "표시/공시",
+    "effectiveDate": "2021.09.10",
     "paragraphs": [
       {
         "id": "1108-1",
@@ -661,14 +662,13 @@
         "standardId": "k-ifrs-1108",
         "standardCode": "K-IFRS 제1108호",
         "standardTitle": "영업부문",
-        "content": "[한국회계기준원 회계기준위원회가 삭제함]\n부록 A. 용어의 정의\n이 부록은 기준서의 일부를 구성한다.",
+        "content": "[한국회계기준원 회계기준위원회가 삭제함]",
         "sectionTitle": "기준서 등의 대체",
         "keywords": [
           "기준서 등의 대체"
         ]
       }
-    ],
-    "effectiveDate": "2021.09.10"
+    ]
   },
   {
     "id": "k-ifrs-1108-ig",
