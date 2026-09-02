@@ -22,12 +22,16 @@ export interface AccountingStandard {
 export type ParagraphNumberFormat = 'raw' | 'bracket' | 'korean' | 'hash'; 
 // 'raw': 38, 'bracket': [38], 'korean': 제38호, 'hash': #38
 
+// 문단제목 행에 무엇을 넣을지: 대분류(sectionTitle) / 소분류(subTitle) / 둘 다
+export type SectionTitleLevel = 'section' | 'sub' | 'both';
+
 export type TableTheme = 'standard' | 'minimal' | 'audit_gray' | 'audit_blue' | 'classic_accounting';
 
 export interface ExportConfig {
   maxCharsPerLine: number; // 기본 45~50자
   includeStandardTitle: boolean; // A1에 기준서명 삽입 여부
-  includeSectionTitle: boolean; // A2에 문단/섹션명 삽입 여부
+  includeSectionTitle: boolean; // 문단제목 행 삽입 여부
+  sectionTitleLevel: SectionTitleLevel; // 대분류만 / 소분류만 / '대분류 > 소분류'
   paragraphNumberFormat: ParagraphNumberFormat;
   theme: TableTheme;
   customHeaderTitle?: string;
