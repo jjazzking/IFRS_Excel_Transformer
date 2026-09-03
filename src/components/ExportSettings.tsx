@@ -145,8 +145,32 @@ export const ExportSettings: React.FC<ExportSettingsProps> = ({
               onChange={(e) => update({ includeSectionTitle: e.target.checked })}
               className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
             />
-            <span>A2 행에 <strong>소제목/섹션명</strong> 포함</span>
+            <span><strong>문단제목</strong> 행 포함 (제목이 바뀌면 그 위치에 다시 삽입)</span>
           </label>
+
+          {config.includeSectionTitle && (
+            <div className="ml-6 grid grid-cols-3 gap-1.5">
+              {([
+                { id: 'section', label: '대분류만', hint: '공동약정 당사자들의 재무제표' },
+                { id: 'sub', label: '소분류만', hint: '공동영업' },
+                { id: 'both', label: '대 > 소', hint: '공동약정 당사자들의 재무제표 > 공동영업' }
+              ] as const).map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  title={opt.hint}
+                  onClick={() => update({ sectionTitleLevel: opt.id })}
+                  className={`px-2 py-1 rounded-lg border text-[11px] transition cursor-pointer ${
+                    config.sectionTitleLevel === opt.id
+                      ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 font-semibold ring-1 ring-emerald-500'
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
           <label className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
             <input
               type="checkbox"

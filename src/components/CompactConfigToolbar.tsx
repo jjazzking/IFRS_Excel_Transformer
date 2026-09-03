@@ -153,8 +153,21 @@ export const CompactConfigToolbar: React.FC<CompactConfigToolbarProps> = ({
               onChange={(e) => update({ includeSectionTitle: e.target.checked })}
               className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
             />
-            <span>A2 행에 <strong>소제목</strong></span>
+            <span><strong>문단제목</strong> 행</span>
           </label>
+
+          {config.includeSectionTitle && (
+            <select
+              aria-label="문단제목 표기 수준"
+              value={config.sectionTitleLevel}
+              onChange={(e) => update({ sectionTitleLevel: e.target.value as ExportConfig['sectionTitleLevel'] })}
+              className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-[11px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+            >
+              <option value="section">대분류만</option>
+              <option value="sub">소분류만</option>
+              <option value="both">대분류 &gt; 소분류</option>
+            </select>
+          )}
 
           <label className="flex items-center space-x-1.5 cursor-pointer hover:text-slate-900 select-none">
             <input

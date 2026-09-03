@@ -6,8 +6,33 @@ import {
   FormattedCell, 
   ClipboardExportResult, 
   ParagraphNumberFormat,
+  SectionTitleLevel,
   TableTheme 
 } from '../types';
+
+/**
+ * 선택한 수준(대분류/소분류/둘 다)에 맞는 문단제목 문자열을 만든다.
+ * 해당 수준의 제목이 없으면 있는 쪽으로 대체하고, 둘 다 없으면 빈 문자열을 준다.
+ */
+export function resolveSectionLabel(
+  paragraph: StandardParagraph,
+  level: SectionTitleLevel
+): string {
+  const section = (paragraph.sectionTitle || '').trim();
+  const sub = (paragraph.subTitle || '').trim();
+
+  switch (level) {
+    case 'section':
+      return section || sub;
+    case 'sub':
+      return sub || section;
+    case 'both':
+      if (section && sub && section !== sub) return `${section} > ${sub}`;
+      return section || sub;
+    default:
+      return section || sub;
+  }
+}
 
 /**
  * 포맷에 따른 문단 번호 변환
@@ -118,20 +143,27 @@ export function generateFormattedCells(
     });
   }
 
-  // 2) A2: 대표 섹션 제목 또는 소제목 (선택된 첫 문단의 섹션명 등)
-  if (config.includeSectionTitle && paragraphs.length > 0) {
-    const firstSec = paragraphs[0].sectionTitle || paragraphs[0].subTitle || '기준서 주요 발췌 문단';
-    cells.push({
-      relativeRow: currentRow++,
-      colA: firstSec,
-      colB: '',
-      isHeaderRow: true,
-      isSectionTitle: true
-    });
-  }
+  // 2) 문단제목 행 + 각 문단의 A열(문단번호) / B열(분할 본문) 배치.
+  //    제목은 한 번만 넣지 않고, 앞 문단과 제목이 달라질 때마다 새로 넣는다.
+  //    서로 다른 대분류에서 문단을 골라와도 각각의 제목이 붙는다.
+  let lastSectionLabel: string | null = null;
 
-  // 3) 각 문단별 A열(문단번호), B열(분할 본문) 배치
   paragraphs.forEach((p, pIndex) => {
+    if (config.includeSectionTitle) {
+      const label = resolveSectionLabel(p, config.sectionTitleLevel);
+      const shown = label || '기준서 주요 발췌 문단';
+      if (shown !== lastSectionLabel) {
+        cells.push({
+          relativeRow: currentRow++,
+          colA: shown,
+          colB: '',
+          isHeaderRow: true,
+          isSectionTitle: true
+        });
+        lastSectionLabel = shown;
+      }
+    }
+
     const lines = splitContentSmart(p.content, config.maxCharsPerLine);
     const formattedNum = formatParagraphNumber(p.number, config.paragraphNumberFormat);
 

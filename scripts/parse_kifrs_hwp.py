@@ -16,7 +16,9 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import json
+import os
 import re
 import struct
 import sys
@@ -212,12 +214,68 @@ def split_document(text: str) -> tuple[list[str], int, int]:
     return lines, 0, len(lines)
 
 
+RANGE_ONLY_RE = re.compile(rf"^\s*{PARA_NO}(?:\s*[~∼～-]\s*{PARA_NO})?\s*$")
+
+# '용어의 정의<TAB>4~8A' 처럼 제목과 문단범위가 한 줄에 있는 목차 형식
+INLINE_TOC_RE = re.compile(
+    rf"^(?P<title>\S.*?)[ \t]+(?P<rng>{PARA_NO}(?:\s*[~∼～-]\s*{PARA_NO})?)\s*$"
+)
+
+# 목차가 끝났다고 볼 수 있는 표제들
+TOC_END_RE = re.compile(r"^(?:결론도출근거|적용사례|소수의견|문단비교표)$")
+
+
 def parse_toc(lines: list[str]) -> list[TocEntry]:
-    """목차 영역(제목 목록 + '문단번호' 이후의 범위 목록)을 짝지어 반환한다."""
-    try:
-        toc_start = next(i for i, ln in enumerate(lines) if _norm(ln) in ("목 차", "목차"))
-    except StopIteration:
+    """목차에서 (제목, 문단범위) 쌍을 뽑는다.
+
+    기준서마다 목차 조판이 다르다.
+      (a) '제목<TAB>문단범위' 가 한 줄에 있는 형식 (제1027·1033호 등)
+      (b) 제목 목록이 먼저 나오고 '문단번호' 뒤에 범위 목록이 따로 오는 형식 (제1001호 등)
+    (a) 가 짝을 잘못 맞출 여지가 없으므로 우선 시도하고, 없으면 (b) 로 넘어간다.
+    """
+    # 목차 표제는 '목  차' 일 때도 있고 표 머리글과 붙어 '내   용목  차' 일 때도 있다.
+    toc_start = None
+    for i, ln in enumerate(lines[:400]):
+        if _key(ln).endswith("목차"):
+            toc_start = i
+            break
+    if toc_start is None:
         return []
+
+    # 목차 영역의 끝. 표제(결론도출근거 등)로 끊기지 않는 문서도 있으므로
+    # 본문 첫 문단이 시작되는 지점을 상한으로 함께 둔다. 이 경계가 없으면
+    # 뒤쪽 결론도출근거의 'IAS 7' 같은 줄을 목차 항목으로 오인한다.
+    toc_end = len(lines)
+    for i in range(toc_start + 1, min(len(lines), toc_start + 400)):
+        if TOC_END_RE.match(_norm(lines[i])):
+            toc_end = i
+            break
+    for i in range(toc_start + 1, len(lines)):
+        m = PARA_START_RE.match(lines[i].strip())
+        if m and FIRST_PARA_RE.fullmatch(m.group(1)):
+            toc_end = min(toc_end, i)
+            break
+
+    # (a) 한 줄 형식
+    inline: list[tuple[str, str]] = []
+    seen_titles: set[str] = set()
+    for ln in lines[toc_start + 1 : toc_end]:
+        t = _norm(ln)
+        if not t or RANGE_ONLY_RE.match(t):
+            continue
+        m = INLINE_TOC_RE.match(t)
+        if not m:
+            continue
+        title = _norm(m.group("title"))
+        if not title or _key(title) in seen_titles:
+            continue
+        seen_titles.add(_key(title))
+        inline.append((title, _norm(m.group("rng"))))
+
+    if len(inline) >= 3:
+        return [_make_entry(title, rng) for title, rng in inline]
+
+    # (b) 분리 형식
     try:
         num_head = next(
             i for i, ln in enumerate(lines[toc_start:], toc_start) if _key(ln) == "문단번호"
@@ -228,7 +286,7 @@ def parse_toc(lines: list[str]) -> list[TocEntry]:
     titles: list[str] = []
     for ln in lines[toc_start + 1 : num_head]:
         t = _norm(ln)
-        if not t or t == "목 차":
+        if not t or _key(t).endswith("목차"):
             continue
         if STANDARD_TITLE_RE.search(t) and "‘" in t:  # 목차 상단의 기준서 표제
             continue
@@ -239,7 +297,7 @@ def parse_toc(lines: list[str]) -> list[TocEntry]:
         t = _norm(ln)
         if not t:
             continue
-        if re.fullmatch(rf"{PARA_NO}(?:\s*[~∼～-]\s*{PARA_NO})?", t):
+        if RANGE_ONLY_RE.match(t):
             ranges.append(t)
         else:
             break
@@ -263,13 +321,13 @@ def parse_toc(lines: list[str]) -> list[TocEntry]:
             continue
         merged.append(t)
         i += 1
-    titles = merged
 
-    entries: list[TocEntry] = []
-    for title, rng in zip(titles, ranges):
-        parts = re.split(r"\s*[~∼～-]\s*", rng)
-        entries.append(TocEntry(title=title, rng=rng, start=parts[0], end=parts[-1]))
-    return entries
+    return [_make_entry(title, rng) for title, rng in zip(merged, ranges)]
+
+
+def _make_entry(title: str, rng: str) -> TocEntry:
+    parts = re.split(r"\s*[~∼～-]\s*", rng)
+    return TocEntry(title=title, rng=rng, start=parts[0], end=parts[-1])
 
 
 def assign_levels(entries: list[TocEntry], order: dict[str, int]) -> None:
@@ -546,12 +604,20 @@ def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: 
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="K-IFRS 기준서 HWP → 기준서 DB JSON 변환기")
-    ap.add_argument("hwp", help="입력 HWP 파일 경로")
-    ap.add_argument("-o", "--output", help="출력 JSON 경로 (미지정 시 stdout)")
+    ap = argparse.ArgumentParser(
+        description="K-IFRS 기준서 HWP → 기준서 DB JSON 변환기",
+        epilog="폴더를 주면 그 안의 *.hwp 를 모두 변환한다. "
+               "이때 -o 는 출력 폴더로 해석되고 파일명은 k-ifrs-<번호>.json 으로 자동 결정된다.",
+    )
+    ap.add_argument("hwp", help="입력 HWP 파일 또는 HWP 가 들어있는 폴더")
+    ap.add_argument("-o", "--output", help="출력 JSON 경로(파일 입력) 또는 출력 폴더(폴더 입력)")
     ap.add_argument("--include-ig", action="store_true", help="실무적용지침(IG)도 별도 기준서로 포함")
-    ap.add_argument("--dump-text", help="추출한 원문 텍스트를 저장(디버깅용)")
+    ap.add_argument("--dump-text", help="추출한 원문 텍스트를 저장(파일 입력일 때만, 디버깅용)")
     args = ap.parse_args()
+
+    if os.path.isdir(args.hwp):
+        convert_directory(args.hwp, args.output, args.include_ig)
+        return
 
     text = extract_hwp_text(args.hwp)
     if args.dump_text:
@@ -568,6 +634,42 @@ def main() -> None:
         print(f"{args.output} 저장 완료 — 기준서 {len(data)}건 / 문단 {total}건", file=sys.stderr)
     else:
         print(payload)
+
+
+def convert_directory(src_dir: str, out_dir: str | None, include_ig: bool) -> None:
+    """폴더 안의 HWP 를 모두 변환한다. 한 건이 실패해도 나머지는 계속 진행한다."""
+    out_dir = out_dir or "parsed_json"
+    os.makedirs(out_dir, exist_ok=True)
+
+    files = sorted(
+        f for f in glob.glob(os.path.join(src_dir, "*"))
+        if f.lower().endswith((".hwp", ".hwpx"))
+    )
+    if not files:
+        sys.exit(f"{src_dir} 에서 HWP 파일을 찾지 못했습니다.")
+
+    ok = 0
+    failed: list[tuple[str, str]] = []
+    for path in files:
+        name = os.path.basename(path)
+        try:
+            data = build_standard(extract_hwp_text(path), include_ig=include_ig)
+            code_no = re.sub(r"\D", "", data[0]["code"])[:4]
+            dst = os.path.join(out_dir, f"k-ifrs-{code_no}.json")
+            with open(dst, "w", encoding="utf-8") as fp:
+                fp.write(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+            total = sum(len(s["paragraphs"]) for s in data)
+            print(f"  OK   {os.path.basename(dst):<20} 기준서 {len(data)}건 / 문단 {total:>4}건  ← {name[:40]}")
+            ok += 1
+        except Exception as e:  # 한 파일의 실패가 전체를 막지 않도록 한다
+            print(f"  실패 {name[:60]}: {e}")
+            failed.append((name, str(e)))
+
+    print(f"\n{ok}/{len(files)}건 변환 완료 → {out_dir}/")
+    if failed:
+        print("실패 목록:")
+        for name, err in failed:
+            print(f"  - {name}: {err}")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,8 @@ export default function App() {
   const [config, setConfig] = useState<ExportConfig>({
     maxCharsPerLine: 45, // 기본 45자 (실무 조서의 B열 기본 폭에 최적화)
     includeStandardTitle: true, // A1: 기준서명
-    includeSectionTitle: true, // A2: 소제목
+    includeSectionTitle: true, // 문단제목 행
+    sectionTitleLevel: 'both', // 대분류 > 소분류 를 함께 표기
     paragraphNumberFormat: 'raw', // '38' 형태
     theme: 'audit_gray', // 전통 감사조서 스타일
     addBlankLineBetweenParagraphs: false,
@@ -105,6 +106,7 @@ export default function App() {
       maxCharsPerLine: 45,
       includeStandardTitle: true,
       includeSectionTitle: true,
+      sectionTitleLevel: 'both',
       paragraphNumberFormat: 'raw',
       theme: 'audit_gray',
       addBlankLineBetweenParagraphs: false,
