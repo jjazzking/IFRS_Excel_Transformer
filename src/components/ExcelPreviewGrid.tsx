@@ -41,7 +41,8 @@ export const ExcelPreviewGrid: React.FC<ExcelPreviewGridProps> = ({
 }) => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success_formatted' | 'success_plain'>('idle');
   const [startCellInput, setStartCellInput] = useState<string>('C26'); // 기본 C26
-  const [isConfigOpen, setIsConfigOpen] = useState(true);
+  // 서식은 한 번 맞춰 두면 계속 볼 일이 없다. 접힌 채로 시작해 미리보기에 높이를 넘긴다.
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   // 상대 위치 계산 (예: C26 기준일 때의 실제 열/행 라벨)
   const cellCoordinateInfo = useMemo(() => {

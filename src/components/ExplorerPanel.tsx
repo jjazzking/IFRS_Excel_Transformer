@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, ChevronDown, ChevronRight, ListTree, Search } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, ListTree, PanelLeftClose, Search } from 'lucide-react';
 import { AccountingStandard } from '../types';
 import { TocNode, buildToc, nodeKeysForParagraph, rangeLabel } from '../utils/toc';
 
@@ -10,6 +10,8 @@ interface ExplorerPanelProps {
   /** 본문 리더가 지금 보고 있는 문단 (목차에서 현재 위치를 강조) */
   activeParagraphId: string;
   onGoToParagraph: (paragraphId: string) => void;
+  /** 이 패널을 접는다 */
+  onCollapse: () => void;
 }
 
 type Tab = 'standards' | 'toc';
@@ -20,6 +22,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   onSelectStandard,
   activeParagraphId,
   onGoToParagraph,
+  onCollapse,
 }) => {
   const [tab, setTab] = useState<Tab>('standards');
   const [filter, setFilter] = useState('');
@@ -82,6 +85,13 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
           icon={<ListTree className="w-3.5 h-3.5" />}
           label="목차"
         />
+        <button
+          onClick={onCollapse}
+          title="탐색 패널 접기"
+          className="px-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition cursor-pointer border-b-2 border-transparent"
+        >
+          <PanelLeftClose className="w-4 h-4" />
+        </button>
       </div>
 
       {tab === 'standards' ? (
