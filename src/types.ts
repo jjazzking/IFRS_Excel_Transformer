@@ -1,6 +1,14 @@
+// 문단이 기준서의 어느 부분에 속하는지. JSON 에 적지 않아도 문단번호에서 추론한다.
+//   main: 1, 35, 한2.1  /  appendix: B34, AG1, D1  /  ig: IG5A  /  bc: BC13T, 한BC104.1
+export type ParagraphPart = 'main' | 'appendix' | 'ig' | 'bc';
+
+// 기준서 체계. JSON 에 적지 않으면 code 에서 추론하며 기본값은 'K-IFRS' 이다.
+export type StandardFramework = 'K-IFRS' | 'K-GAAP' | '기타';
+
 export interface StandardParagraph {
   id: string; // e.g. "1115-31"
   number: string; // e.g. "31", "35", "B34", "AG1"
+  part?: ParagraphPart; // 생략 시 number 에서 추론
   standardId?: string; // e.g. "k-ifrs-1115"
   standardCode?: string; // e.g. "K-IFRS 제1115호"
   standardTitle?: string; // e.g. "고객과의 계약에서 생기는 수익"
@@ -13,6 +21,8 @@ export interface StandardParagraph {
 export interface AccountingStandard {
   id: string; // e.g. "k-ifrs-1115"
   code: string; // e.g. "K-IFRS 제1115호"
+  framework?: StandardFramework; // 생략 시 code 에서 추론
+  number?: string; // e.g. "1115" — 목록에서 번호만 따로 보여줄 때 사용. 생략 시 code 에서 추출
   title: string; // e.g. "고객과의 계약에서 생기는 수익"
   effectiveDate?: string; // e.g. "2018년 1월 1일 이후"
   category: '수익/비용' | '자산/부채' | '금융상품' | '표시/공시' | '특수회계';

@@ -7,7 +7,7 @@
 
 사용법:
     python3 scripts/parse_kifrs_hwp.py <입력.hwp> -o src/data/standards/1001.json
-    python3 scripts/parse_kifrs_hwp.py <입력.hwp> --include-ig   # 실무적용지침(IG)도 별도 기준서로 추가
+    python3 scripts/parse_kifrs_hwp.py <입력.hwp> --include-ig   # 실무적용지침(IG)도 같은 기준서의 문단으로 추가
     python3 scripts/parse_kifrs_hwp.py <입력.hwp> --dump-text out.txt  # 추출 원문 확인용
 
 의존성: olefile (pip install olefile)
@@ -524,19 +524,16 @@ def build_standard(text: str, include_ig: bool = False) -> list[dict]:
     if effective:
         # 회계기준위원회 의결일(해당 개정판을 식별하는 날짜)
         standard["effectiveDate"] = effective
-    standard["paragraphs"] = body
-
-    result = [standard]
-
     if include_ig:
-        ig = parse_ig(lines, std_id, std_code, title, code_no)
-        if ig["paragraphs"]:
-            result.append(ig)
-    return result
+        # 실무적용지침은 별도 기준서가 아니라 같은 기준서의 뒷부분으로 이어붙인다.
+        body.extend(parse_ig(lines, std_id, std_code, title, code_no))
+
+    standard["paragraphs"] = body
+    return [standard]
 
 
-def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: str) -> dict:
-    """실무적용지침(IG) 문단을 별도 기준서 항목으로 수집한다.
+def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: str) -> list[dict]:
+    """실무적용지침(IG) 문단을 상위 기준서의 문단으로 수집한다.
 
     일부 기준서(예: 제1101호)는 실무적용지침 본문이 문서 안에 두 번 실려 있고,
     그 사이에 대조표 같은 대형 표가 끼어 있다. 이미 나온 IG 번호가 다시 등장하면
@@ -570,9 +567,9 @@ def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: 
             current = {
                 "id": f"{code_no}-{number}",
                 "number": number,
-                "standardId": f"{std_id}-ig",
+                "standardId": std_id,
                 "standardCode": std_code,
-                "standardTitle": f"{title} (실무적용지침)",
+                "standardTitle": title,
                 "sectionTitle": "실무적용지침",
                 "content": m.group(2).strip(),
             }
@@ -594,13 +591,7 @@ def parse_ig(lines: list[str], std_id: str, std_code: str, title: str, code_no: 
         if kw:
             p["keywords"] = kw
 
-    return {
-        "id": f"{std_id}-ig",
-        "code": std_code,
-        "title": f"{title} (실무적용지침)",
-        "category": CATEGORY_BY_CODE.get(code_no, "표시/공시"),
-        "paragraphs": paragraphs,
-    }
+    return paragraphs
 
 
 def main() -> None:
@@ -611,7 +602,7 @@ def main() -> None:
     )
     ap.add_argument("hwp", help="입력 HWP 파일 또는 HWP 가 들어있는 폴더")
     ap.add_argument("-o", "--output", help="출력 JSON 경로(파일 입력) 또는 출력 폴더(폴더 입력)")
-    ap.add_argument("--include-ig", action="store_true", help="실무적용지침(IG)도 별도 기준서로 포함")
+    ap.add_argument("--include-ig", action="store_true", help="실무적용지침(IG)도 같은 기준서의 문단으로 포함")
     ap.add_argument("--dump-text", help="추출한 원문 텍스트를 저장(파일 입력일 때만, 디버깅용)")
     args = ap.parse_args()
 
