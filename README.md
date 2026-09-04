@@ -74,7 +74,7 @@ pip install -r scripts/requirements.txt
 # 기본: 기준서 본문(문단 1~140 및 '한' 문단)만 추출
 python3 scripts/parse_kifrs_hwp.py 기업회계기준서_제1001호.hwp -o src/data/standards/k-ifrs-1001.json
 
-# 실무적용지침(IG)도 별도 기준서 항목으로 함께 추출
+# 실무적용지침(IG)도 같은 기준서의 문단으로 함께 추출
 python3 scripts/parse_kifrs_hwp.py 기업회계기준서_제1001호.hwp --include-ig -o out.json
 
 # 추출된 원문 텍스트를 확인하고 싶을 때
@@ -96,8 +96,9 @@ python3 scripts/parse_kifrs_hwp.py ~/기준서_HWP/ --include-ig -o parsed_json/
 
 ### 산출물
 
-`src/data/standards/` 아래 JSON 40개 파일에 **기준서 45건 / 문단 3,645건**이 들어 있습니다
-(제1001·1101·1102·1107·1108호는 실무적용지침을 별도 항목으로 포함).
+`src/data/standards/` 아래 JSON 40개 파일에 **기준서 40건 / 문단 3,661건**이 들어 있습니다.
+실무적용지침(IG)은 별도 기준서가 아니라 상위 기준서의 문단(`IG1`, `IG5A` …)으로 들어갑니다
+— 제1001·1101·1102·1107·1108호가 이에 해당합니다.
 
 아직 반영되지 않은 기준서: 제1109호 '금융상품'(다단계 문단번호 대응 후 재파싱 필요).
 
