@@ -10,7 +10,9 @@ import {
   Sparkles,
   ArrowDownAZ,
   Trash2,
-  Layers
+  Layers,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { FormattedCell, ExportConfig, ClipboardExportResult, StandardParagraph } from '../types';
 import { generateClipboardData, exportToExcelFile } from '../utils/textSplitter';
@@ -39,6 +41,7 @@ export const ExcelPreviewGrid: React.FC<ExcelPreviewGridProps> = ({
 }) => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success_formatted' | 'success_plain'>('idle');
   const [startCellInput, setStartCellInput] = useState<string>('C26'); // 기본 C26
+  const [isConfigOpen, setIsConfigOpen] = useState(true);
 
   // 상대 위치 계산 (예: C26 기준일 때의 실제 열/행 라벨)
   const cellCoordinateInfo = useMemo(() => {
@@ -157,13 +160,36 @@ export const ExcelPreviewGrid: React.FC<ExcelPreviewGridProps> = ({
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       
-      {/* 1. 상시 노출되는 서식 설정 툴바 (상단 1안) */}
-      <CompactConfigToolbar
-        config={config}
-        onChangeConfig={onChangeConfig}
-        startCell={startCellInput}
-        onChangeStartCell={setStartCellInput}
-      />
+      {/* 1. 서식 설정 툴바 — 한 번 맞춰 두면 계속 볼 일이 없으므로 접을 수 있게 했다.
+             3존 레이아웃에서 이 패널이 좁아진 만큼, 접으면 미리보기에 높이를 넘겨준다. */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 border-b border-slate-200 shrink-0">
+        <span className="text-[11px] font-semibold text-slate-600">서식 설정</span>
+        <button
+          onClick={() => setIsConfigOpen(v => !v)}
+          className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 transition cursor-pointer"
+          title={isConfigOpen ? '설정 접기' : '설정 펼치기'}
+        >
+          {isConfigOpen ? (
+            <>
+              접기 <ChevronUp className="w-3.5 h-3.5" />
+            </>
+          ) : (
+            <>
+              {config.maxCharsPerLine || '제한 없음'}
+              {config.maxCharsPerLine ? '자' : ''} · {startCellInput} 기준
+              <ChevronDown className="w-3.5 h-3.5" />
+            </>
+          )}
+        </button>
+      </div>
+      {isConfigOpen && (
+        <CompactConfigToolbar
+          config={config}
+          onChangeConfig={onChangeConfig}
+          startCell={startCellInput}
+          onChangeStartCell={setStartCellInput}
+        />
+      )}
 
       {/* 2. 시뮬레이션 상태 바 & 원클릭 복사/추출 액션 버튼 영역 */}
       <div className="px-4 py-2.5 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
