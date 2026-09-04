@@ -17,6 +17,11 @@ interface CompactConfigToolbarProps {
   onChangeStartCell: (val: string) => void;
 }
 
+// 글자수 슬라이더 범위 (기존 25~75자에서 확대)
+const MIN_CHARS_PER_LINE = 20;
+const MAX_CHARS_PER_LINE = 150;
+const DEFAULT_CHARS_PER_LINE = 45;
+
 export const CompactConfigToolbar: React.FC<CompactConfigToolbarProps> = ({
   config,
   onChangeConfig,
@@ -25,6 +30,21 @@ export const CompactConfigToolbar: React.FC<CompactConfigToolbarProps> = ({
 }) => {
   const update = (partial: Partial<ExportConfig>) => {
     onChangeConfig({ ...config, ...partial });
+  };
+
+  // 글자수 제한 없음(0) 모드. 해제 시 직전에 쓰던 글자수로 되돌린다.
+  const isUnlimited = !config.maxCharsPerLine || config.maxCharsPerLine <= 0;
+  const [lastCharsPerLine, setLastCharsPerLine] = React.useState<number>(
+    isUnlimited ? DEFAULT_CHARS_PER_LINE : config.maxCharsPerLine
+  );
+
+  const handleChangeMaxChars = (value: number) => {
+    setLastCharsPerLine(value);
+    update({ maxCharsPerLine: value });
+  };
+
+  const handleToggleUnlimited = (checked: boolean) => {
+    update({ maxCharsPerLine: checked ? 0 : lastCharsPerLine });
   };
 
   const numberFormats: { id: ParagraphNumberFormat; label: string; example: string }[] = [
@@ -47,7 +67,7 @@ export const CompactConfigToolbar: React.FC<CompactConfigToolbarProps> = ({
       {/* 1행: 핵심 조절 컨트롤 (슬라이더, 시작셀, 문단번호 형식, 테마) */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
         
-        {/* (1) 1행당 글자 수 슬라이더 (4 cols) */}
+        {/* (1) 1행당 글자 수 슬라이더 + 제한 없음(문장 단위) 옵션 (4 cols) */}
         <div className="md:col-span-4 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-slate-700 flex items-center gap-1">
@@ -55,24 +75,38 @@ export const CompactConfigToolbar: React.FC<CompactConfigToolbarProps> = ({
               1행당 글자 수
             </span>
             <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px] border border-emerald-200">
-              {config.maxCharsPerLine}자
+              {isUnlimited ? '제한 없음' : `${config.maxCharsPerLine}자`}
             </span>
           </div>
           <input
             id="toolbar-max-chars"
             type="range"
-            min={25}
-            max={75}
+            min={MIN_CHARS_PER_LINE}
+            max={MAX_CHARS_PER_LINE}
             step={5}
-            value={config.maxCharsPerLine}
-            onChange={(e) => update({ maxCharsPerLine: Number(e.target.value) })}
-            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+            value={isUnlimited ? lastCharsPerLine : config.maxCharsPerLine}
+            disabled={isUnlimited}
+            onChange={(e) => handleChangeMaxChars(Number(e.target.value))}
+            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed"
           />
           <div className="flex justify-between text-[9px] text-slate-400 font-mono">
-            <span>좁은 조서 (30자)</span>
-            <span>표준 (45자)</span>
-            <span>넓은 조서 (70자)</span>
+            <span>좁은 조서 ({MIN_CHARS_PER_LINE}자)</span>
+            <span>표준 ({DEFAULT_CHARS_PER_LINE}자)</span>
+            <span>넓은 조서 ({MAX_CHARS_PER_LINE}자)</span>
           </div>
+          <label
+            className="flex items-center space-x-1.5 cursor-pointer select-none text-[11px] text-slate-600 hover:text-slate-900 pt-0.5"
+            title="글자 수와 관계없이 문장(마침표) 단위로 한 줄씩 배치합니다"
+          >
+            <input
+              id="toolbar-unlimited-chars"
+              type="checkbox"
+              checked={isUnlimited}
+              onChange={(e) => handleToggleUnlimited(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+            />
+            <span><strong>글자수 제한 없음</strong> (문장 단위로 한 줄씩)</span>
+          </label>
         </div>
 
         {/* (2) 문단 번호 표기 방식 드롭다운 (3 cols) */}
