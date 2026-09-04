@@ -128,6 +128,20 @@ export default function App() {
     return standards.reduce((acc, s) => acc + s.paragraphs.length, 0);
   }, [standards]);
 
+  // 파일명/표시에 사용할 대표 기준서 제목 (여러 기준서를 함께 선택하면 '외 N건'으로 표기)
+  const exportTitle = useMemo(() => {
+    const titles = Array.from(
+      new Set(
+        selectedParagraphs
+          .map(p => (p.standardTitle || '').trim())
+          .filter(Boolean)
+      )
+    );
+    if (titles.length === 0) return currentStandard ? currentStandard.title : '기준서';
+    if (titles.length === 1) return titles[0];
+    return `${titles[0]} 외 ${titles.length - 1}건`;
+  }, [selectedParagraphs, currentStandard]);
+
   // 실시간 엑셀 그리드 셀 데이터 생성
   const formattedCells = useMemo(() => {
     return generateFormattedCells(currentStandard, selectedParagraphs, config);
@@ -167,7 +181,7 @@ export default function App() {
               cells={formattedCells}
               config={config}
               onChangeConfig={setConfig}
-              standardTitle={currentStandard ? currentStandard.title : '기준서'}
+              standardTitle={exportTitle}
               selectedParagraphs={selectedParagraphs}
               onRemoveParagraph={handleRemoveParagraph}
               onClearAll={handleClearAll}

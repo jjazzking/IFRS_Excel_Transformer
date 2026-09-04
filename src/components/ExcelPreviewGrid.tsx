@@ -422,7 +422,11 @@ export const ExcelPreviewGrid: React.FC<ExcelPreviewGridProps> = ({
         <div className="flex items-center space-x-1.5">
           <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
           <span>
-            열 너비와 무관하게 <strong>최대 {config.maxCharsPerLine}자</strong> 단위로 조문이 분할되어 다음 행에 안전하게 배치됩니다.
+            {config.maxCharsPerLine > 0 ? (
+              <>열 너비와 무관하게 <strong>최대 {config.maxCharsPerLine}자</strong> 단위로 조문이 분할되어 다음 행에 안전하게 배치됩니다.</>
+            ) : (
+              <>글자수 제한 없이 <strong>문장 단위</strong>로 한 줄씩 조문이 배치됩니다.</>
+            )}
           </span>
         </div>
         <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">

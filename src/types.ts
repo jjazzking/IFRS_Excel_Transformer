@@ -28,7 +28,7 @@ export type SectionTitleLevel = 'section' | 'sub' | 'both';
 export type TableTheme = 'standard' | 'minimal' | 'audit_gray' | 'audit_blue' | 'classic_accounting';
 
 export interface ExportConfig {
-  maxCharsPerLine: number; // 기본 45~50자
+  maxCharsPerLine: number; // 1행당 최대 글자 수 (기본 45~50자, 0이면 제한 없이 문장 단위로 분할)
   includeStandardTitle: boolean; // A1에 기준서명 삽입 여부
   includeSectionTitle: boolean; // 문단제목 행 삽입 여부
   sectionTitleLevel: SectionTitleLevel; // 대분류만 / 소분류만 / '대분류 > 소분류'

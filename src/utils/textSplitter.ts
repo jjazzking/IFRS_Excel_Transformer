@@ -35,6 +35,25 @@ export function resolveSectionLabel(
 }
 
 /**
+ * 문단이 속한 기준서의 식별자와 머리글 문자열을 구한다.
+ * - 문단 자체에 기준서 정보가 있으면 그 값을 우선 사용한다(서로 다른 기준서를 섞어도 각자의 제목이 붙는다).
+ * - 문단에 기준서 정보가 전혀 없을 때만 현재 탐색 중인 기준서로 대체한다.
+ */
+export function resolveStandardHeading(
+  paragraph: StandardParagraph,
+  fallback?: AccountingStandard | null
+): { key: string; label: string } {
+  const hasOwnStandard = !!(paragraph.standardId || paragraph.standardCode || paragraph.standardTitle);
+
+  const id = (hasOwnStandard ? paragraph.standardId : fallback?.id) || '';
+  const code = ((hasOwnStandard ? paragraph.standardCode : fallback?.code) || '').trim();
+  const title = ((hasOwnStandard ? paragraph.standardTitle : fallback?.title) || '').trim();
+
+  const label = [code, title].filter(Boolean).join(' ').trim();
+  return { key: (id || label).trim(), label };
+}
+
+/**
  * 포맷에 따른 문단 번호 변환
  */
 export function formatParagraphNumber(numberStr: string, format: ParagraphNumberFormat): string {
@@ -53,13 +72,67 @@ export function formatParagraphNumber(numberStr: string, format: ParagraphNumber
   }
 }
 
+// 문장 종결 부호와, 종결 부호 뒤에 붙을 수 있는 닫는 괄호/따옴표류
+const SENTENCE_ENDINGS = '.!?\u3002\uFF01\uFF1F';
+const SENTENCE_TRAILERS = ')]}\u300D\u300F\u201D\u2019"\'';
+
+/**
+ * 글자수 제한 없이 '문장' 단위로만 줄을 나눈다.
+ * - 개행문자(\n)를 먼저 분리한 뒤, 문장 종결 부호(. ! ? 。) 다음의 공백에서 끊는다.
+ * - '1.', '(2)' 같은 항목 번호에서 잘리지 않도록 너무 짧은 조각은 뒤 문장과 이어 붙인다.
+ */
+export function splitIntoSentences(text: string): string[] {
+  if (!text) return [];
+  const sentences: string[] = [];
+
+  const rawParagraphs = text.split(/\r?\n/).map(p => p.trim()).filter(Boolean);
+
+  for (const paragraph of rawParagraphs) {
+    let start = 0;
+
+    for (let i = 0; i < paragraph.length; i++) {
+      if (!SENTENCE_ENDINGS.includes(paragraph[i])) continue;
+
+      // 연속된 종결 부호 및 닫는 괄호/따옴표까지 한 문장에 포함시킨다.
+      let end = i + 1;
+      while (
+        end < paragraph.length &&
+        (SENTENCE_ENDINGS.includes(paragraph[end]) || SENTENCE_TRAILERS.includes(paragraph[end]))
+      ) {
+        end++;
+      }
+
+      // 종결 부호 뒤에 공백이 와야 실제 문장 끝으로 본다. (예: 3.5%, www.x.com 오분할 방지)
+      if (end >= paragraph.length || !/\s/.test(paragraph[end])) continue;
+
+      const candidate = paragraph.slice(start, end).trim();
+      // '1.', '(2).' 같은 항목 번호만 남는 조각은 문장으로 보지 않고 뒤와 이어 붙인다.
+      if (candidate.length < 5) continue;
+
+      sentences.push(candidate);
+      start = end;
+      i = end;
+    }
+
+    const tail = paragraph.slice(start).trim();
+    if (tail) sentences.push(tail);
+  }
+
+  return sentences;
+}
+
 /**
  * 문장 보존형 스마트 텍스트 분할 알고리즘
  * - 개행문자(\n) 우선 분리
+ * - maxChars가 0 이하이면 글자수 제한 없이 문장 단위로 한 줄씩 배치
  * - 글자수 초과 시 마침표(.), 쉼표(,), 괄호, 공백 등을 탐색하여 문장 의미가 훼손되지 않게 다음 줄로 내림
  */
 export function splitContentSmart(text: string, maxChars: number): string[] {
   if (!text) return [];
+
+  // 글자수 제한 없음: 문장 단위로만 줄바꿈
+  if (!maxChars || maxChars <= 0) return splitIntoSentences(text);
+
   const lines: string[] = [];
 
   // 원문에 포함된 개행 기준으로 먼저 분리 (예: (1), (2) 리스트 항목 등)
@@ -132,23 +205,62 @@ export function generateFormattedCells(
   const cells: FormattedCell[] = [];
   let currentRow = 1;
 
-  // 1) A1: 기준서 제목
-  if (config.includeStandardTitle && standard) {
-    cells.push({
-      relativeRow: currentRow++,
-      colA: config.customHeaderTitle || `${standard.code} ${standard.title}`,
-      colB: '',
-      isHeaderRow: true,
-      isStandardTitle: true
-    });
+  // 선택된 문단들이 실제로 어떤 기준서에서 왔는지 먼저 계산한다.
+  const headings = paragraphs.map(p => resolveStandardHeading(p, standard));
+  const distinctStandardCount = new Set(
+    headings.map(h => h.key).filter(Boolean)
+  ).size;
+  const customTitle = (config.customHeaderTitle || '').trim();
+
+  // 1) A1: 사용자가 지정한 머리글(있으면) 또는 선택 문단이 없을 때의 현재 기준서 제목
+  if (config.includeStandardTitle) {
+    if (customTitle) {
+      cells.push({
+        relativeRow: currentRow++,
+        colA: customTitle,
+        colB: '',
+        isHeaderRow: true,
+        isStandardTitle: true
+      });
+    } else if (paragraphs.length === 0 && standard) {
+      cells.push({
+        relativeRow: currentRow++,
+        colA: `${standard.code} ${standard.title}`.trim(),
+        colB: '',
+        isHeaderRow: true,
+        isStandardTitle: true
+      });
+    }
   }
 
-  // 2) 문단제목 행 + 각 문단의 A열(문단번호) / B열(분할 본문) 배치.
+  // 2) 기준서 제목 행 + 문단제목 행 + 각 문단의 A열(문단번호) / B열(분할 본문) 배치.
   //    제목은 한 번만 넣지 않고, 앞 문단과 제목이 달라질 때마다 새로 넣는다.
-  //    서로 다른 대분류에서 문단을 골라와도 각각의 제목이 붙는다.
+  //    서로 다른 기준서/대분류에서 문단을 골라와도 각각의 제목이 붙는다.
+  let lastStandardKey: string | null = null;
   let lastSectionLabel: string | null = null;
 
   paragraphs.forEach((p, pIndex) => {
+    // 2-1) 기준서가 바뀌는 지점마다 큰 헤더(기준서 제목) 행 삽입.
+    //      사용자 지정 머리글이 있고 기준서가 하나뿐이면 위에서 이미 넣었으므로 생략한다.
+    if (config.includeStandardTitle && !(customTitle && distinctStandardCount <= 1)) {
+      const heading = headings[pIndex];
+      const label = heading.label || '기준서';
+      const key = heading.key || label;
+
+      if (key !== lastStandardKey) {
+        cells.push({
+          relativeRow: currentRow++,
+          colA: label,
+          colB: '',
+          isHeaderRow: true,
+          isStandardTitle: true
+        });
+        lastStandardKey = key;
+        // 기준서가 바뀌면 문단제목도 새 기준서 아래에서 다시 표기되어야 한다.
+        lastSectionLabel = null;
+      }
+    }
+
     if (config.includeSectionTitle) {
       const label = resolveSectionLabel(p, config.sectionTitleLevel);
       const shown = label || '기준서 주요 발췌 문단';
