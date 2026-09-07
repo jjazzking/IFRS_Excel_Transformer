@@ -96,16 +96,16 @@ export const StandardReader: React.FC<StandardReaderProps> = ({
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* 기준서 머리말 + 파트 필터 */}
-      <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-50 shrink-0 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <span className="text-[11px] font-mono text-slate-500">{standard.code}</span>
+      <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-50 shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <div className="flex-1 min-w-[150px]">
+          <span className="block text-[11px] font-mono text-slate-500 truncate">{standard.code}</span>
           <h2 className="text-sm font-bold text-slate-900 truncate leading-tight">
             {standard.title}
           </h2>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex flex-wrap items-center gap-1">
           {availableParts.length > 1 && (
-            <div className="flex gap-1 mr-1">
+            <div className="flex flex-wrap gap-1 mr-1">
               <PartChip
                 label="전체"
                 active={partFilter === 'all'}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Search, X } from 'lucide-react';
+import { BookOpen, PanelRightClose, Search, Table, X } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { ExplorerPanel } from './components/ExplorerPanel';
 import { StandardReader } from './components/StandardReader';
@@ -7,6 +7,8 @@ import { SearchResults } from './components/SearchResults';
 import { ExcelPreviewGrid } from './components/ExcelPreviewGrid';
 import { VbaSnippetModal } from './components/VbaSnippetModal';
 import { ImportCustomDbModal } from './components/ImportCustomDbModal';
+import { CollapsedRail, PresetSwitch, Splitter } from './components/LayoutControls';
+import { useResizableLayout } from './hooks/useResizableLayout';
 
 import { AccountingStandard, ParagraphPart, StandardParagraph, ExportConfig } from './types';
 import { ALL_STANDARDS } from './data/standardsData';
@@ -53,9 +55,9 @@ export default function App() {
   const [activeParagraphId, setActiveParagraphId] = useState('');
   const [scrollTarget, setScrollTarget] = useState({ id: '', seq: 0 });
 
-  // 레이아웃 (3존 중 좌·우는 접을 수 있다)
-  const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
+  // 3존 폭·접기 (경계 드래그로 조절하고 브라우저에 기억시킨다)
+  const { containerRef, state: layout, dragging, startDrag, resetSide, toggleSide, applyPreset } =
+    useResizableLayout();
 
   const [config, setConfig] = useState<ExportConfig>(DEFAULT_CONFIG);
   const [isVbaModalOpen, setIsVbaModalOpen] = useState(false);
@@ -186,43 +188,50 @@ export default function App() {
         totalParagraphs={totalParagraphCount}
       />
 
-      {/* 3존: 좌(기준서·목차) / 중(검색 결과 또는 본문) / 우(조서 + 엑셀 미리보기) */}
-      <main className="flex-1 min-h-0 flex gap-3 p-3">
-        {leftOpen && (
-          <aside className="w-[264px] shrink-0 min-h-0">
-            <ExplorerPanel
-              standards={standards}
-              currentStandard={currentStandard}
-              onSelectStandard={setSelectedStandardId}
-              activeParagraphId={activeParagraphId}
-              onGoToParagraph={goToParagraph}
+      {/* 3존: 좌(기준서·목차) / 중(검색 결과 또는 본문) / 우(조서 + 엑셀 미리보기).
+          가운데 경계를 드래그하면 폭이 바뀐다. */}
+      <main ref={containerRef} className="flex-1 min-h-0 flex p-3">
+        {layout.leftOpen ? (
+          <>
+            <aside style={{ width: layout.left }} className="shrink-0 min-h-0">
+              <ExplorerPanel
+                standards={standards}
+                currentStandard={currentStandard}
+                onSelectStandard={setSelectedStandardId}
+                activeParagraphId={activeParagraphId}
+                onGoToParagraph={goToParagraph}
+                onCollapse={() => toggleSide('left')}
+              />
+            </aside>
+            <Splitter
+              label="탐색 패널 폭"
+              active={dragging === 'left'}
+              onPointerDown={startDrag('left')}
+              onDoubleClick={() => resetSide('left')}
             />
-          </aside>
+          </>
+        ) : (
+          <>
+            <CollapsedRail
+              icon={<BookOpen className="w-4 h-4" />}
+              label="기준서 · 목차"
+              onClick={() => toggleSide('left')}
+            />
+            <div className="w-3 shrink-0" />
+          </>
         )}
 
         <section className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
           {/* 통합 검색 바 */}
-          <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 shadow-sm px-2.5 py-2 shrink-0">
-            <button
-              onClick={() => setLeftOpen(v => !v)}
-              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer shrink-0"
-              title={leftOpen ? '탐색 패널 접기' : '탐색 패널 펼치기'}
-            >
-              {leftOpen ? (
-                <PanelLeftClose className="w-4 h-4" />
-              ) : (
-                <PanelLeftOpen className="w-4 h-4" />
-              )}
-            </button>
-
-            <div className="relative flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 bg-white rounded-xl border border-slate-200 shadow-sm px-2.5 py-2 shrink-0">
+            <div className="relative flex-1 min-w-[160px] basis-40">
               <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 id="input-global-search"
                 type="text"
                 value={queryInput}
                 onChange={e => handleChangeQuery(e.target.value)}
-                placeholder="찾는 말을 그대로 쓰세요 (예: 사용권자산 감가상각)"
+                placeholder="찾는 말을 그대로 쓰세요"
                 className="w-full pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               />
               {queryInput && (
@@ -264,17 +273,17 @@ export default function App() {
               </button>
             )}
 
-            <button
-              onClick={() => setRightOpen(v => !v)}
-              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer shrink-0"
-              title={rightOpen ? '조서 패널 접기' : '조서 패널 펼치기'}
-            >
-              {rightOpen ? (
+            <PresetSwitch onApply={applyPreset} />
+
+            {layout.rightOpen && (
+              <button
+                onClick={() => toggleSide('right')}
+                className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer shrink-0"
+                title="조서 패널 접기"
+              >
                 <PanelRightClose className="w-4 h-4" />
-              ) : (
-                <PanelRightOpen className="w-4 h-4" />
-              )}
-            </button>
+              </button>
+            )}
           </div>
 
           {/* 검색 결과 또는 본문 */}
@@ -308,19 +317,36 @@ export default function App() {
           )}
         </section>
 
-        {rightOpen && (
-          <aside className="w-[420px] shrink-0 min-h-0">
-            <ExcelPreviewGrid
-              cells={formattedCells}
-              config={config}
-              onChangeConfig={setConfig}
-              standardTitle={exportTitle}
-              selectedParagraphs={selectedParagraphs}
-              onRemoveParagraph={handleRemoveParagraph}
-              onClearAll={handleClearAll}
-              onSortParagraphs={handleSortParagraphs}
+        {layout.rightOpen ? (
+          <>
+            <Splitter
+              label="조서 패널 폭"
+              active={dragging === 'right'}
+              onPointerDown={startDrag('right')}
+              onDoubleClick={() => resetSide('right')}
             />
-          </aside>
+            <aside style={{ width: layout.right }} className="shrink-0 min-h-0">
+              <ExcelPreviewGrid
+                cells={formattedCells}
+                config={config}
+                onChangeConfig={setConfig}
+                standardTitle={exportTitle}
+                selectedParagraphs={selectedParagraphs}
+                onRemoveParagraph={handleRemoveParagraph}
+                onClearAll={handleClearAll}
+                onSortParagraphs={handleSortParagraphs}
+              />
+            </aside>
+          </>
+        ) : (
+          <>
+            <div className="w-3 shrink-0" />
+            <CollapsedRail
+              icon={<Table className="w-4 h-4" />}
+              label="조서 · 엑셀"
+              onClick={() => toggleSide('right')}
+            />
+          </>
         )}
       </main>
 
