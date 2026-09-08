@@ -160,3 +160,43 @@ python3 scripts/ingest_standards.py ~/parsed_json/ --check-only
 
 검사 항목: 배열 형식 / 기준서·문단 필수 필드 / `category` 유효값 /
 기준서·문단 id 중복 / 빈 `content` / 문단의 `standardId`·`standardCode`·`standardTitle` 일치.
+
+---
+
+## ✅ 기준서 수정 모드와 footing
+
+파싱된 기준서가 원문과 다를 때, **쓰던 사람이 그 자리에서 고치고 기록을 남깁니다.**
+
+### 앱에서 고치기
+
+상단 **`수정 모드`** 버튼 → 이름 입력 → 문단마다 나타나는 **`수정`** 버튼으로 본문과
+문단제목을 고칩니다. 원본 JSON 은 바뀌지 않고, 고친 내용은 브라우저에 수정 기록으로
+쌓여 본문·검색·조서에 덧씌워집니다. **`수정 로그`** 에서 두 파일을 내려받습니다 —
+검토용 `.md` 와 반영용 `.json`.
+
+### 어디를 봐야 하는지
+
+```bash
+python3 scripts/audit_standards.py          # 확인지점 233곳과 기준서별 분포
+python3 scripts/audit_standards.py --severity P1   # 배포 차단 항목만
+```
+
+| 심각도 | 규칙 | 의미 |
+| --- | --- | --- |
+| P1 | `NUM_GAP` `DUP_BODY` `TOO_SHORT` | 배포 전 반드시 해소 (파서 수정이 필요할 수 있음) |
+| P2 | `HEADING_LEAK` `OVERSIZE` `TAIL_NOISE` | 원문과 대조해 판단 후 수정 모드에서 수정 |
+| P3 | `NO_TERMINAL` `NO_SECTION` | 참고 (기본 출력에서 제외) |
+
+### 수정 기록을 검토하고 반영하기
+
+```bash
+python3 scripts/apply_edit_log.py ~/Downloads/standards-edit-log-*.json          # docs/edit-log.md 생성
+python3 scripts/apply_edit_log.py ~/Downloads/standards-edit-log-*.json --apply  # 원본에 반영
+```
+
+여러 사람의 기록을 한 번에 받아 문단별로 마지막 수정만 반영하고, 원본이 기록의 '수정 전'과
+다르면 반영하지 않고 검토 문서에 표시합니다.
+
+자세한 절차는 [`docs/footing-plan.md`](docs/footing-plan.md) 에 있습니다.
+함께 볼 문서: [`docs/naming.md`](docs/naming.md) (기능 작명) ·
+[`docs/roadmap.md`](docs/roadmap.md) (확장 구상).

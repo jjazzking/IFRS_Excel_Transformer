@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, FileSpreadsheet, Code2, Upload, RotateCcw } from 'lucide-react';
+import { BookOpen, FileSpreadsheet, Code2, PencilLine, Upload, RotateCcw } from 'lucide-react';
 
 interface NavbarProps {
   onOpenImport: () => void;
@@ -7,6 +7,9 @@ interface NavbarProps {
   onResetAll: () => void;
   standardCount: number;
   totalParagraphs: number;
+  /** 기준서 본문을 그 자리에서 고칠 수 있는 모드 */
+  editMode: boolean;
+  onToggleEditMode: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -14,7 +17,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenVbaGuide,
   onResetAll,
   standardCount,
-  totalParagraphs
+  totalParagraphs,
+  editMode,
+  onToggleEditMode
 }) => {
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
@@ -41,6 +46,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             <BookOpen className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
             기준서 <span className="text-emerald-300 font-semibold mx-1">{standardCount}개</span> ({totalParagraphs}개 문단)
           </div>
+
+          <button
+            id="btn-edit-mode"
+            onClick={onToggleEditMode}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              editMode
+                ? 'bg-amber-500 text-amber-950 border-amber-400 font-semibold'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+            }`}
+            title="기준서 본문을 직접 고치고 수정 기록을 남깁니다"
+          >
+            <PencilLine className={`w-3.5 h-3.5 ${editMode ? 'text-amber-900' : 'text-amber-400'}`} />
+            <span>{editMode ? '수정 모드 켜짐' : '수정 모드'}</span>
+          </button>
 
           <button
             id="btn-import-db"

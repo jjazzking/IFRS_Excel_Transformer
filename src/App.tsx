@@ -8,7 +8,10 @@ import { ExcelPreviewGrid } from './components/ExcelPreviewGrid';
 import { VbaSnippetModal } from './components/VbaSnippetModal';
 import { ImportCustomDbModal } from './components/ImportCustomDbModal';
 import { CollapsedRail, PresetSwitch, Splitter } from './components/LayoutControls';
+import { EditModeBar, EditorNameModal } from './components/EditModeBar';
+import { EditLogModal } from './components/EditLogModal';
 import { useResizableLayout } from './hooks/useResizableLayout';
+import { useEditMode } from './hooks/useEditMode';
 
 import { AccountingStandard, ParagraphPart, StandardParagraph, ExportConfig } from './types';
 import { ALL_STANDARDS } from './data/standardsData';
@@ -35,8 +38,11 @@ const SEARCH_DEBOUNCE_MS = 180;
 const INITIAL_STANDARDS = normalizeStandards(ALL_STANDARDS);
 
 export default function App() {
-  // 기준서 데이터베이스 상태
-  const [standards, setStandards] = useState<AccountingStandard[]>(INITIAL_STANDARDS);
+  // 기준서 데이터베이스 상태. 화면에 보이는 standards 는 원본(baseStandards) 위에
+  // 수정 기록을 덧씌운 결과다 — 원본 JSON 은 앱에서 바뀌지 않는다.
+  const [baseStandards, setBaseStandards] = useState<AccountingStandard[]>(INITIAL_STANDARDS);
+  const editing = useEditMode(baseStandards);
+  const standards = editing.standards;
   const [selectedStandardId, setSelectedStandardId] = useState<string>(
     INITIAL_STANDARDS[0]?.id ?? ''
   );
@@ -62,11 +68,31 @@ export default function App() {
   const [config, setConfig] = useState<ExportConfig>(DEFAULT_CONFIG);
   const [isVbaModalOpen, setIsVbaModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isEditorNameOpen, setIsEditorNameOpen] = useState(false);
+  const [isEditLogOpen, setIsEditLogOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(queryInput), SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [queryInput]);
+
+  // 문단을 고쳤을 때, 이미 조서에 담아 둔 문단도 고친 내용으로 바꿔 준다.
+  useEffect(() => {
+    setSelectedParagraphs(prev => {
+      let changed = false;
+      const next = prev.map(p => {
+        const std = standards.find(s => s.id === (p.standardId || ''));
+        const fresh = (std || standards.find(s => s.paragraphs.some(x => x.id === p.id)))
+          ?.paragraphs.find(x => x.id === p.id);
+        if (fresh && fresh !== p) {
+          changed = true;
+          return fresh;
+        }
+        return p;
+      });
+      return changed ? next : prev;
+    });
+  }, [standards]);
 
   const currentStandard = useMemo(
     () => standards.find(s => s.id === selectedStandardId) || standards[0],
@@ -149,7 +175,7 @@ export default function App() {
 
   const handleImportStandards = (newStandards: AccountingStandard[]) => {
     const normalized = normalizeStandards(newStandards);
-    setStandards(normalized);
+    setBaseStandards(normalized);
     if (normalized.length > 0) {
       setSelectedStandardId(normalized[0].id);
       setSelectedParagraphs([]);
@@ -186,7 +212,20 @@ export default function App() {
         onResetAll={handleResetAll}
         standardCount={standards.length}
         totalParagraphs={totalParagraphCount}
+        editMode={editing.enabled}
+        onToggleEditMode={() =>
+          editing.enabled ? editing.stopEditing() : setIsEditorNameOpen(true)
+        }
       />
+
+      {editing.enabled && (
+        <EditModeBar
+          editor={editing.editor}
+          editCount={editing.edits.length}
+          onOpenLog={() => setIsEditLogOpen(true)}
+          onExit={editing.stopEditing}
+        />
+      )}
 
       {/* 3존: 좌(기준서·목차) / 중(검색 결과 또는 본문) / 우(조서 + 엑셀 미리보기).
           가운데 경계를 드래그하면 폭이 바뀐다. */}
@@ -312,6 +351,10 @@ export default function App() {
                 highlightTokens={highlightTokens}
                 partFilter={partFilter}
                 onChangePartFilter={setPartFilter}
+                editMode={editing.enabled}
+                editedIds={editing.editedIds}
+                onSaveParagraph={editing.saveParagraph}
+                onRevertParagraph={editing.revertParagraph}
               />
             </div>
           )}
@@ -350,6 +393,22 @@ export default function App() {
         )}
       </main>
 
+      <EditorNameModal
+        isOpen={isEditorNameOpen}
+        defaultName={editing.editor}
+        onCancel={() => setIsEditorNameOpen(false)}
+        onConfirm={name => {
+          if (editing.startEditing(name)) setIsEditorNameOpen(false);
+        }}
+      />
+      <EditLogModal
+        isOpen={isEditLogOpen}
+        edits={editing.edits}
+        onClose={() => setIsEditLogOpen(false)}
+        onRevert={editing.revertParagraph}
+        onClearAll={editing.clearAllEdits}
+        onGoToParagraph={(paragraphId, standardId) => goToParagraph(paragraphId, standardId)}
+      />
       <VbaSnippetModal isOpen={isVbaModalOpen} onClose={() => setIsVbaModalOpen(false)} />
       <ImportCustomDbModal
         isOpen={isImportModalOpen}

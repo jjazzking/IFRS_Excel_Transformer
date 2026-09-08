@@ -29,6 +29,31 @@ export interface AccountingStandard {
   paragraphs: StandardParagraph[];
 }
 
+/** 수정 모드에서 문단을 고칠 때 바꿀 수 있는 부분 */
+export interface ParagraphEditFields {
+  content: string;
+  sectionTitle?: string;
+  subTitle?: string;
+}
+
+/**
+ * 수정 기록 한 건. 앱은 원본 JSON 을 건드리지 않고 이 기록만 쌓아 두고,
+ * 화면에는 기록을 덧씌워 보여준다. 내보낸 기록을 검토한 뒤에야 원본에 반영한다.
+ */
+export interface ParagraphEdit {
+  editId: string; // 기록 고유 id
+  paragraphId: string; // e.g. "1116-2"
+  standardId: string;
+  standardCode: string;
+  standardTitle: string;
+  paragraphNumber: string;
+  editor: string; // 수정자 이름
+  editedAt: string; // ISO 8601
+  note?: string; // 왜 고쳤는지
+  before: ParagraphEditFields;
+  after: ParagraphEditFields;
+}
+
 export type ParagraphNumberFormat = 'raw' | 'bracket' | 'korean' | 'hash'; 
 // 'raw': 38, 'bracket': [38], 'korean': 제38호, 'hash': #38
 
