@@ -160,3 +160,27 @@ python3 scripts/ingest_standards.py ~/parsed_json/ --check-only
 
 검사 항목: 배열 형식 / 기준서·문단 필수 필드 / `category` 유효값 /
 기준서·문단 id 중복 / 빈 `content` / 문단의 `standardId`·`standardCode`·`standardTitle` 일치.
+
+---
+
+## ✅ 기준서 DB footing (정합성 검증)
+
+파싱된 기준서가 원문과 맞는지 사람이 3,661개 문단을 전수로 읽는 대신, 기계가 잡을 수 있는
+결함을 먼저 걸러 **확인이 필요한 지점만** 검수자에게 넘깁니다.
+
+```bash
+python3 scripts/audit_standards.py                      # 요약
+python3 scripts/audit_standards.py --csv footing.csv    # 검수 워크시트(엑셀)
+python3 scripts/audit_standards.py --assign 4           # 검수자 4명에게 기준서 배분
+python3 scripts/audit_standards.py --severity P1        # 배포 차단 항목만
+```
+
+| 심각도 | 규칙 | 의미 |
+| --- | --- | --- |
+| P1 | `NUM_GAP` `DUP_BODY` `TOO_SHORT` | 배포 전 반드시 해소 |
+| P2 | `HEADING_LEAK` `OVERSIZE` `TAIL_NOISE` | 사람이 원문과 대조해 판정 |
+| P3 | `NO_TERMINAL` `NO_SECTION` | 참고 |
+
+검수 절차·배분·배포 판정 기준은 [`docs/footing-plan.md`](docs/footing-plan.md) 에 있습니다.
+함께 볼 문서: [`docs/naming.md`](docs/naming.md) (기능 작명) ·
+[`docs/roadmap.md`](docs/roadmap.md) (확장 구상).
