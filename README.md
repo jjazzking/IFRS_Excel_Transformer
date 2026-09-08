@@ -169,18 +169,23 @@ python3 scripts/ingest_standards.py ~/parsed_json/ --check-only
 결함을 먼저 걸러 **확인이 필요한 지점만** 검수자에게 넘깁니다.
 
 ```bash
-python3 scripts/audit_standards.py                      # 요약
-python3 scripts/audit_standards.py --csv footing.csv    # 검수 워크시트(엑셀)
-python3 scripts/audit_standards.py --assign 4           # 검수자 4명에게 기준서 배분
-python3 scripts/audit_standards.py --severity P1        # 배포 차단 항목만
+python3 scripts/audit_standards.py                       # 요약
+python3 scripts/audit_standards.py --assign 4            # 검수자 4명 배분(예상시간 기준)
+python3 scripts/audit_standards.py --assign 4 --worksheet f.csv   # Notion 가져오기용 워크시트
+python3 scripts/audit_standards.py --severity P1         # 배포 차단 항목만
 ```
 
 | 심각도 | 규칙 | 의미 |
 | --- | --- | --- |
 | P1 | `NUM_GAP` `DUP_BODY` `TOO_SHORT` | 배포 전 반드시 해소 |
 | P2 | `HEADING_LEAK` `OVERSIZE` `TAIL_NOISE` | 사람이 원문과 대조해 판정 |
-| P3 | `NO_TERMINAL` `NO_SECTION` | 참고 |
+| P3 | `NO_TERMINAL` `NO_SECTION` | 참고 (기본 검수 대상에서 제외) |
+
+워크시트에는 검출된 확인지점과 함께 **기준서당 표본 문단**(`--sample`, 기본 5개, 시드 고정)이
+들어갑니다. 자동검증 규칙이 놓치는 결함이 있는지 보는 용도입니다. 각 행에는 건당 예상시간이
+붙어 있어 담당자별 부담을 시간으로 나눌 수 있습니다.
 
 검수 절차·배분·배포 판정 기준은 [`docs/footing-plan.md`](docs/footing-plan.md) 에 있습니다.
+Notion 공지문과 DB 설정 방법은 [`docs/footing-notice.md`](docs/footing-notice.md) 에 있습니다.
 함께 볼 문서: [`docs/naming.md`](docs/naming.md) (기능 작명) ·
 [`docs/roadmap.md`](docs/roadmap.md) (확장 구상).
