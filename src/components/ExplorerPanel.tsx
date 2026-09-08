@@ -5,6 +5,8 @@ import { TocNode, buildToc, nodeKeysForParagraph, rangeLabel } from '../utils/to
 
 interface ExplorerPanelProps {
   standards: AccountingStandard[];
+  /** 기준서 id → 자동 점검이 짚은 의심 지점 수. 표시가 꺼져 있으면 비어 있다. */
+  auditCounts?: Map<string, number>;
   currentStandard?: AccountingStandard;
   onSelectStandard: (id: string) => void;
   /** 본문 리더가 지금 보고 있는 문단 (목차에서 현재 위치를 강조) */
@@ -18,6 +20,7 @@ type Tab = 'standards' | 'toc';
 
 export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   standards,
+  auditCounts,
   currentStandard,
   onSelectStandard,
   activeParagraphId,
@@ -97,6 +100,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
       {tab === 'standards' ? (
         <StandardList
           standards={visibleStandards}
+          auditCounts={auditCounts}
           totalCount={standards.length}
           currentId={currentStandard?.id ?? ''}
           filter={filter}
@@ -149,6 +153,7 @@ const TabButton: React.FC<{
 
 const StandardList: React.FC<{
   standards: AccountingStandard[];
+  auditCounts?: Map<string, number>;
   totalCount: number;
   currentId: string;
   filter: string;
@@ -159,6 +164,7 @@ const StandardList: React.FC<{
   onSelect: (id: string) => void;
 }> = ({
   standards,
+  auditCounts,
   totalCount,
   currentId,
   filter,
@@ -204,12 +210,17 @@ const StandardList: React.FC<{
       ) : (
         standards.map(s => {
           const active = s.id === currentId;
+          const suspicious = auditCounts?.get(s.id) || 0;
           return (
             <button
               key={s.id}
               onClick={() => onSelect(s.id)}
               className={`w-full text-left px-2 py-1.5 rounded-lg flex items-start gap-2 transition cursor-pointer ${
-                active ? 'bg-emerald-50 ring-1 ring-emerald-300' : 'hover:bg-slate-100'
+                active
+                  ? 'bg-emerald-50 ring-1 ring-emerald-300'
+                  : suspicious
+                    ? 'bg-amber-50 hover:bg-amber-100'
+                    : 'hover:bg-slate-100'
               }`}
             >
               <span
@@ -231,6 +242,14 @@ const StandardList: React.FC<{
                   문단 {s.paragraphs.length}
                 </span>
               </span>
+              {suspicious > 0 && (
+                <span
+                  className="ml-auto shrink-0 px-1.5 py-0.5 rounded bg-amber-400 text-amber-950 text-[10px] font-bold tabular-nums"
+                  title={`원문과 다를 것 같은 자리 ${suspicious}곳`}
+                >
+                  {suspicious}
+                </span>
+              )}
             </button>
           );
         })

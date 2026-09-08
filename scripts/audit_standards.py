@@ -153,7 +153,10 @@ def main() -> int:
         print(f'{rule:<14}{SEVERITY[rule]:<7}{by_rule[rule]:>6}  {RULE_DESC[rule]}')
     print('-' * 96)
     p1 = sum(1 for f in findings if f['severity'] == 'P1')
-    print(f'확인지점 {len(findings):,}곳 (P1 {p1} · 전체 문단의 {len(findings) / total_p:.1%})')
+    # 한 문단에 규칙이 여러 개 걸려도 사람이 볼 자리는 한 곳이다.
+    spots = len({(f['standardId'], f['paragraph']) for f in findings})
+    print(f'확인지점 {spots:,}곳 / 검출 {len(findings):,}건 '
+          f'(P1 {p1} · 전체 문단의 {spots / total_p:.1%})')
 
     ranked = sorted(per_std.items(), key=lambda kv: -len(kv[1]['found']))
     print('\n확인지점이 많은 기준서 — 여기부터 보면 된다')
@@ -162,7 +165,8 @@ def main() -> int:
             continue
         rules = Counter(f['rule'] for f in info['found'])
         detail = ' '.join(f'{r} {c}' for r, c in rules.most_common())
-        print(f'  {sid:<16} 문단 {info["paras"]:>4}  확인지점 {len(info["found"]):>3}  {detail}')
+        spots_here = len({f['paragraph'] for f in info['found']})
+        print(f'  {sid:<16} 문단 {info["paras"]:>4}  확인지점 {spots_here:>3}  {detail}')
     clean = [sid for sid, info in per_std.items() if not info['found']]
     if clean:
         print(f'\n확인지점 없음 ({len(clean)}건): ' +
