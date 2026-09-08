@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Pencil, Plus, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Check, Pencil, Plus, RotateCcw } from 'lucide-react';
 import {
   AccountingStandard,
   ParagraphEditFields,
@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { PART_LABEL } from '../data/normalize';
 import { highlightParts } from '../utils/search';
+import { AuditFinding, RULE_HINT, RULE_LABEL, primaryFinding } from '../utils/auditStandards';
 
 interface StandardReaderProps {
   standard?: AccountingStandard;
@@ -33,6 +34,8 @@ interface StandardReaderProps {
     note: string
   ) => void;
   onRevertParagraph?: (paragraphId: string) => void;
+  /** 자동 점검에서 의심으로 짚은 문단들 (문단 id → 의심 목록). 켜져 있을 때만 넘어온다. */
+  auditByParagraph?: Map<string, AuditFinding[]>;
 }
 
 const NO_IDS: Set<string> = new Set();
@@ -52,6 +55,7 @@ export const StandardReader: React.FC<StandardReaderProps> = ({
   editedIds = NO_IDS,
   onSaveParagraph,
   onRevertParagraph,
+  auditByParagraph,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState('');
@@ -195,6 +199,7 @@ export const StandardReader: React.FC<StandardReaderProps> = ({
                   tokens={highlightTokens}
                   editMode={editMode}
                   edited={editedIds.has(p.id)}
+                  suspicions={auditByParagraph?.get(p.id)}
                   onEdit={() => setEditingId(p.id)}
                   onRevert={() => onRevertParagraph?.(p.id)}
                 />
@@ -239,9 +244,20 @@ const ParagraphBlock: React.FC<{
   tokens: string[];
   editMode: boolean;
   edited: boolean;
+  suspicions?: AuditFinding[];
   onEdit: () => void;
   onRevert: () => void;
-}> = ({ paragraph, selected, onToggle, tokens, editMode, edited, onEdit, onRevert }) => {
+}> = ({
+  paragraph,
+  selected,
+  onToggle,
+  tokens,
+  editMode,
+  edited,
+  suspicions,
+  onEdit,
+  onRevert,
+}) => {
   const parts = useMemo(
     () => highlightParts(paragraph.content, tokens),
     [paragraph.content, tokens]
@@ -252,11 +268,13 @@ const ParagraphBlock: React.FC<{
       id={`para-${paragraph.id}`}
       data-paragraph
       className={`group relative flex gap-2.5 rounded-lg px-2 py-2 -mx-2 scroll-mt-2 transition ${
-        edited
-          ? 'bg-amber-50 ring-1 ring-amber-300'
-          : selected
-            ? 'bg-emerald-50/70'
-            : 'hover:bg-slate-50'
+        suspicions?.length
+          ? 'bg-amber-100/70 ring-1 ring-amber-400'
+          : edited
+            ? 'bg-emerald-50 ring-1 ring-emerald-300'
+            : selected
+              ? 'bg-emerald-50/70'
+              : 'hover:bg-slate-50'
       }`}
     >
       {/* 문단번호 + 담기 버튼 */}
@@ -303,13 +321,25 @@ const ParagraphBlock: React.FC<{
 
       {/* 본문 — 클릭해도 선택되지 않으므로 드래그해서 그대로 복사할 수 있다 */}
       <div className="flex-1 min-w-0">
-        {edited && (
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 text-[10px] font-bold">
-              <Pencil className="w-2.5 h-2.5" />
-              수정됨
-            </span>
-            {editMode && (
+        {(edited || suspicions?.length) && (
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            {suspicions?.length ? (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-400 text-amber-950 text-[10px] font-bold"
+                title={`${RULE_HINT[primaryFinding(suspicions).rule]}\n짚은 근거: ${primaryFinding(suspicions).evidence}`}
+              >
+                <AlertTriangle className="w-2.5 h-2.5" />
+                {RULE_LABEL[primaryFinding(suspicions).rule]}
+                {suspicions.length > 1 && ` 외 ${suspicions.length - 1}건`}
+              </span>
+            ) : null}
+            {edited && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-bold">
+                <Pencil className="w-2.5 h-2.5" />
+                수정됨
+              </span>
+            )}
+            {editMode && edited && (
               <button
                 onClick={onRevert}
                 className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-slate-800 cursor-pointer"

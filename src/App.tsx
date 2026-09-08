@@ -10,6 +10,7 @@ import { ImportCustomDbModal } from './components/ImportCustomDbModal';
 import { CollapsedRail, PresetSwitch, Splitter } from './components/LayoutControls';
 import { EditModeBar, EditorNameModal } from './components/EditModeBar';
 import { EditLogModal } from './components/EditLogModal';
+import { AuditListModal } from './components/AuditListModal';
 import { useResizableLayout } from './hooks/useResizableLayout';
 import { useEditMode } from './hooks/useEditMode';
 
@@ -17,6 +18,7 @@ import { AccountingStandard, ParagraphPart, StandardParagraph, ExportConfig } fr
 import { ALL_STANDARDS } from './data/standardsData';
 import { normalizeStandards } from './data/normalize';
 import { buildSearchIndex, searchAll, tokenize } from './utils/search';
+import { auditStandards, EMPTY_AUDIT } from './utils/auditStandards';
 import { generateFormattedCells } from './utils/textSplitter';
 import { sortParagraphsByStandardAndNumber } from './utils/paragraphSorter';
 
@@ -70,6 +72,9 @@ export default function App() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isEditorNameOpen, setIsEditorNameOpen] = useState(false);
   const [isEditLogOpen, setIsEditLogOpen] = useState(false);
+  // 자동 점검 — 켜면 원문과 다를 것 같은 문단을 노란색으로 표시한다.
+  const [auditOn, setAuditOn] = useState(false);
+  const [isAuditListOpen, setIsAuditListOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(queryInput), SEARCH_DEBOUNCE_MS);
@@ -97,6 +102,12 @@ export default function App() {
   const currentStandard = useMemo(
     () => standards.find(s => s.id === selectedStandardId) || standards[0],
     [standards, selectedStandardId]
+  );
+
+  // 고친 문단은 다시 검사되므로, 제대로 고치면 노란 표시가 저절로 사라진다.
+  const audit = useMemo(
+    () => (auditOn ? auditStandards(standards) : EMPTY_AUDIT),
+    [auditOn, standards]
   );
 
   const searchIndex = useMemo(() => buildSearchIndex(standards), [standards]);
@@ -222,6 +233,15 @@ export default function App() {
         <EditModeBar
           editor={editing.editor}
           editCount={editing.edits.length}
+          auditOn={auditOn}
+          auditTotal={audit.total}
+          onToggleAudit={() => {
+            setAuditOn(on => {
+              if (!on) setIsAuditListOpen(true); // 처음 켜면 어디에 몰려 있는지 함께 보여준다
+              return !on;
+            });
+          }}
+          onOpenAuditList={() => setIsAuditListOpen(true)}
           onOpenLog={() => setIsEditLogOpen(true)}
           onExit={editing.stopEditing}
         />
@@ -235,6 +255,7 @@ export default function App() {
             <aside style={{ width: layout.left }} className="shrink-0 min-h-0">
               <ExplorerPanel
                 standards={standards}
+                auditCounts={audit.countByStandard}
                 currentStandard={currentStandard}
                 onSelectStandard={setSelectedStandardId}
                 activeParagraphId={activeParagraphId}
@@ -355,6 +376,7 @@ export default function App() {
                 editedIds={editing.editedIds}
                 onSaveParagraph={editing.saveParagraph}
                 onRevertParagraph={editing.revertParagraph}
+                auditByParagraph={auditOn ? audit.byParagraph : undefined}
               />
             </div>
           )}
@@ -408,6 +430,14 @@ export default function App() {
         onRevert={editing.revertParagraph}
         onClearAll={editing.clearAllEdits}
         onGoToParagraph={(paragraphId, standardId) => goToParagraph(paragraphId, standardId)}
+      />
+      <AuditListModal
+        isOpen={isAuditListOpen}
+        audit={audit}
+        standards={standards}
+        editedIds={editing.editedIds}
+        onClose={() => setIsAuditListOpen(false)}
+        onGoToParagraph={goToParagraph}
       />
       <VbaSnippetModal isOpen={isVbaModalOpen} onClose={() => setIsVbaModalOpen(false)} />
       <ImportCustomDbModal

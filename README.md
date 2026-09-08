@@ -176,8 +176,15 @@ python3 scripts/ingest_standards.py ~/parsed_json/ --check-only
 
 ### 어디를 봐야 하는지
 
+수정 모드 띠의 **`의심 문단 훑기`** 를 누르면 앱이 그 자리에서 전 기준서를 점검해,
+원문과 다를 것 같은 문단을 **노란색으로 표시**합니다. 기준서 목록에는 기준서별 의심 지점
+수가 배지로 붙고, `목록` 을 누르면 규칙별로 걸러 보며 해당 문단으로 바로 건너뜁니다.
+고치면 그 표시는 저절로 사라집니다 — 다시 검사하기 때문입니다.
+
+같은 점검을 터미널에서도 돌릴 수 있습니다 (`src/utils/auditStandards.ts` 와 같은 규칙).
+
 ```bash
-python3 scripts/audit_standards.py          # 확인지점 233곳과 기준서별 분포
+python3 scripts/audit_standards.py          # 확인지점 230곳과 기준서별 분포
 python3 scripts/audit_standards.py --severity P1   # 배포 차단 항목만
 ```
 

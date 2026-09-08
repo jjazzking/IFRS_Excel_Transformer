@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ListChecks, PencilLine, X } from 'lucide-react';
+import { AlertTriangle, ListChecks, PencilLine, X } from 'lucide-react';
 
 /** 수정 모드로 들어갈 때 이름을 받는다. 누가 고쳤는지 기록에 남기기 위해서다. */
 export const EditorNameModal: React.FC<{
@@ -76,9 +76,23 @@ export const EditorNameModal: React.FC<{
 export const EditModeBar: React.FC<{
   editor: string;
   editCount: number;
+  /** 의심 문단 표시가 켜져 있는지 */
+  auditOn: boolean;
+  auditTotal: number;
+  onToggleAudit: () => void;
+  onOpenAuditList: () => void;
   onOpenLog: () => void;
   onExit: () => void;
-}> = ({ editor, editCount, onOpenLog, onExit }) => (
+}> = ({
+  editor,
+  editCount,
+  auditOn,
+  auditTotal,
+  onToggleAudit,
+  onOpenAuditList,
+  onOpenLog,
+  onExit,
+}) => (
   <div className="bg-amber-500 text-amber-950 shrink-0">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2 min-w-0">
@@ -89,6 +103,27 @@ export const EditModeBar: React.FC<{
         </span>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={onToggleAudit}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition cursor-pointer border ${
+            auditOn
+              ? 'bg-amber-950 text-amber-100 border-amber-950'
+              : 'bg-amber-100/80 hover:bg-amber-50 text-amber-900 border-transparent'
+          }`}
+          title="기준서 데이터에서 원문과 다를 것 같은 문단을 찾아 노란색으로 표시합니다"
+        >
+          <AlertTriangle className="w-3 h-3" />
+          {auditOn ? `의심 ${auditTotal}곳 표시 중` : '의심 문단 훑기'}
+        </button>
+        {auditOn && (
+          <button
+            onClick={onOpenAuditList}
+            className="px-2 py-1 rounded-md bg-amber-100/80 hover:bg-amber-50 text-amber-900 text-[11px] font-semibold transition cursor-pointer"
+          >
+            목록
+          </button>
+        )}
+        <span className="w-px h-4 bg-amber-600/40" aria-hidden />
         <button
           onClick={onOpenLog}
           className="flex items-center gap-1 px-2 py-1 rounded-md bg-amber-100/80 hover:bg-amber-50 text-amber-900 text-[11px] font-semibold transition cursor-pointer"
