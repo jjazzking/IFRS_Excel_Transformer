@@ -25,12 +25,13 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from smbs import Currency, fetch_period, list_currencies, parse_currency_label  # noqa: E402
+from smbs import Currency, NoTableError, fetch_period, list_currencies, parse_currency_label  # noqa: E402
 
 # 국내 감사 실무에서 외화환산 조서에 자주 오르는 통화부터 담는다.
+# 위안은 CNH(역외) 만 담는다 — 선택 목록에 CNY 도 있지만 고시 자료가 비어 있다.
 # 전부 받고 싶으면 --all-currencies 를 쓴다.
 DEFAULT_CURRENCIES = [
-    "USD", "JPY", "EUR", "CNY", "CNH", "HKD", "GBP", "AUD",
+    "USD", "JPY", "EUR", "CNH", "HKD", "GBP", "AUD",
     "SGD", "VND", "THB", "IDR", "MYR", "PHP", "INR", "CAD", "CHF", "TWD",
 ]
 
@@ -39,6 +40,10 @@ OUT_DIR = Path(__file__).resolve().parent.parent / "src" / "data" / "fx"
 # 사이트의 기간 조회는 12개월까지가 한 번에 눌러 볼 수 있는 최대다.
 # 그보다 긴 기간은 잘라서 여러 번 묻는다.
 CHUNK_DAYS = 330
+
+# 통화에 따라 긴 기간을 한 번에 주지 않는다 (USD 처럼 열이 많은 통화가 그렇다).
+# 표가 비어 오면 기간을 반으로 줄여 다시 묻는다. 이보다 짧아지면 포기한다.
+MIN_CHUNK_DAYS = 20
 
 # 남의 서버다. 요청 사이에 잠깐씩 쉰다.
 POLITE_DELAY_SEC = 1.2
@@ -88,15 +93,40 @@ def merge_rows(old: list[dict], new: list[dict]) -> list[dict]:
     return [by_date[d] for d in sorted(by_date)]
 
 
-def fetch_currency(code: str, start: dt.date, end: dt.date) -> tuple[Currency | None, list[dict]]:
+def fetch_span(code: str, start: dt.date, end: dt.date, notes: list[str]):
+    """
+    한 구간을 받는다. 표가 비어 오면 기간을 반으로 갈라 다시 묻는다.
+
+    사이트가 왜 빈 표를 주는지는 통화마다 다르다 — 어떤 통화는 긴 기간을 한 번에
+    주지 않고, 어떤 통화는 그 기간에 고시가 아예 없다. 둘을 미리 가릴 수 없으므로
+    좁혀 가며 물어보고, 끝까지 비면 그 구간만 비워 둔 채 넘어간다.
+    """
+    try:
+        result = fetch_period(code, start.isoformat(), end.isoformat())
+        time.sleep(POLITE_DELAY_SEC)
+        return result.currency, result.rows
+    except NoTableError as exc:
+        time.sleep(POLITE_DELAY_SEC)
+        span = (end - start).days
+        if span <= MIN_CHUNK_DAYS:
+            notes.append(str(exc))
+            return None, []
+
+        mid = start + dt.timedelta(days=span // 2)
+        cur_a, rows_a = fetch_span(code, start, mid, notes)
+        cur_b, rows_b = fetch_span(code, mid + dt.timedelta(days=1), end, notes)
+        return cur_a or cur_b, merge_rows(rows_a, rows_b)
+
+
+def fetch_currency(code: str, start: dt.date, end: dt.date) -> tuple[Currency | None, list[dict], list[str]]:
     currency: Currency | None = None
     rows: list[dict] = []
+    notes: list[str] = []
     for chunk_start, chunk_end in date_chunks(start, end):
-        result = fetch_period(code, chunk_start.isoformat(), chunk_end.isoformat())
-        currency = currency or result.currency
-        rows = merge_rows(rows, result.rows)
-        time.sleep(POLITE_DELAY_SEC)
-    return currency, rows
+        cur, chunk_rows = fetch_span(code, chunk_start, chunk_end, notes)
+        currency = currency or cur
+        rows = merge_rows(rows, chunk_rows)
+    return currency, rows, notes
 
 
 def main() -> int:
@@ -135,7 +165,9 @@ def main() -> int:
         path = out_dir / f"{code}.json"
         existing = load_existing(path)
         try:
-            currency, rows = fetch_currency(code, start, end)
+            currency, rows, notes = fetch_currency(code, start, end)
+            for note in notes[:3]:
+                print(f"       · {note}")
         except Exception as exc:  # noqa: BLE001 - 한 통화가 막혀도 나머지는 계속한다
             print(f"  {code:4s} 실패: {type(exc).__name__} {exc}")
             failed.append((code, f"{type(exc).__name__}: {exc}"))

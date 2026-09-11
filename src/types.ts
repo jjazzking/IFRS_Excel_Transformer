@@ -91,3 +91,76 @@ export interface ClipboardExportResult {
   rowCount: number;
   cells: FormattedCell[];
 }
+
+// ---------------------------------------------------------------------------
+// 여러 열짜리 표 — 환율처럼 문단이 아닌 자료를 조서에 붙일 때 쓴다.
+// 기준서 문단은 '문단번호 | 본문' 두 열로 굳어 있지만, 환율은 날짜·환율·전일대비처럼
+// 열이 여럿이고 통화마다 개수도 다르다. 그래서 열을 데이터로 들고 다닌다.
+// ---------------------------------------------------------------------------
+
+export interface SheetColumn {
+  key: string;
+  label: string;
+  /** 숫자 열은 오른쪽으로 붙이고, 엑셀에 문자열이 아니라 숫자로 넘긴다 */
+  numeric?: boolean;
+  /** 소수 자릿수 — 환율은 통화마다 다르다 (USD 2자리, JPY Cross Rate 5자리) */
+  digits?: number;
+  /** 엑셀 열 너비 (문자 수) */
+  width?: number;
+}
+
+export interface SheetRow {
+  cells: (string | number | null)[];
+  /** 합계·평균처럼 눈에 띄어야 하는 행 */
+  emphasis?: 'total';
+}
+
+export interface SheetTable {
+  /** 표 맨 위에 열 전체를 가로질러 들어가는 제목. 없으면 넣지 않는다 */
+  title?: string;
+  columns: SheetColumn[];
+  rows: SheetRow[];
+  /** 표 아래 각주 — 자료 출처와 받은 시각. 조서에는 출처가 반드시 남아야 한다 */
+  footnote?: string;
+}
+
+// ---------------------------------------------------------------------------
+// 환율
+// ---------------------------------------------------------------------------
+
+/** 하루치 고시 환율. 통화에 따라 있는 값만 채워진다. */
+export interface FxRateRow {
+  date: string; // 'YYYY-MM-DD'
+  rate: number; // 매매기준율
+  change?: number; // 전일대비 (오르면 +, 내리면 -)
+  open?: number;
+  high?: number;
+  low?: number;
+  close1530?: number;
+  close0600?: number;
+  volume?: number;
+  crossRate?: number;
+}
+
+export interface FxCurrencyMeta {
+  code: string; // 'USD'
+  name: string; // '미국 달러'
+  /** 1 또는 100. JPY·IDR·VND 는 100단위로 고시된다 */
+  unit: number;
+  from: string;
+  to: string;
+  count: number;
+}
+
+export interface FxCurrencyData extends FxCurrencyMeta {
+  source: string;
+  sourceUrl: string;
+  fetchedAt: string;
+  rows: FxRateRow[];
+}
+
+export interface FxIndex {
+  source: string;
+  updatedAt: string;
+  currencies: FxCurrencyMeta[];
+}

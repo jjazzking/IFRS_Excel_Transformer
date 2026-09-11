@@ -185,6 +185,31 @@ DATE_KEYS = {"date"}
 TEXT_KEYS = {"currency"}
 
 
+class NoTableError(RuntimeError):
+    """
+    일자별 표가 없는 응답. 기간이 너무 길거나 그 통화에 자료가 없을 때 나온다.
+
+    무엇이 왔는지 모르면 고칠 수 없으므로, 페이지에서 눈에 보이는 글자를 조금
+    떼어 함께 싣는다.
+    """
+
+    def __init__(self, code: str, start: str, end: str, html: str) -> None:
+        self.code, self.start, self.end = code, start, end
+        self.excerpt = page_excerpt(html)
+        super().__init__(
+            f"{code} {start}~{end}: 일자별 표 없음 "
+            f"(응답 {len(html):,}바이트) — 페이지에 보이는 글: {self.excerpt}"
+        )
+
+
+def page_excerpt(html: str, limit: int = 240) -> str:
+    """난독화까지 풀어 낸 페이지의 본문 글자. 오류 메시지를 읽으려는 것이다."""
+    body = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", html)
+    text = " ".join(cell_text(chunk) for chunk in re.split(r"(?i)</?(?:tr|td|div|p|br)[^>]*>", body))
+    text = re.sub(r"\s+", " ", _TAG.sub(" ", text)).strip()
+    return text[:limit]
+
+
 @dataclass
 class PeriodResult:
     currency: Currency
@@ -233,7 +258,7 @@ def fetch_period(code: str, start: str, end: str) -> PeriodResult:
             }
 
     if not header_row:
-        raise ValueError(f"{code}: 일자별 표를 찾지 못했다 (응답 {len(html)}바이트)")
+        raise NoTableError(code, start, end, html)
 
     keys = [COLUMN_KEYS.get(h, "") for h in header_row]
     currency: Currency | None = None

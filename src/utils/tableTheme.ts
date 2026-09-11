@@ -7,6 +7,16 @@
  */
 import { TableTheme } from '../types';
 
+/** 화면에 보여 줄 때 쓰는 Tailwind 클래스. 엑셀로 나가는 서식과 짝을 이룬다. */
+export interface TablePreviewClasses {
+  tableBorder: string;
+  headerRow: string;
+  sectionRow: string;
+  headerCell: string;
+  numCell: string;
+  contentCell: string;
+}
+
 export interface TableThemeStyles {
   tableStyle: string;
   /** 표 맨 위 제목 행 (열 전체를 가로지른다) */
@@ -82,4 +92,55 @@ export function numericTd(theme: TableThemeStyles): string {
 /** 합계·평균처럼 눈에 띄어야 하는 행 */
 export function totalTd(theme: TableThemeStyles): string {
   return `${numericTd(theme)} font-weight: bold; background-color: #F2F2F2;`;
+}
+
+export function getThemePreviewClasses(theme: TableTheme): TablePreviewClasses {
+  switch (theme) {
+    case 'audit_gray':
+      return {
+        tableBorder: 'border-slate-400',
+        headerRow: 'bg-slate-200 text-slate-900 font-bold',
+        sectionRow: 'bg-slate-100 text-slate-800 font-bold',
+        headerCell: 'border border-slate-400',
+        numCell: 'bg-slate-50 text-slate-900 font-bold text-center border border-slate-300',
+        contentCell: 'bg-white text-slate-800 border border-slate-300'
+      };
+    case 'audit_blue':
+      return {
+        tableBorder: 'border-blue-900',
+        headerRow: 'bg-blue-900 text-white font-bold',
+        sectionRow: 'bg-blue-100 text-blue-950 font-bold',
+        headerCell: 'border border-blue-950',
+        numCell: 'bg-blue-50/70 text-blue-950 font-bold text-center border border-blue-200',
+        contentCell: 'bg-white text-slate-800 border border-slate-300'
+      };
+    case 'classic_accounting':
+      return {
+        tableBorder: 'border-slate-900',
+        headerRow: 'bg-white text-slate-950 font-bold',
+        sectionRow: 'bg-slate-50 text-slate-900 font-semibold',
+        headerCell: 'border-t-2 border-b-2 border-black border-x-0',
+        numCell: 'bg-white text-slate-900 font-semibold text-center border-b border-r border-slate-300',
+        contentCell: 'bg-white text-slate-800 border-b border-slate-300'
+      };
+    case 'minimal':
+      return {
+        tableBorder: 'border-slate-200',
+        headerRow: 'bg-transparent text-slate-900 font-bold',
+        sectionRow: 'bg-transparent text-slate-700 font-bold',
+        headerCell: 'border-b border-slate-200',
+        numCell: 'bg-transparent text-slate-900 font-semibold text-center border-b border-slate-100',
+        contentCell: 'bg-transparent text-slate-800 border-b border-slate-100'
+      };
+    case 'standard':
+    default:
+      return {
+        tableBorder: 'border-slate-400',
+        headerRow: 'bg-slate-100 text-slate-900 font-bold',
+        sectionRow: 'bg-slate-50 text-slate-800 font-bold',
+        headerCell: 'border border-slate-300',
+        numCell: 'bg-slate-50 text-slate-900 font-semibold text-center border border-slate-300',
+        contentCell: 'bg-white text-slate-800 border border-slate-300'
+      };
+  }
 }
