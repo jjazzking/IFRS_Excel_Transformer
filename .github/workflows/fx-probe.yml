@@ -1,0 +1,22 @@
+# 서울외국환중개 페이지 구조 확인용 일회성 워크플로우.
+# 개발 환경에서는 이 호스트로 나갈 수 없어, 러너에서 한 번 열어 보고 파서를 쓴다.
+# 파서가 자리를 잡으면 이 파일과 scripts/probe_smbs.py 를 함께 지운다.
+name: FX probe (임시)
+
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'scripts/probe_smbs.py'
+      - '.github/workflows/fx-probe.yml'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/probe_smbs.py
