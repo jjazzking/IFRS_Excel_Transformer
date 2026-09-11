@@ -1,0 +1,39 @@
+# 환율 받기 스크립트를 이 브랜치에서 시험해 보는 임시 워크플로우.
+# 본 워크플로우(fx-rates.yml)가 main 에 올라가면 지운다.
+name: 환율 받기 (브랜치 시험)
+
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'scripts/fetch_fx_rates.py'
+      - 'scripts/smbs.py'
+      - '.github/workflows/fx-rates-test.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fx-rates
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/fetch_fx_rates.py --years 3
+      - name: 바뀐 것이 있으면 커밋
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet -- src/data/fx; then
+            echo "바뀐 환율 없음."
+            exit 0
+          fi
+          git add src/data/fx
+          git commit -m "chore(fx): 환율 자료 첫 수집 ($(date -u +%Y-%m-%d))"
+          git push origin HEAD:${{ github.ref_name }}

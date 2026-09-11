@@ -1,0 +1,58 @@
+# 환율 자료 받아 두기.
+#
+# 이 앱은 GitHub Pages 정적 호스팅이라 브라우저가 smbs.biz 를 직접 부를 수 없다.
+# (CORS 에 막히고, 사이트가 http 라 https 페이지에서는 아예 차단된다.)
+# 그래서 여기서 받아 저장소에 커밋하고, 앱은 저장소 안의 JSON 만 읽는다.
+name: 환율 받기
+
+on:
+  schedule:
+    # 매 영업일 09:30 UTC = 18:30 KST. 그날 매매기준율이 모두 고시된 뒤다.
+    - cron: '30 9 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      years:
+        description: '최근 몇 년치를 받을지'
+        required: false
+        default: '3'
+      currencies:
+        description: '통화 코드 (쉼표 구분, 비우면 기본 통화)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+# 앞 실행이 커밋하는 중에 다음 실행이 겹치면 푸시가 충돌한다.
+concurrency:
+  group: fx-rates
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 정기 실행은 최근 자료만 확인하면 된다. 과거치는 이미 저장소에 있다.
+      - name: 환율 받기
+        run: |
+          python3 scripts/fetch_fx_rates.py \
+            ${{ github.event_name == 'schedule' && '--years 1' || format('--years {0}', inputs.years) }} \
+            ${{ inputs.currencies && format('--currencies {0}', inputs.currencies) || '' }}
+
+      - name: 바뀐 것이 있으면 커밋
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet -- src/data/fx; then
+            echo "바뀐 환율 없음 — 커밋하지 않는다."
+            exit 0
+          fi
+          git add src/data/fx
+          git commit -m "chore(fx): 환율 자료 갱신 ($(date -u +%Y-%m-%d))"
+          git push origin HEAD:${{ github.ref_name }}
