@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { FormattedCell, ExportConfig, ClipboardExportResult, StandardParagraph } from '../types';
 import { generateClipboardData, exportToExcelFile } from '../utils/textSplitter';
+import { getThemePreviewClasses } from '../utils/tableTheme';
 import { CompactConfigToolbar } from './CompactConfigToolbar';
 
 interface ExcelPreviewGridProps {
@@ -104,59 +105,9 @@ export const ExcelPreviewGrid: React.FC<ExcelPreviewGridProps> = ({
     exportToExcelFile(cells, filename);
   };
 
-  // 테마별 미리보기 CSS 스타일 매핑
-  const getThemePreviewClasses = () => {
-    switch (config.theme) {
-      case 'audit_gray':
-        return {
-          tableBorder: 'border-slate-400',
-          headerRow: 'bg-slate-200 text-slate-900 font-bold',
-          sectionRow: 'bg-slate-100 text-slate-800 font-bold',
-          headerCell: 'border border-slate-400',
-          numCell: 'bg-slate-50 text-slate-900 font-bold text-center border border-slate-300',
-          contentCell: 'bg-white text-slate-800 border border-slate-300'
-        };
-      case 'audit_blue':
-        return {
-          tableBorder: 'border-blue-900',
-          headerRow: 'bg-blue-900 text-white font-bold',
-          sectionRow: 'bg-blue-100 text-blue-950 font-bold',
-          headerCell: 'border border-blue-950',
-          numCell: 'bg-blue-50/70 text-blue-950 font-bold text-center border border-blue-200',
-          contentCell: 'bg-white text-slate-800 border border-slate-300'
-        };
-      case 'classic_accounting':
-        return {
-          tableBorder: 'border-slate-900',
-          headerRow: 'bg-white text-slate-950 font-bold',
-          sectionRow: 'bg-slate-50 text-slate-900 font-semibold',
-          headerCell: 'border-t-2 border-b-2 border-black border-x-0',
-          numCell: 'bg-white text-slate-900 font-semibold text-center border-b border-r border-slate-300',
-          contentCell: 'bg-white text-slate-800 border-b border-slate-300'
-        };
-      case 'minimal':
-        return {
-          tableBorder: 'border-slate-200',
-          headerRow: 'bg-transparent text-slate-900 font-bold',
-          sectionRow: 'bg-transparent text-slate-700 font-bold',
-          headerCell: 'border-b border-slate-200',
-          numCell: 'bg-transparent text-slate-900 font-semibold text-center border-b border-slate-100',
-          contentCell: 'bg-transparent text-slate-800 border-b border-slate-100'
-        };
-      case 'standard':
-      default:
-        return {
-          tableBorder: 'border-slate-400',
-          headerRow: 'bg-slate-100 text-slate-900 font-bold',
-          sectionRow: 'bg-slate-50 text-slate-800 font-bold',
-          headerCell: 'border border-slate-300',
-          numCell: 'bg-slate-50 text-slate-900 font-semibold text-center border border-slate-300',
-          contentCell: 'bg-white text-slate-800 border border-slate-300'
-        };
-    }
-  };
 
-  const themeClasses = getThemePreviewClasses();
+
+  const themeClasses = getThemePreviewClasses(config.theme);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

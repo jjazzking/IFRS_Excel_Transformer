@@ -10,6 +10,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const STORAGE_KEY = 'workpaper.layout.v1';
 
+export interface LayoutOptions {
+  /** 작업대마다 폭을 따로 기억한다. 기준서의 배분이 환율에 끌려오면 곤란하다. */
+  storageKey?: string;
+  /** 왼쪽 구역이 없는 2존 작업대 (조회+결과 | 엑셀) 에서는 false. */
+  hasLeft?: boolean;
+}
+
 export const MIN_LEFT = 190;
 export const MAX_LEFT = 460;
 export const MIN_RIGHT = 320;
@@ -44,10 +51,10 @@ const PADDING = 24; // main 의 좌우 여백 (p-3)
 const SPLITTER = 12; // 경계, 또는 패널이 접혔을 때 그 자리의 여백
 const RAIL = 36; // 접힌 패널이 남기는 세로 띠 (w-9)
 
-function readStored(): LayoutState {
+function readStored(key: string): LayoutState {
   if (typeof window === 'undefined') return DEFAULT_STATE;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw) as Partial<LayoutState>;
     return {
@@ -63,15 +70,15 @@ function readStored(): LayoutState {
 }
 
 /** 좌·우와 경계를 뺀 뒤 가운데에 실제로 남는 폭. */
-function centerWidth(state: LayoutState, total: number): number {
-  const leftPart = (state.leftOpen ? state.left : RAIL) + SPLITTER;
+function centerWidth(state: LayoutState, total: number, hasLeft: boolean): number {
+  const leftPart = hasLeft ? (state.leftOpen ? state.left : RAIL) + SPLITTER : 0;
   const rightPart = (state.rightOpen ? state.right : RAIL) + SPLITTER;
   return total - PADDING - leftPart - rightPart;
 }
 
 /** 한쪽 패널이 지금 더 가져갈 수 있는 최대 폭 (가운데의 여유를 다 흡수했을 때). */
-function maxWidthFor(side: Side, state: LayoutState, total: number): number {
-  const slack = Math.max(0, centerWidth(state, total) - MIN_CENTER);
+function maxWidthFor(side: Side, state: LayoutState, total: number, hasLeft: boolean): number {
+  const slack = Math.max(0, centerWidth(state, total, hasLeft) - MIN_CENTER);
   const current = side === 'left' ? state.left : state.right;
   const cap = side === 'left' ? MAX_LEFT : Number.POSITIVE_INFINITY;
   return Math.min(cap, current + slack);
@@ -81,7 +88,7 @@ function maxWidthFor(side: Side, state: LayoutState, total: number): number {
  * 가운데가 MIN_CENTER 아래로 눌리지 않게 폭을 다시 맞춘다.
  * 모자란 만큼 오른쪽에서 먼저 걷고, 그래도 모자라면 왼쪽에서 걷는다.
  */
-function fit(state: LayoutState, total: number): LayoutState {
+function fit(state: LayoutState, total: number, hasLeft: boolean): LayoutState {
   if (total <= 0) return state;
   const next: LayoutState = {
     ...state,
@@ -89,22 +96,23 @@ function fit(state: LayoutState, total: number): LayoutState {
     right: state.rightOpen ? Math.max(state.right, MIN_RIGHT) : state.right,
   };
 
-  let deficit = MIN_CENTER - centerWidth(next, total);
+  let deficit = MIN_CENTER - centerWidth(next, total, hasLeft);
   if (deficit > 0 && next.rightOpen) {
     const give = Math.min(deficit, next.right - MIN_RIGHT);
     next.right -= give;
     deficit -= give;
   }
-  if (deficit > 0 && next.leftOpen) {
+  if (deficit > 0 && hasLeft && next.leftOpen) {
     const give = Math.min(deficit, next.left - MIN_LEFT);
     next.left -= give;
   }
   return next;
 }
 
-export function useResizableLayout() {
+export function useResizableLayout(options: LayoutOptions = {}) {
+  const { storageKey = STORAGE_KEY, hasLeft = true } = options;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<LayoutState>(readStored);
+  const [state, setState] = useState<LayoutState>(() => readStored(storageKey));
   const [dragging, setDragging] = useState<Side | null>(null);
   const dragRef = useRef<{ side: Side; startX: number; startLeft: number; startRight: number } | null>(null);
 
@@ -128,11 +136,11 @@ export function useResizableLayout() {
 
       setState(prev => {
         if (drag.side === 'left') {
-          const max = maxWidthFor('left', prev, total);
+          const max = maxWidthFor('left', prev, total, hasLeft);
           return { ...prev, left: clamp(drag.startLeft + delta, MIN_LEFT, max) };
         }
         // 오른쪽 경계는 왼쪽으로 끌수록 넓어진다.
-        const max = maxWidthFor('right', prev, total);
+        const max = maxWidthFor('right', prev, total, hasLeft);
         return { ...prev, right: clamp(drag.startRight - delta, MIN_RIGHT, max) };
       });
     };
@@ -149,7 +157,7 @@ export function useResizableLayout() {
       window.removeEventListener('pointerup', stop);
       window.removeEventListener('pointercancel', stop);
     };
-  }, [dragging]);
+  }, [dragging, hasLeft]);
 
   // 드래그 중에는 커서와 선택 동작이 텍스트에 걸리지 않게 한다.
   useEffect(() => {
@@ -169,21 +177,21 @@ export function useResizableLayout() {
   useEffect(() => {
     if (dragging) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      window.localStorage.setItem(storageKey, JSON.stringify(state));
     } catch {
       // 저장하지 못해도 이번 세션 동안의 레이아웃은 그대로 쓸 수 있다.
     }
-  }, [state, dragging]);
+  }, [state, dragging, storageKey]);
 
   useEffect(() => {
     const onResize = () => {
       const total = containerRef.current?.clientWidth ?? 0;
-      setState(prev => fit(prev, total));
+      setState(prev => fit(prev, total, hasLeft));
     };
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [hasLeft]);
 
   const toggleSide = useCallback((side: Side) => {
     setState(prev => {
@@ -192,35 +200,35 @@ export function useResizableLayout() {
         side === 'left'
           ? { ...prev, leftOpen: !prev.leftOpen }
           : { ...prev, rightOpen: !prev.rightOpen };
-      return fit(next, total);
+      return fit(next, total, hasLeft);
     });
-  }, []);
+  }, [hasLeft]);
 
   /** 경계를 더블클릭하면 그 패널만 기본 폭으로 되돌린다. */
   const resetSide = useCallback((side: Side) => {
     setState(prev => {
       const total = containerRef.current?.clientWidth ?? 0;
       const next = side === 'left' ? { ...prev, left: DEFAULT_LEFT } : { ...prev, right: DEFAULT_RIGHT };
-      return fit(next, total);
+      return fit(next, total, hasLeft);
     });
-  }, []);
+  }, [hasLeft]);
 
   const applyPreset = useCallback((preset: LayoutPreset) => {
     const total = containerRef.current?.clientWidth ?? 0;
     setState(prev => {
       if (preset === 'explore') {
         // 찾는 데 집중: 목차와 본문을 넓게, 엑셀은 접는다.
-        return fit({ ...prev, left: 280, leftOpen: true, rightOpen: false }, total);
+        return fit({ ...prev, left: 280, leftOpen: true, rightOpen: false }, total, hasLeft);
       }
       if (preset === 'excel') {
         // 조서에 집중: 탐색을 접고, 본문에 최소폭만 남긴 채 미리보기가 나머지를 가져간다.
         const base = { ...prev, leftOpen: false, rightOpen: true, right: MIN_RIGHT };
-        const slack = Math.max(0, centerWidth(base, total) - MIN_CENTER);
-        return fit({ ...base, right: MIN_RIGHT + slack }, total);
+        const slack = Math.max(0, centerWidth(base, total, hasLeft) - MIN_CENTER);
+        return fit({ ...base, right: MIN_RIGHT + slack }, total, hasLeft);
       }
-      return fit({ left: DEFAULT_LEFT, right: DEFAULT_RIGHT, leftOpen: true, rightOpen: true }, total);
+      return fit({ left: DEFAULT_LEFT, right: DEFAULT_RIGHT, leftOpen: true, rightOpen: true }, total, hasLeft);
     });
-  }, []);
+  }, [hasLeft]);
 
   return { containerRef, state, dragging, startDrag, resetSide, toggleSide, applyPreset };
 }

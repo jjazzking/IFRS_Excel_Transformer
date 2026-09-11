@@ -4,9 +4,11 @@ import { WorkspaceId, WorkspaceMeta, WORKSPACES } from '../workspaces/registry';
 
 interface HomeScreenProps {
   onOpen: (id: WorkspaceId) => void;
-  /** 카드에 붙는 부제 — 기준서 작업대는 실제 데이터 규모를 보여준다 */
-  standardCount: number;
-  totalParagraphs: number;
+  /**
+   * 카드 이름 옆의 작은 배지. 작업대마다 무엇이 얼마나 들어 있는지 보여 준다 —
+   * 기준서는 문단 수, 환율은 통화 수와 자료 구간. 없으면 배지를 달지 않는다.
+   */
+  badges: Partial<Record<WorkspaceId, string>>;
 }
 
 // 색은 카드마다 다르지만 클래스 문자열은 통째로 적어 둔다.
@@ -41,11 +43,7 @@ const ACCENT: Record<
   },
 };
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({
-  onOpen,
-  standardCount,
-  totalParagraphs,
-}) => (
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpen, badges }) => (
   <div className="min-h-screen bg-slate-100 text-slate-900 antialiased font-sans overflow-y-auto">
     <header className="bg-slate-900 text-white border-b border-slate-800">
       <div className="max-w-5xl mx-auto px-6 py-10 sm:py-14">
@@ -80,6 +78,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {WORKSPACES.map(ws => {
           const accent = ACCENT[ws.accent];
           const ready = ws.status === 'ready';
+          const badge = badges[ws.id];
           const Icon = ws.icon;
 
           return (
@@ -108,11 +107,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-base text-slate-900">{ws.name}</h3>
                     {ready ? (
-                      <span
-                        className={`text-[11px] px-1.5 py-0.5 rounded-full border font-medium ${accent.chip}`}
-                      >
-                        {standardCount}개 기준서 · {totalParagraphs.toLocaleString()}개 문단
-                      </span>
+                      badge && (
+                        <span
+                          className={`text-[11px] px-1.5 py-0.5 rounded-full border font-medium ${accent.chip}`}
+                        >
+                          {badge}
+                        </span>
+                      )
                     ) : (
                       <span className="text-[11px] px-1.5 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-500 font-medium inline-flex items-center gap-1">
                         <Lock className="w-3 h-3" />
