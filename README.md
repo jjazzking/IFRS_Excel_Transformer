@@ -284,5 +284,52 @@ python3 scripts/apply_edit_log.py ~/Downloads/standards-edit-log-*.json --apply 
 다르면 반영하지 않고 검토 문서에 표시합니다.
 
 자세한 절차는 [`docs/footing-plan.md`](docs/footing-plan.md) 에 있습니다.
+
+---
+
+## 📄 이사회 의사록 읽기 (PoC — 화면 없음)
+
+이사회 의사록 PDF 를 **정규 데이터 스키마 JSON** 으로 옮깁니다. 아직 작업대가 아니라
+스크립트 단계입니다. 화면보다 정확도를 먼저 재기 위해서입니다.
+
+**모델을 부르지 않습니다.** API 키도, 네트워크도, 비용도 없습니다. 한국 이사회 의사록은
+서식이 강해서 (`제1호 의안`, `재적이사 7명 중 6명 출석`, `원안대로 가결`) 대부분의 필드가
+정규식으로 잡힙니다.
+
+```bash
+pip install -r scripts/requirements.txt
+
+python3 scripts/make_sample_minutes.py -o samples/minutes          # 합성 표본 + 정답
+python3 scripts/parse_minutes.py samples/minutes -o out/minutes --print
+python3 scripts/eval_minutes.py samples/minutes out/minutes --detail
+```
+
+| 필드 | 규칙 전용 정확도 (합성 표본 4건) |
+| --- | ---: |
+| 일시 · 장소 · 총·출석 이사 수 · 총·출석 감사위원 수 | 100% |
+| 의안제목 · 가결 여부 | 90% |
+| 의안 경계 · 폐회시각 | 75% |
+| **전체** | **93%** |
+
+**틀린 4건이 전부 스캔 페이지 하나에서 나왔습니다.** 텍스트 레이어가 있는 표본 3건은 모든
+필드 100% 입니다. 그림에는 글자가 없으므로 그 페이지는 OCR 없이 읽을 수 없고, 규칙은 조용히
+넘어가는 대신 `SCAN_PAGE` 로 표시하고 멈춥니다.
+
+| 스크립트 | 하는 일 |
+| --- | --- |
+| `scripts/minutes_text.py` | PDF → 본문 문자열 + `오프셋 ↔ 낱말 좌표` 좌표계, 페이지별 텍스트/스캔 판정 |
+| `scripts/minutes_rules.py` | 규칙 추출 — 일시·장소·인원수·의안·가결 여부·금액·기준서 후보 |
+| `scripts/parse_minutes.py` | 오케스트레이션 + 교차검증(정족수·번호 연속성·찬반 합계) + JSON |
+| `scripts/eval_minutes.py` | 정답 대비 필드별 정확도 채점 |
+| `scripts/make_sample_minutes.py` | 서식 변형을 담은 합성 표본 생성 (실제 의사록은 저장소에 둘 수 없음) |
+
+값은 모두 **원문 어디에서 왔는지**(쪽·문자 구간·좌표)를 달고 나옵니다. 글자는 규칙이 다시
+쓰지 않고 원문에서 잘라냅니다 — 법적 문서의 원문이 바뀌면 증빙으로 쓸 수 없기 때문입니다.
+
+설계와 측정 결과는 [`docs/minutes-plan.md`](docs/minutes-plan.md) 에 있습니다.
+
+---
+
 함께 볼 문서: [`docs/naming.md`](docs/naming.md) (기능 작명) ·
-[`docs/roadmap.md`](docs/roadmap.md) (확장 구상).
+[`docs/roadmap.md`](docs/roadmap.md) (확장 구상) ·
+[`docs/minutes-plan.md`](docs/minutes-plan.md) (의사록 읽기 설계).

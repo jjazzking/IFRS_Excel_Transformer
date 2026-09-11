@@ -1,1 +1,2 @@
 olefile>=0.47
+pymupdf>=1.24        # 의사록 PDF 본문·낱말 좌표 추출 (scripts/minutes_text.py)
