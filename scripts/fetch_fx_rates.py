@@ -37,16 +37,23 @@ DEFAULT_CURRENCIES = [
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "src" / "data" / "fx"
 
-# 사이트의 기간 조회는 12개월까지가 한 번에 눌러 볼 수 있는 최대다.
-# 그보다 긴 기간은 잘라서 여러 번 묻는다.
-CHUNK_DAYS = 330
+# 한 번에 묻는 기간.
+#
+# 사이트의 화면에는 12개월 버튼이 있지만, 긴 기간을 물으면 표가 통째로 비어 오는
+# 일이 잦다. 통화마다 다르고 같은 통화도 그때그때 다르다 — 서버 사정으로 보인다.
+# 90일쯤으로 끊으면 거의 어긋나지 않는다. 요청 수는 늘지만 빠진 날이 없는 편이 낫다.
+CHUNK_DAYS = 90
 
-# 통화에 따라 긴 기간을 한 번에 주지 않는다 (USD 처럼 열이 많은 통화가 그렇다).
-# 표가 비어 오면 기간을 반으로 줄여 다시 묻는다. 이보다 짧아지면 포기한다.
-MIN_CHUNK_DAYS = 20
+# 빈 표가 와도 곧바로 포기하지 않는다. 잠깐 쉬었다 다시 묻는다.
+EMPTY_RETRIES = 3
+RETRY_DELAY_SEC = [3.0, 7.0, 15.0]
 
 # 남의 서버다. 요청 사이에 잠깐씩 쉰다.
 POLITE_DELAY_SEC = 1.2
+
+# 고시가 이만큼 끊기면 공휴일이 아니라 못 받은 것으로 본다.
+# 설·추석 연휴가 길어야 영업일 기준 5일 남짓이다.
+GAP_DAYS = 8
 
 
 def date_chunks(start: dt.date, end: dt.date):
@@ -95,27 +102,25 @@ def merge_rows(old: list[dict], new: list[dict]) -> list[dict]:
 
 def fetch_span(code: str, start: dt.date, end: dt.date, notes: list[str]):
     """
-    한 구간을 받는다. 표가 비어 오면 기간을 반으로 갈라 다시 묻는다.
+    한 구간을 받는다. 표가 비어 오면 쉬었다 다시 묻는다.
 
-    사이트가 왜 빈 표를 주는지는 통화마다 다르다 — 어떤 통화는 긴 기간을 한 번에
-    주지 않고, 어떤 통화는 그 기간에 고시가 아예 없다. 둘을 미리 가릴 수 없으므로
-    좁혀 가며 물어보고, 끝까지 비면 그 구간만 비워 둔 채 넘어간다.
+    빈 표는 두 가지를 뜻할 수 있다 — 그 기간에 고시가 없거나, 서버가 이번에
+    주지 않았거나. 미리 가릴 수 없으므로 몇 번 다시 물어보고, 그래도 비면
+    그 구간만 비워 둔 채 넘어가되 무엇이 비었는지 기록한다.
     """
-    try:
-        result = fetch_period(code, start.isoformat(), end.isoformat())
-        time.sleep(POLITE_DELAY_SEC)
-        return result.currency, result.rows
-    except NoTableError as exc:
-        time.sleep(POLITE_DELAY_SEC)
-        span = (end - start).days
-        if span <= MIN_CHUNK_DAYS:
-            notes.append(str(exc))
-            return None, []
+    last: NoTableError | None = None
+    for attempt in range(EMPTY_RETRIES + 1):
+        try:
+            result = fetch_period(code, start.isoformat(), end.isoformat())
+            time.sleep(POLITE_DELAY_SEC)
+            return result.currency, result.rows
+        except NoTableError as exc:
+            last = exc
+            if attempt < EMPTY_RETRIES:
+                time.sleep(RETRY_DELAY_SEC[attempt])
 
-        mid = start + dt.timedelta(days=span // 2)
-        cur_a, rows_a = fetch_span(code, start, mid, notes)
-        cur_b, rows_b = fetch_span(code, mid + dt.timedelta(days=1), end, notes)
-        return cur_a or cur_b, merge_rows(rows_a, rows_b)
+    notes.append(f"{start}~{end} 비어 있음 ({EMPTY_RETRIES + 1}번 물었다): {last.excerpt if last else ''}")
+    return None, []
 
 
 def fetch_currency(code: str, start: dt.date, end: dt.date) -> tuple[Currency | None, list[dict], list[str]]:
@@ -129,12 +134,23 @@ def fetch_currency(code: str, start: dt.date, end: dt.date) -> tuple[Currency | 
     return currency, rows, notes
 
 
+def find_gaps(rows: list[dict]) -> list[str]:
+    """고시가 길게 끊긴 자리. 공휴일이 아니라 못 받은 것일 수 있어 눈에 보여야 한다."""
+    gaps = []
+    for a, b in zip(rows, rows[1:]):
+        days = (dt.date.fromisoformat(b["date"]) - dt.date.fromisoformat(a["date"])).days
+        if days >= GAP_DAYS:
+            gaps.append(f"{a['date']}~{b['date']}({days}일)")
+    return gaps
+
+
 def main() -> int:
     today = dt.date.today()
     ap = argparse.ArgumentParser(description="서울외국환중개 고시 환율 내려받기")
     ap.add_argument("--currencies", help="쉼표로 구분한 통화 코드 (예: USD,JPY,EUR)")
     ap.add_argument("--all-currencies", action="store_true", help="고시되는 통화 전부")
     ap.add_argument("--years", type=int, default=3, help="최근 몇 년치 (기본 3)")
+    ap.add_argument("--days", type=int, help="최근 며칠치. --years 보다 우선한다")
     ap.add_argument("--from", dest="date_from", help="시작일 YYYY-MM-DD")
     ap.add_argument("--to", dest="date_to", help="종료일 YYYY-MM-DD")
     ap.add_argument("--out", default=str(OUT_DIR), help="저장 폴더")
@@ -143,6 +159,8 @@ def main() -> int:
     end = dt.date.fromisoformat(args.date_to) if args.date_to else today
     if args.date_from:
         start = dt.date.fromisoformat(args.date_from)
+    elif args.days:
+        start = end - dt.timedelta(days=args.days)
     else:
         start = end.replace(year=end.year - args.years)
 
@@ -160,6 +178,7 @@ def main() -> int:
     print(f"기간 {start} ~ {end} · 통화 {len(codes)}개")
     index: list[dict] = []
     failed: list[tuple[str, str]] = []
+    incomplete: list[tuple[str, list[str]]] = []
 
     for code in codes:
         path = out_dir / f"{code}.json"
@@ -196,7 +215,14 @@ def main() -> int:
         }
         path.write_text(dump_doc(doc), encoding="utf-8")
         added = len(merged) - len(existing.get("rows", []))
-        print(f"  {code:4s} {meta.name:14s} {len(merged):5d}일 ({merged[0]['date']}~{merged[-1]['date']}) 새로 {added}일")
+        gaps = find_gaps(merged)
+        gap_note = f"  ⚠ 끊긴 자리 {len(gaps)}곳: {' '.join(gaps[:3])}" if gaps else ""
+        print(
+            f"  {code:4s} {meta.name:14s} {len(merged):5d}일 "
+            f"({merged[0]['date']}~{merged[-1]['date']}) 새로 {added}일{gap_note}"
+        )
+        if gaps:
+            incomplete.append((code, gaps))
         index.append({k: doc[k] for k in ("code", "name", "unit", "from", "to", "count")})
 
     (out_dir / "index.json").write_text(
@@ -215,9 +241,13 @@ def main() -> int:
 
     print(f"\n통화 {len(index)}개 저장 → {out_dir}")
     if failed:
-        print("실패:")
+        print("받지 못한 통화:")
         for code, why in failed:
             print(f"  {code}: {why}")
+    if incomplete:
+        print("\n중간이 끊긴 통화 — 같은 기간으로 한 번 더 돌리면 채워진다:")
+        for code, gaps in incomplete:
+            print(f"  {code}: {len(gaps)}곳  {' '.join(gaps[:5])}")
     return 1 if not index else 0
 
 

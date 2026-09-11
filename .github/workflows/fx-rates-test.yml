@@ -36,5 +36,5 @@ jobs:
             echo "바뀐 환율 없음."
             exit 0
           fi
-          git commit -m "chore(fx): 환율 자료 첫 수집 ($(date -u +%Y-%m-%d))"
+          git commit -m "chore(fx): 환율 자료 수집 ($(date -u +%Y-%m-%d))"
           git push origin HEAD:${{ github.ref_name }}
