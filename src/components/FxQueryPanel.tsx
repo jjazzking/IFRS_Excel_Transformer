@@ -1,6 +1,7 @@
 import React from 'react';
 import { CalendarRange, Coins } from 'lucide-react';
 import { FxCurrencyMeta } from '../types';
+import { monthsBefore } from '../utils/dateRange';
 
 interface FxQueryPanelProps {
   currencies: FxCurrencyMeta[];
@@ -20,13 +21,6 @@ const PRESETS: { label: string; months: number }[] = [
   { label: '6개월', months: 6 },
   { label: '1년', months: 12 },
 ];
-
-function shiftMonths(iso: string, months: number): string {
-  const d = new Date(`${iso}T00:00:00`);
-  d.setMonth(d.getMonth() - months);
-  // 말일에서 뒤로 갈 때 달을 넘겨 버리는 경우(3월 31일 → 3월 3일)를 막는다.
-  return d.toISOString().slice(0, 10);
-}
 
 export const FxQueryPanel: React.FC<FxQueryPanelProps> = ({
   currencies,
@@ -90,7 +84,7 @@ export const FxQueryPanel: React.FC<FxQueryPanelProps> = ({
         {PRESETS.map(p => (
           <button
             key={p.label}
-            onClick={() => onChangeRange(shiftMonths(to, p.months), to)}
+            onClick={() => onChangeRange(monthsBefore(to, p.months), to)}
             className="px-2 py-1.5 bg-white text-slate-600 hover:bg-slate-100 transition cursor-pointer whitespace-nowrap border-r border-slate-200 last:border-r-0"
             title={`종료일에서 ${p.label} 거슬러 올라간다`}
           >

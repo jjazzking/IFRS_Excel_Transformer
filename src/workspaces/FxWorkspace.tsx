@@ -8,16 +8,21 @@ import { useResizableLayout } from '../hooks/useResizableLayout';
 import { FxCurrencyData, FxRateRow, TableTheme } from '../types';
 import { FX_INDEX, FX_READY, FX_SOURCE, FX_UPDATED_AT, loadCurrency } from '../data/fxData';
 import { buildFxTable, currencyLabel, decimalsOf } from '../utils/fxSheet';
+import { isIsoDate, monthsBefore, todayIso } from '../utils/dateRange';
 
 interface FxWorkspaceProps {
   onBackHome: () => void;
 }
 
-/** 기본 기간은 최근 한 달. 기말 조서를 만들 때는 프리셋이나 달력으로 옮긴다. */
+/**
+ * 기본 기간은 최근 한 달. 기말 조서를 만들 때는 프리셋이나 달력으로 옮긴다.
+ *
+ * 자료를 아직 한 번도 받지 않았으면 기준일이 없다. 그때도 화면은 떠야 하므로
+ * 오늘로 대신한다 — 어차피 `FX_READY` 가 안내 화면을 대신 보여 준다.
+ */
 function defaultRange(to: string): { from: string; to: string } {
-  const d = new Date(`${to}T00:00:00`);
-  d.setMonth(d.getMonth() - 1);
-  return { from: d.toISOString().slice(0, 10), to };
+  const end = isIsoDate(to) ? to : todayIso();
+  return { from: monthsBefore(end, 1), to: end };
 }
 
 export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
