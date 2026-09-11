@@ -17,6 +17,18 @@ export interface TablePreviewClasses {
   contentCell: string;
 }
 
+/**
+ * 인라인 style 값을 HTML 속성에 안전하게 넣는다.
+ *
+ * 서식 문자열에는 `font-family: "맑은 고딕"` 이나 `mso-number-format:"\@"` 처럼
+ * 큰따옴표가 들어 있다. 이를 `style="..."` 에 그대로 쓰면 속성이 첫 따옴표에서
+ * 끊겨 폰트·글자크기·열너비가 통째로 사라진다 — 엑셀에 붙여도 서식이 안 붙는다.
+ * 속성 안에서는 `&quot;` 로 적어야 파서가 원래 따옴표로 돌려준다.
+ */
+export function styleAttr(css: string): string {
+  return css.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
 export interface TableThemeStyles {
   tableStyle: string;
   /** 표 맨 위 제목 행 (열 전체를 가로지른다) */

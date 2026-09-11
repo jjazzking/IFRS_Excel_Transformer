@@ -26,14 +26,21 @@ export function decimalsOf(values: number[], fallback = 2): number {
   return Math.max(fallback, Math.min(max, 6));
 }
 
-export function averageRate(rows: FxRateRow[]): number | null {
+/**
+ * 기간 평균환율 — 고시된 날의 단순평균.
+ *
+ * 자릿수를 맞춰 둔다. 맞추지 않으면 화면에는 866.60 이 보이는데 붙여넣기에는
+ * 866.5988888888888 이 들어가, 조서와 화면이 어긋난다.
+ */
+export function averageRate(rows: FxRateRow[], digits = 2): number | null {
   if (rows.length === 0) return null;
-  return rows.reduce((sum, r) => sum + r.rate, 0) / rows.length;
+  const mean = rows.reduce((sum, r) => sum + r.rate, 0) / rows.length;
+  return Number(mean.toFixed(digits));
 }
 
-/** 통화 한 줄 이름. 100단위 고시는 반드시 드러나야 한다. */
-export function currencyLabel(data: Pick<FxCurrencyData, 'code' | 'name' | 'unit'>): string {
-  return `${data.name} (${data.code})` + (data.unit !== 1 ? ` ${data.unit}단위` : '');
+/** 통화 한 줄 이름 — 파일명과 표 제목에 함께 쓴다. */
+export function currencyLabel(data: Pick<FxCurrencyData, 'code' | 'name'>): string {
+  return `${data.name} (${data.code})`;
 }
 
 export function buildFxTable(
@@ -67,7 +74,7 @@ export function buildFxTable(
   }));
 
   if (options.includeSummary && rows.length > 0) {
-    const avg = averageRate(rows);
+    const avg = averageRate(rows, rateDigits);
     const last = rows[rows.length - 1];
     const blank = columns.slice(2).map(() => null);
     sheetRows.push(
@@ -76,7 +83,8 @@ export function buildFxTable(
     );
   }
 
-  const unitNote = data.unit !== 1 ? ` · ${data.unit}단위 고시` : '';
+  // 100단위 고시는 제목에 한 번만 적는다. 빠지면 100배 틀리고, 두 번 적으면 읽기 나쁘다.
+  const unitNote = data.unit !== 1 ? ` (${data.unit}단위 고시)` : '';
   return {
     title: `${currencyLabel(data)} 매매기준율${unitNote}`,
     columns,

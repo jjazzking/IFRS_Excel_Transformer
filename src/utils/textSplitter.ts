@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { getThemeStyles } from './tableTheme';
+import { getThemeStyles, styleAttr } from './tableTheme';
 import { 
   AccountingStandard, 
   StandardParagraph, 
@@ -339,15 +339,15 @@ export function generateClipboardData(cells: FormattedCell[], config: ExportConf
 
   cells.forEach(cell => {
     if (cell.isStandardTitle) {
-      tableRows += `<tr><td colspan="2" style="${theme.titleTd}">${escapeHtml(cell.colA)}</td></tr>`;
+      tableRows += `<tr><td colspan="2" style="${styleAttr(theme.titleTd)}">${escapeHtml(cell.colA)}</td></tr>`;
     } else if (cell.isSectionTitle) {
-      tableRows += `<tr><td colspan="2" style="${theme.sectionTd}">${escapeHtml(cell.colA)}</td></tr>`;
+      tableRows += `<tr><td colspan="2" style="${styleAttr(theme.sectionTd)}">${escapeHtml(cell.colA)}</td></tr>`;
     } else if (!cell.colA && !cell.colB) {
-      tableRows += `<tr><td style="${theme.emptyRowTd}">&nbsp;</td><td style="${theme.emptyRowTd}">&nbsp;</td></tr>`;
+      tableRows += `<tr><td style="${styleAttr(theme.emptyRowTd)}">&nbsp;</td><td style="${styleAttr(theme.emptyRowTd)}">&nbsp;</td></tr>`;
     } else {
       const colAVal = cell.colA ? escapeHtml(cell.colA) : '&nbsp;';
       const colBVal = cell.colB ? escapeHtml(cell.colB) : '&nbsp;';
-      tableRows += `<tr><td style="${theme.colATd}">${colAVal}</td><td style="${theme.colBTd}">${colBVal}</td></tr>`;
+      tableRows += `<tr><td style="${styleAttr(theme.colATd)}">${colAVal}</td><td style="${styleAttr(theme.colBTd)}">${colBVal}</td></tr>`;
     }
   });
 
@@ -376,7 +376,7 @@ export function generateClipboardData(cells: FormattedCell[], config: ExportConf
 </head>
 <body>
 <!--StartFragment-->
-<table border="1" cellpadding="0" cellspacing="0" style="${theme.tableStyle}">
+<table border="1" cellpadding="0" cellspacing="0" style="${styleAttr(theme.tableStyle)}">
 <colgroup>
   <col width="75" style="width: 55pt; mso-width-source: userset; mso-width-alt: 2400;">
   <col width="650" style="width: 480pt; mso-width-source: userset; mso-width-alt: 18000;">

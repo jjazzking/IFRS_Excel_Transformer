@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { ClipboardExportResult, SheetTable, TableTheme } from '../types';
-import { getThemeStyles, numericTd, totalTd } from './tableTheme';
+import { getThemeStyles, numericTd, styleAttr, totalTd } from './tableTheme';
 
 /**
  * 여러 열짜리 표를 엑셀 조서에 붙일 수 있는 형태로 바꾼다.
@@ -59,11 +59,11 @@ export function generateSheetClipboard(
   // --- HTML: 엑셀이 테두리와 음영까지 읽는 형식 -------------------------
   let body = '';
   if (table.title) {
-    body += `<tr><td colspan="${colCount}" style="${styles.titleTd}">${escapeHtml(table.title)}</td></tr>`;
+    body += `<tr><td colspan="${colCount}" style="${styleAttr(styles.titleTd)}">${escapeHtml(table.title)}</td></tr>`;
   }
   body += '<tr>';
   table.columns.forEach(c => {
-    body += `<td style="${styles.sectionTd} text-align: center;">${escapeHtml(c.label)}</td>`;
+    body += `<td style="${styleAttr(`${styles.sectionTd} text-align: center;`)}">${escapeHtml(c.label)}</td>`;
   });
   body += '</tr>';
 
@@ -73,13 +73,13 @@ export function generateSheetClipboard(
       const col = table.columns[i];
       const isNum = typeof value === 'number';
       const style = row.emphasis === 'total' ? totalStyle : isNum ? numStyle : styles.colATd;
-      body += `<td style="${style}">${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
+      body += `<td style="${styleAttr(style)}">${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
     });
     body += '</tr>';
   });
 
   if (table.footnote) {
-    body += `<tr><td colspan="${colCount}" style="${styles.emptyRowTd} text-align: left; padding: 3px 6px; font-size: 8pt; color: #595959;">${escapeHtml(table.footnote)}</td></tr>`;
+    body += `<tr><td colspan="${colCount}" style="${styleAttr(`${styles.emptyRowTd} text-align: left; padding: 3px 6px; font-size: 8pt; color: #595959;`)}">${escapeHtml(table.footnote)}</td></tr>`;
   }
 
   const colgroup = table.columns
@@ -93,7 +93,7 @@ export function generateSheetClipboard(
 </head>
 <body>
 <!--StartFragment-->
-<table border="1" cellpadding="0" cellspacing="0" style="${styles.tableStyle}">
+<table border="1" cellpadding="0" cellspacing="0" style="${styleAttr(styles.tableStyle)}">
 <colgroup>${colgroup}</colgroup>
 <tbody>
 ${body}
