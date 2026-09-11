@@ -74,13 +74,20 @@ export function buildFxTable(
   }));
 
   if (options.includeSummary && rows.length > 0) {
-    const avg = averageRate(rows, rateDigits);
     const last = rows[rows.length - 1];
     const blank = columns.slice(2).map(() => null);
-    sheetRows.push(
-      { cells: ['기간 평균환율', avg, ...blank], emphasis: 'total' },
-      { cells: [`기말환율 (${last.date})`, last.rate, ...blank], emphasis: 'total' }
-    );
+    // 하루만 담았으면 평균과 기말이 같은 값이다. 같은 숫자를 두 줄 적지 않는다.
+    if (rows.length > 1) {
+      sheetRows.push({
+        cells: [`기간 평균환율 (${rows[0].date}~${last.date}, ${rows.length}일)`,
+                averageRate(rows, rateDigits), ...blank],
+        emphasis: 'total',
+      });
+    }
+    sheetRows.push({
+      cells: [`기말환율 (${last.date})`, last.rate, ...blank],
+      emphasis: 'total',
+    });
   }
 
   // 100단위 고시는 제목에 한 번만 적는다. 빠지면 100배 틀리고, 두 번 적으면 읽기 나쁘다.
