@@ -61,12 +61,11 @@ export const WORKSPACES: WorkspaceMeta[] = [
     name: '환율 찾기',
     tagline: '기말환율·평균환율을 통화와 기간으로 찾는다',
     description:
-      '외화환산 조서에 쓰는 매매기준율을 통화·기간으로 뽑고, 기간 평균환율까지 계산해 붙여넣는다.',
+      '서울외국환중개 고시 매매기준율을 통화·기간으로 뽑고, 기간 평균환율과 기말환율까지 계산해 붙여넣는다.',
     leftPane: '통화·기간으로 환율 조회',
-    rightPane: '일자별 환율 + 평균 + 엑셀 미리보기',
+    rightPane: '담은 날짜 + 평균·기말 + 엑셀 미리보기',
     icon: Landmark,
-    status: 'preparing',
-    blockedBy: '환율 데이터 출처 확정 (서울외국환중개 · 한국수출입은행)',
+    status: 'ready',
     accent: 'amber',
   },
   {
