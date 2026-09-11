@@ -1,7 +1,9 @@
 import React from 'react';
-import { BookOpen, FileSpreadsheet, Code2, PencilLine, Upload, RotateCcw } from 'lucide-react';
+import { ArrowLeft, BookOpen, Code2, PencilLine, Upload, RotateCcw } from 'lucide-react';
 
 interface NavbarProps {
+  /** 첫 화면(작업대 고르기)으로 돌아간다 */
+  onBackHome: () => void;
   onOpenImport: () => void;
   onOpenVbaGuide: () => void;
   onResetAll: () => void;
@@ -13,6 +15,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  onBackHome,
   onOpenImport,
   onOpenVbaGuide,
   onResetAll,
@@ -24,19 +27,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-inner">
-            <FileSpreadsheet className="w-5 h-5 text-white" />
-          </div>
-          <div>
+        <div className="flex items-center space-x-3 min-w-0">
+          <button
+            id="btn-back-home"
+            onClick={onBackHome}
+            className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center transition cursor-pointer shrink-0"
+            title="작업대 고르기로 돌아가기"
+            aria-label="작업대 고르기로 돌아가기"
+          >
+            <ArrowLeft className="w-4.5 h-4.5 text-slate-300" />
+          </button>
+          <div className="min-w-0">
             <div className="flex items-center space-x-2">
-              <h1 className="font-bold text-lg text-slate-100 tracking-tight">회계기준서 조서 추출기</h1>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700/60 font-medium">
-                Workpaper Assistant
-              </span>
+              <button
+                onClick={onBackHome}
+                className="text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
+              >
+                기준서 데스크
+              </button>
+              <span className="text-slate-600 text-xs">/</span>
+              <h1 className="font-bold text-lg text-slate-100 tracking-tight truncate">기준서 찾기</h1>
             </div>
-            <p className="text-xs text-slate-400">
-              사내 DB 검색 · 스마트 문장 분할 · 엑셀 상대위치 자동 서식 복사
+            <p className="text-xs text-slate-400 truncate">
+              통합검색 · 담기 · 엑셀 상대위치 자동 서식 복사
             </p>
           </div>
         </div>
