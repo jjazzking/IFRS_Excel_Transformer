@@ -99,3 +99,218 @@ export function buildFxTable(
     footnote: `출처: ${data.source} · 자료 기준 ${data.fetchedAt.slice(0, 10)}`,
   };
 }
+
+// ---------------------------------------------------------------------------
+// 결산기 요약 — 감사에서 환율이 필요한 자리는 정해져 있다.
+//   마감환율(재무상태표 환산) · 평균환율(손익 환산) · 그리고 비교표시를 위한 전기.
+// 날짜를 손으로 넣는 대신 결산기를 고르면 이 네 값이 한 번에 선다.
+// ---------------------------------------------------------------------------
+
+export type RateLookupStatus =
+  /** 결산일에 고시가 있었다 */
+  | 'exact'
+  /** 결산일이 휴장이라 직전 고시를 쓴다 */
+  | 'previous'
+  /** 결산일이 자료 시작보다 앞선다 */
+  | 'beforeData'
+  /** 결산일이 아직 오지 않았거나 자료가 거기까지 들어오지 않았다 */
+  | 'afterData';
+
+export interface RateLookup {
+  status: RateLookupStatus;
+  /** 실제로 고시된 날. 결산일이 휴장이면 그 이전의 마지막 고시일이다 */
+  date?: string;
+  rate?: number;
+}
+
+/**
+ * 결산일의 마감환율.
+ *
+ * 결산일이 주말이나 휴장일이면 고시가 없다. 그때는 직전 고시를 쓰되, **어느 날
+ * 고시를 썼는지 함께 돌려준다.** 조서에서 12월 31일이라고만 적고 실제로는 29일
+ * 고시를 쓴 것이 드러나지 않으면 리뷰에서 되돌아온다.
+ *
+ * 결산일이 자료의 마지막 날보다 뒤면 값을 주지 않는다. 그 경우는 휴장이 아니라
+ * **결산일이 아직 오지 않은 것**이고, 직전 고시를 마감환율이라고 내주면 오늘 환율이
+ * 기말환율로 조서에 오른다. 빈 칸이 틀린 숫자보다 낫다.
+ */
+export function rateOn(rows: FxRateRow[], date: string): RateLookup {
+  if (rows.length === 0) return { status: 'beforeData' };
+  if (date < rows[0].date) return { status: 'beforeData' };
+  if (date > rows[rows.length - 1].date) return { status: 'afterData' };
+
+  let found = rows[0];
+  for (const r of rows) {
+    if (r.date > date) break; // rows 는 날짜순이다
+    found = r;
+  }
+  return {
+    status: found.date === date ? 'exact' : 'previous',
+    date: found.date,
+    rate: found.rate,
+  };
+}
+
+export interface AverageResult {
+  value: number;
+  /** 평균을 낸 고시 일수 */
+  count: number;
+  /** 실제로 자료가 있었던 구간 */
+  from: string;
+  to: string;
+  /** 요구한 기간의 앞쪽이 자료에 없어 평균이 그만큼 짧은 경우 */
+  short: boolean;
+  /** 기간이 아직 끝나지 않아 평균이 진행 중인 경우 */
+  inProgress: boolean;
+}
+
+/**
+ * 기간 평균환율 — 그 기간에 고시된 날의 단순평균.
+ *
+ * 자료가 요구한 시작일보다 늦게 시작하면 평균이 짧은 기간으로 계산된다.
+ * 조용히 넘기면 조서에 틀린 평균이 오르므로 `short` 로 알린다.
+ */
+export function averageOver(
+  rows: FxRateRow[],
+  from: string,
+  to: string,
+  digits = 2
+): AverageResult | null {
+  const inRange = rows.filter(r => r.date >= from && r.date <= to);
+  if (inRange.length === 0) return null;
+  const mean = inRange.reduce((sum, r) => sum + r.rate, 0) / inRange.length;
+  return {
+    value: Number(mean.toFixed(digits)),
+    count: inRange.length,
+    from: inRange[0].date,
+    to: inRange[inRange.length - 1].date,
+    short: rows[0].date > from,
+    inProgress: rows[rows.length - 1].date < to,
+  };
+}
+
+export interface FxPeriodOptions {
+  /** 당분기만의 평균환율도 넣을지 (누적 평균과 별개) */
+  includeQuarterAverage: boolean;
+  /** 전기 비교 행을 넣을지 */
+  includePriorYear: boolean;
+}
+
+/** 평균이 실제로 어느 구간으로 계산됐는지. 요구한 기간과 다르면 그 자리에 적는다. */
+function averageBasis(from: string, to: string, avg: AverageResult | null): string {
+  if (!avg) return `${from}~${to} (자료 없음)`;
+  if (avg.inProgress) return `${from}~${avg.to} (${to} 까지 중, 진행)`;
+  if (avg.short) return `${avg.from}~${to} (자료 ${avg.from} 부터)`;
+  return `${from}~${to}`;
+}
+
+function averageWarn(
+  label: string,
+  from: string,
+  to: string,
+  avg: AverageResult | null
+): string | undefined {
+  if (!avg) return `${label}: ${from}~${to} 에 고시가 없다`;
+  if (avg.inProgress) return `${label}은 ${to} 까지가 아니라 ${avg.to} 까지의 평균이다`;
+  if (avg.short) return `${label}은 ${from} 이 아니라 ${avg.from} 부터 계산됐다`;
+  return undefined;
+}
+
+interface PeriodSpec {
+  label: string;
+  end: string;
+  cumulativeStart: string;
+  quarterStart: string;
+}
+
+function periodBlock(
+  rows: FxRateRow[],
+  spec: PeriodSpec,
+  prefix: string,
+  digits: number,
+  options: FxPeriodOptions
+): { cells: (string | number | null)[]; emphasis?: 'total'; warn?: string }[] {
+  const out: { cells: (string | number | null)[]; emphasis?: 'total'; warn?: string }[] = [];
+  const emphasis = prefix === '당기' ? ('total' as const) : undefined;
+
+  const closing = rateOn(rows, spec.end);
+  const closingBasis: Record<RateLookupStatus, string> = {
+    exact: spec.end,
+    previous: `${closing.date} (${spec.end} 고시 없음)`,
+    beforeData: `${spec.end} (자료 없음)`,
+    afterData: `${spec.end} (결산일 미도래)`,
+  };
+  out.push({
+    cells: [`${prefix} 마감환율`, closingBasis[closing.status], closing.rate ?? null, null],
+    emphasis,
+    warn:
+      closing.status === 'afterData'
+        ? `${prefix} 마감환율: ${spec.end} 이 아직 오지 않아 비워 뒀다`
+        : closing.status === 'beforeData'
+          ? `${prefix} 마감환율: ${spec.end} 이전 고시가 자료에 없다`
+          : undefined,
+  });
+
+  const cumulative = averageOver(rows, spec.cumulativeStart, spec.end, digits);
+  out.push({
+    cells: [
+      `${prefix} 평균환율 (누적)`,
+      averageBasis(spec.cumulativeStart, spec.end, cumulative),
+      cumulative ? cumulative.value : null,
+      cumulative ? cumulative.count : null,
+    ],
+    emphasis,
+    warn: averageWarn(`${prefix} 평균환율(누적)`, spec.cumulativeStart, spec.end, cumulative),
+  });
+
+  // 누적과 같은 구간이면 같은 숫자를 두 줄 적지 않는다 (1분기말이 그렇다).
+  if (options.includeQuarterAverage && spec.quarterStart !== spec.cumulativeStart) {
+    const quarter = averageOver(rows, spec.quarterStart, spec.end, digits);
+    out.push({
+      cells: [
+        `${prefix} 평균환율 (당분기)`,
+        averageBasis(spec.quarterStart, spec.end, quarter),
+        quarter ? quarter.value : null,
+        quarter ? quarter.count : null,
+      ],
+      emphasis,
+      warn: averageWarn(`${prefix} 평균환율(당분기)`, spec.quarterStart, spec.end, quarter),
+    });
+  }
+
+  return out;
+}
+
+export function buildFxPeriodTable(
+  data: FxCurrencyData,
+  current: PeriodSpec,
+  prior: PeriodSpec | null,
+  options: FxPeriodOptions
+): SheetTable {
+  const digits = decimalsOf(data.rows.map(r => r.rate));
+  const columns: SheetColumn[] = [
+    { key: 'label', label: '구분', width: 22 },
+    { key: 'basis', label: '적용 기준일 / 기간', width: 30 },
+    { key: 'rate', label: '환율', numeric: true, digits, width: 13 },
+    { key: 'days', label: '고시일수', numeric: true, digits: 0, width: 10 },
+  ];
+
+  const blocks = [
+    ...periodBlock(data.rows, current, '당기', digits, options),
+    ...(options.includePriorYear && prior
+      ? periodBlock(data.rows, prior, '전기', digits, options)
+      : []),
+  ];
+
+  const warnings = blocks.map(b => b.warn).filter(Boolean) as string[];
+  const unitNote = data.unit !== 1 ? ` (${data.unit}단위 고시)` : '';
+
+  return {
+    title: `${currencyLabel(data)} ${current.label} 환율${unitNote}`,
+    columns,
+    rows: blocks.map(({ cells, emphasis }) => ({ cells, emphasis })),
+    footnote:
+      `출처: ${data.source} · 자료 기준 ${data.fetchedAt.slice(0, 10)}` +
+      (warnings.length ? ` · ⚠ ${warnings.join(' / ')}` : ''),
+  };
+}

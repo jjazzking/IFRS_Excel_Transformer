@@ -7,12 +7,30 @@ import { CollapsedRail, Splitter } from '../components/LayoutControls';
 import { useResizableLayout } from '../hooks/useResizableLayout';
 import { FxCurrencyData, FxRateRow, TableTheme } from '../types';
 import { FX_INDEX, FX_READY, FX_SOURCE, FX_UPDATED_AT, loadCurrency } from '../data/fxData';
-import { buildFxTable, currencyLabel, decimalsOf } from '../utils/fxSheet';
+import {
+  buildFxPeriodTable,
+  buildFxTable,
+  currencyLabel,
+  decimalsOf,
+  rateOn,
+} from '../utils/fxSheet';
 import { isIsoDate, monthsBefore, todayIso } from '../utils/dateRange';
+import {
+  FISCAL_PERIODS,
+  FiscalPeriodKey,
+  defaultYear,
+  fiscalPeriod,
+  hasArrived,
+  priorPeriod,
+  selectableYears,
+} from '../utils/fiscalPeriod';
 
 interface FxWorkspaceProps {
   onBackHome: () => void;
 }
+
+/** 결산기 모드에서는 날짜를 담지 않는다. 매번 새 Set 을 만들지 않도록 하나를 돌려 쓴다. */
+const EMPTY_PICKS: ReadonlySet<string> = new Set<string>();
 
 /**
  * 기본 기간은 최근 한 달. 기말 조서를 만들 때는 프리셋이나 달력으로 옮긴다.
@@ -40,7 +58,69 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
   const [includeOhlc, setIncludeOhlc] = useState(false);
   const [theme, setTheme] = useState<TableTheme>('audit_gray');
 
+  // 조서에 담는 방식이 둘이다.
+  //   'period' — 결산기를 눌러 마감환율·평균환율을 전기 비교까지 한 번에
+  //   'daily'  — 날짜를 하나씩 골라 일자별로
+  // 결산기 쪽이 실무에서 훨씬 자주 쓰이므로 기본값이다.
+  const [mode, setMode] = useState<'period' | 'daily'>('period');
+  const [closingMonth, setClosingMonth] = useState(12);
+  const [periodKey, setPeriodKey] = useState<FiscalPeriodKey>('fy');
+  const [includeQuarterAverage, setIncludeQuarterAverage] = useState(true);
+  const [includePriorYear, setIncludePriorYear] = useState(true);
+
   const meta = useMemo(() => FX_INDEX.find(c => c.code === code), [code]);
+
+  const years = useMemo(
+    () =>
+      meta ? selectableYears(meta.from, meta.to, closingMonth) : [],
+    [meta, closingMonth]
+  );
+  // 처음에는 결산이 끝난 가장 최근 해를 보여 준다. 진행 중인 해를 먼저 띄우면
+  // 마감환율 자리가 빈 표가 보이는데, 조서를 만들러 온 사람이 찾는 것은 직전 결산기다.
+  const [year, setYear] = useState(
+    () => (meta ? defaultYear(meta.from, meta.to, 12) : undefined) ?? new Date().getFullYear()
+  );
+
+  // 결산월이나 통화를 바꾸면 고를 수 있는 해가 달라진다. 지금 고른 해가
+  // 그 목록에서 사라졌으면 결산이 끝난 가장 최근 해로 옮긴다.
+  useEffect(() => {
+    if (!meta || years.length === 0 || years.includes(year)) return;
+    setYear(defaultYear(meta.from, meta.to, closingMonth) ?? years[0]);
+  }, [meta, years, year, closingMonth]);
+
+  /** 결산일이 아직 오지 않은 결산기. 눌러 볼 수는 있되 버튼에 미리 적어 둔다. */
+  const unarrived = useMemo(() => {
+    const out = new Set<FiscalPeriodKey>();
+    if (!meta) return out;
+    for (const p of FISCAL_PERIODS) {
+      if (!hasArrived(fiscalPeriod(year, closingMonth, p.key), meta.to)) out.add(p.key);
+    }
+    return out;
+  }, [meta, year, closingMonth]);
+
+  const period = useMemo(
+    () => fiscalPeriod(year, closingMonth, periodKey),
+    [year, closingMonth, periodKey]
+  );
+
+  /**
+   * 결산기를 누르면 그 기간이 곧바로 조서에 선다.
+   * 왼쪽 표는 누적 구간으로 맞춰 둔다 — 평균이 어느 날들로 계산됐는지 눈으로 볼 수 있어야 한다.
+   */
+  const pickPeriod = useCallback(
+    (key: FiscalPeriodKey) => {
+      const next = fiscalPeriod(year, closingMonth, key);
+      setPeriodKey(key);
+      setMode('period');
+      setRange({ from: next.cumulativeStart, to: next.end });
+    },
+    [year, closingMonth]
+  );
+
+  // 결산기를 고른 상태에서 연도·결산월을 바꾸면 보던 구간도 따라 움직인다.
+  useEffect(() => {
+    if (mode === 'period') setRange({ from: period.cumulativeStart, to: period.end });
+  }, [mode, period]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,11 +154,25 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
   );
 
   const digits = useMemo(() => decimalsOf(visibleRows.map(r => r.rate)), [visibleRows]);
+
+  // 결산일에 고시가 없으면 직전 고시를 쓴다. 그 행을 표에서 짚어 준다.
+  const closingRow = useMemo(
+    () => (data ? rateOn(data.rows, period.end) : null),
+    [data, period]
+  );
   const hasOhlc = useMemo(() => visibleRows.some(r => r.open !== undefined), [visibleRows]);
   const hasCross = useMemo(() => visibleRows.some(r => r.crossRate !== undefined), [visibleRows]);
 
   const table = useMemo(() => {
     if (!data) return { columns: [], rows: [] };
+    if (mode === 'period') {
+      return buildFxPeriodTable(
+        data,
+        period,
+        includePriorYear ? priorPeriod(period) : null,
+        { includeQuarterAverage, includePriorYear }
+      );
+    }
     return buildFxTable(data, pickedRows, {
       columns: [
         'rate',
@@ -88,9 +182,27 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
       ],
       includeSummary,
     });
-  }, [data, pickedRows, includeOhlc, hasOhlc, hasCross, includeSummary]);
+  }, [
+    data,
+    mode,
+    period,
+    includeQuarterAverage,
+    includePriorYear,
+    pickedRows,
+    includeOhlc,
+    hasOhlc,
+    hasCross,
+    includeSummary,
+  ]);
+
+  /** 날짜를 직접 만지거나 날짜를 담으면 일자별 모드로 돌아간다. */
+  const setRangeManually = useCallback((from: string, to: string) => {
+    setMode('daily');
+    setRange({ from, to });
+  }, []);
 
   const togglePick = useCallback((date: string) => {
+    setMode('daily');
     setPickedDates(prev => {
       const next = new Set(prev);
       if (next.has(date)) next.delete(date);
@@ -99,10 +211,10 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
     });
   }, []);
 
-  const pickAll = useCallback(
-    () => setPickedDates(new Set(visibleRows.map(r => r.date))),
-    [visibleRows]
-  );
+  const pickAll = useCallback(() => {
+    setMode('daily');
+    setPickedDates(new Set(visibleRows.map(r => r.date)));
+  }, [visibleRows]);
   const clearPicks = useCallback(() => setPickedDates(new Set()), []);
 
   if (!FX_READY) {
@@ -140,21 +252,39 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
             currencies={FX_INDEX}
             code={code}
             onChangeCode={setCode}
+            closingMonth={closingMonth}
+            onChangeClosingMonth={setClosingMonth}
+            year={year}
+            onChangeYear={setYear}
+            years={years}
+            activePeriod={mode === 'period' ? periodKey : null}
+            onPickPeriod={pickPeriod}
+            unarrived={unarrived}
             from={range.from}
             to={range.to}
-            onChangeRange={(from, to) => setRange({ from, to })}
+            onChangeRange={setRangeManually}
             bounds={meta && { from: meta.from, to: meta.to }}
           />
 
           <FxRateTable
             rows={visibleRows}
-            pickedDates={pickedDates}
+            pickedDates={mode === 'period' ? EMPTY_PICKS : pickedDates}
             onTogglePick={togglePick}
             onPickAll={pickAll}
             onClearPicks={clearPicks}
             digits={digits}
             hasOhlc={hasOhlc}
             loading={loading}
+            periodNote={
+              mode === 'period' && closingRow
+                ? {
+                    label: `${year}년 ${period.label}`,
+                    closingDate: period.end,
+                    appliedDate: closingRow.rate === undefined ? undefined : closingRow.date,
+                    pending: closingRow.status === 'afterData',
+                  }
+                : undefined
+            }
           />
         </section>
 
@@ -169,27 +299,54 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
             />
             <aside style={{ width: layout.right }} className="shrink-0 min-h-0 flex flex-col gap-2">
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-3 py-2 shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
-                  <input
-                    id="check-fx-summary"
-                    type="checkbox"
-                    checked={includeSummary}
-                    onChange={e => setIncludeSummary(e.target.checked)}
-                    className="accent-emerald-600 cursor-pointer"
-                  />
-                  기간 평균환율·기말환율 행 넣기
-                </label>
-                {hasOhlc && (
-                  <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
-                    <input
-                      id="check-fx-ohlc"
-                      type="checkbox"
-                      checked={includeOhlc}
-                      onChange={e => setIncludeOhlc(e.target.checked)}
-                      className="accent-emerald-600 cursor-pointer"
-                    />
-                    시가·고가·저가도
-                  </label>
+                {mode === 'period' ? (
+                  <>
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                      <input
+                        id="check-fx-prior-year"
+                        type="checkbox"
+                        checked={includePriorYear}
+                        onChange={e => setIncludePriorYear(e.target.checked)}
+                        className="accent-emerald-600 cursor-pointer"
+                      />
+                      전기 비교
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                      <input
+                        id="check-fx-quarter-avg"
+                        type="checkbox"
+                        checked={includeQuarterAverage}
+                        onChange={e => setIncludeQuarterAverage(e.target.checked)}
+                        className="accent-emerald-600 cursor-pointer"
+                      />
+                      당분기 평균환율도
+                    </label>
+                  </>
+                ) : (
+                  <>
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                      <input
+                        id="check-fx-summary"
+                        type="checkbox"
+                        checked={includeSummary}
+                        onChange={e => setIncludeSummary(e.target.checked)}
+                        className="accent-emerald-600 cursor-pointer"
+                      />
+                      기간 평균환율·기말환율 행 넣기
+                    </label>
+                    {hasOhlc && (
+                      <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                        <input
+                          id="check-fx-ohlc"
+                          type="checkbox"
+                          checked={includeOhlc}
+                          onChange={e => setIncludeOhlc(e.target.checked)}
+                          className="accent-emerald-600 cursor-pointer"
+                        />
+                        시가·고가·저가도
+                      </label>
+                    )}
+                  </>
                 )}
                 <button
                   onClick={() => toggleSide('right')}
@@ -203,11 +360,15 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
               <div className="flex-1 min-h-0">
                 <SheetPreview
                   table={table}
-                  name={data ? currencyLabel(data) : code}
+                  name={
+                    data
+                      ? `${currencyLabel(data)}${mode === 'period' ? ` ${year}년 ${period.label}` : ''}`
+                      : code
+                  }
                   theme={theme}
                   onChangeTheme={setTheme}
-                  onClearAll={clearPicks}
-                  emptyHint="왼쪽 표에서 조서에 넣을 날짜를 담으면 여기에 붙여넣을 모습 그대로 나타납니다. 기말환율만 쓸 때는 그 하루만, 평균환율이 필요하면 기간 전체를 담으세요."
+                  onClearAll={mode === 'daily' ? clearPicks : undefined}
+                  emptyHint="왼쪽에서 결산기를 누르면 마감환율과 평균환율이 전기 비교까지 한 번에 섭니다. 결산기에 없는 구간이 필요하면 직접 조회로 날짜를 골라 담으세요."
                 />
               </div>
             </aside>
