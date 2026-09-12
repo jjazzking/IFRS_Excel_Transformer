@@ -145,19 +145,34 @@ def body_of(golden_path: Path, source: str, ocr) -> str | None:
     return MinutesText(pdf, ocr=ocr).text
 
 
-def run_group(paths: list[Path], source: str, ocr, tally: dict, misses: dict) -> tuple[int, int]:
-    ok_n = total_n = 0
-    for jf in paths:
-        body = body_of(jf, source, ocr)
-        if body is None:
+def _measure(job: tuple[str, str, str | None]) -> tuple[str, dict] | None:
+    """한 건을 읽고 뽑는다. 엔진은 문서마다 새로 만든다 — 방향 판정 상태가 섞이면 안 된다."""
+    path, source, engine_name = job
+    jf = Path(path)
+    body = body_of(jf, source, engine_or_none(engine_name))
+    if body is None:
+        return None
+    return jf.stem, extract(body)
+
+
+def run_group(paths: list[Path], source: str, engine_name: str | None,
+              tally: dict, misses: dict) -> None:
+    """한 갈래를 순서대로 채점한다.
+
+    **병렬로 돌리지 않는다.** PDF 렌더러(MuPDF)는 스레드 안전하지 않고, 이미 띄운
+    상태에서 프로세스를 포크하면 멈춘다. 둘 다 겪었다. 한 건에 3초 남짓이라
+    200건이 10분이면 끝나므로 나눌 이유도 없다.
+    """
+    results = [_measure((str(p), source, engine_name)) for p in paths]
+
+    for jf, result in zip(paths, results):
+        if result is None:
             continue
+        stem, got = result
         want = golden_of(json.loads(jf.read_text(encoding="utf-8")))
-        got = extract(body)
-        for field, (ok, n) in score(got, want, misses, jf.stem).items():
+        for field, (ok, n) in score(got, want, misses, stem).items():
             tally[field][0] += ok
             tally[field][1] += n
-            ok_n, total_n = ok_n + ok, total_n + n
-    return ok_n, total_n
 
 
 def main() -> int:
@@ -170,7 +185,6 @@ def main() -> int:
     ap.add_argument("--ocr", metavar="엔진", default=None, help="스캔본을 읽을 OCR 엔진 (tesseract)")
     args = ap.parse_args()
 
-    ocr = engine_or_none(args.ocr)
     groups: dict[str, list[Path]] = {}
     own = sorted(args.gen_dir.glob("*.json"))
     if own:
@@ -192,7 +206,7 @@ def main() -> int:
 
     for name, paths in groups.items():
         before = {f: list(v) for f, v in tally.items()}
-        run_group(paths, args.source, ocr, tally, misses)
+        run_group(paths, args.source, args.ocr, tally, misses)
         ok = sum(tally[f][0] - before[f][0] for f in FIELDS)
         total = sum(tally[f][1] - before[f][1] for f in FIELDS)
         per_group.append((name, len(paths), ok, total))

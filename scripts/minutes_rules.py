@@ -47,6 +47,10 @@ def _label(*chars: str) -> str:
 ITEM_PREFIX = r"[ \t]*(?:\d{1,2}\s*[.)]|[가-힣]\s*[.)]|[-·*])?[ \t]*"
 
 
+# 라벨과 값을 가르는 글자. OCR 이 콜론을 `ㆍ`·`·` 같은 것으로 읽는 일이 잦다.
+COLON = r"[:：ㆍ·∶;]"
+
+
 def _loose(*chars: str) -> str:
     """낱말 안에 공백이 끼어도 잡는다. OCR 이 낱자를 벌려 놓는 경우가 여기 걸린다.
 
@@ -119,7 +123,7 @@ def _label_lines(text: str, labels: list[str]) -> list[tuple[int, int, str]]:
     """`라벨 : 값` 형태의 줄에서 값 부분의 구간을 찾는다."""
     out = []
     for label in labels:
-        pattern = re.compile(r"(?m)^" + ITEM_PREFIX + label + r"\s*[:：]?\s*(\S.*)$")
+        pattern = re.compile(r"(?m)^" + ITEM_PREFIX + label + r"\s*" + COLON + r"?\s*(\S.*)$")
         for m in pattern.finditer(text):
             out.append((m.start(1), m.end(1), m.group(1)))
     out.sort(key=lambda t: t[0])
@@ -169,10 +173,11 @@ def _parse_time(value: str, offset: int) -> Hit | None:
 _CLOCK = r"((?:오전|오후)?\s*\d{1,2}\s*(?:시|:)\s*\d{0,2}\s*분?)"
 # 시각과 그 말 사이에 `이사회의` 같은 몇 글자가 끼는 서식이 있어 좁은 창을 둔다.
 _GAP = r"[\s\S]{0,12}?"
-OPEN_PROSE_RE = re.compile(_CLOCK + r"\s*(?:부터\s*)?" + _GAP + r"(?:" + _label("개", "회") + r"를?\s*" + _label("선", "언")
-                           + r"|" + _label("의", "사") + r"를?\s*" + _label("진", "행") + r")")
+_JOSA = r"\s*[를을]?\s*"  # OCR 은 조사 앞뒤에도 공백을 넣는다
+OPEN_PROSE_RE = re.compile(_CLOCK + r"\s*(?:부터\s*)?" + _GAP + r"(?:" + _label("개", "회") + _JOSA + _label("선", "언")
+                           + r"|" + _label("의", "사") + _JOSA + _label("진", "행") + r")")
 CLOSE_PROSE_RE = re.compile(_CLOCK + r"\s*" + _GAP + r"(?:" + _label("폐", "회") + r"|" + _label("산", "회")
-                            + r")를?\s*" + _label("선", "언"))
+                            + r")" + _JOSA + _label("선", "언"))
 
 
 def find_times(text: str) -> tuple[Hit | None, Hit | None]:
@@ -221,11 +226,11 @@ def find_times(text: str) -> tuple[Hit | None, Hit | None]:
 def find_place(text: str) -> Hit | None:
     """장소. 일시와 한 줄에 붙은 서식(`일시 및 장소`)은 쉼표 뒤를 장소로 본다."""
     for start, end, value in _label_lines(text, LINE_LABELS["place"]):
-        cleaned = value.strip().rstrip(".,")
+        cleaned = value.strip(" \tㆍ·∶:：").rstrip(".,")
         if cleaned:
             return Hit(cleaned, start, start + len(value.rstrip()), "PLACE_LABEL")
 
-    combined = re.compile(r"(?m)^" + ITEM_PREFIX + _label("일", "시") + r"\s*(?:및|과)\s*" + _label("장", "소") + r"\s*[:：]?\s*(\S.*)$")
+    combined = re.compile(r"(?m)^" + ITEM_PREFIX + _label("일", "시") + r"\s*(?:및|과)\s*" + _label("장", "소") + r"\s*" + COLON + r"?\s*(\S.*)$")
     for m in combined.finditer(text):
         value = m.group(1)
         parts = re.split(r"\s*[,，]\s*", value)
@@ -273,10 +278,15 @@ def _compile(template: str, subject: str) -> re.Pattern:
 # 이름에 한자 병기(`서규현(徐圭賢)`)가 붙고, 출석 표기 앞에 `원격`·`서면` 이 붙는다.
 # 직함을 열거하지 않는다. `각자대표이사`·`기타비상무이사`처럼 앞에 무엇이 붙든
 # **`…이사` 또는 `…감사`로 끝난다**는 구조만 본다. 열거하면 늘 빠지는 직함이 생긴다.
-ROSTER_RE = re.compile(
-    r"(?m)^[ \t]*([가-힣]{0,8}(?:이사|감사위원|감사))[ \t]+(\S{2,16})[ \t]+"
-    r"(?:원격|화상|서면|대리)?\s*(출석|참석|불참|결석|불출석)"
-)
+#
+# OCR 은 직함과 이름 안에도 공백을 넣는다 (`대 표 이사 김 다 범 원 격 출 석`).
+# 그래서 낱말 사이를 자르는 대신 **줄의 양끝**을 잡는다 — 앞은 직함, 뒤는 출석 표기.
+# 가운데는 이름이므로 무엇이 오든 상관없다.
+_SP = r"[ \t]*"
+_TITLE = r"(?:[가-힣]" + _SP + r"){0,10}?(?:이" + _SP + r"사|감" + _SP + r"사(?:" + _SP + r"위" + _SP + r"원)?)"
+_MARK = (r"(?:원" + _SP + r"격|화" + _SP + r"상|서" + _SP + r"면|대" + _SP + r"리)?" + _SP
+         + r"(?:출" + _SP + r"석|참" + _SP + r"석|불" + _SP + r"참|결" + _SP + r"석|불" + _SP + r"출" + _SP + r"석)")
+ROSTER_RE = re.compile(r"(?m)^[ \t]*(" + _TITLE + r")[ \t]+(.+?)[ \t]*(" + _MARK + r")[ \t]*(?:[(（].*)?$")
 
 ATTENDED = {"출석", "참석"}
 
@@ -286,10 +296,10 @@ def find_roster(text: str) -> dict:
     counts = {"directors": [0, 0], "auditCommittee": [0, 0]}
     span = {"directors": None, "auditCommittee": None}
     for m in ROSTER_RE.finditer(text):
-        title, _, mark = m.groups()
+        title, _, mark = (re.sub(r"\s+", "", g) for g in m.groups())
         key = "auditCommittee" if "감사" in title else "directors"
         counts[key][0] += 1
-        counts[key][1] += int(mark in ATTENDED)
+        counts[key][1] += int(any(word in mark for word in ATTENDED))
         if span[key] is None:
             span[key] = [m.start(), m.end()]
         else:
@@ -480,7 +490,7 @@ def _closing_at(text: str) -> int:
     m = CLOSE_PROSE_RE.search(text)
     at = m.start() if m else -1
     for label in LINE_LABELS["closed"]:
-        lm = re.search(r"(?m)^" + ITEM_PREFIX + label + r"\s*[:：]", text)
+        lm = re.search(r"(?m)^" + ITEM_PREFIX + label + r"\s*" + COLON, text)
         if lm and (at == -1 or lm.start() < at):
             at = lm.start()
     if at == -1:

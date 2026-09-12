@@ -30,6 +30,12 @@ import pymupdf
 # (`docs/minutes-ocr.md` 2-2). 150dpi 가 가장 깨끗했고 파일도 제일 작다.
 DEFAULT_DPI = 150
 
+# 스캔 PDF 는 페이지 크기를 **픽셀 그대로** 잡아 두는 경우가 많다. 300dpi 로 뜬
+# A4 가 595×842 가 아니라 2481×3508 포인트로 들어온다. 여기에 dpi 를 그대로
+# 곱하면 5169×7308 로 렌더되어 OCR 이 네 배 느려지고 낱말은 더 잘게 쪼개진다.
+# 그래서 배율이 아니라 **목표 가로 픽셀**로 맞춘다. A4 를 150dpi 로 뜬 크기다.
+TARGET_WIDTH_PX = 1240
+
 # 페이지 평균 신뢰도가 이 아래면 방향이 틀어졌다고 보고 돌려 가며 다시 읽는다.
 # 정상 88 대 90도 회전 43 으로 뚜렷이 갈린다. 방향 감지(OSD)는 쓰지 않는다 —
 # 한국어 페이지에서 90도를 180도라고 답했다.
@@ -63,6 +69,7 @@ class TesseractEngine:
         self.last_rotation = 0
         self.last_mean_confidence = 0.0
         self._hint = 0
+        self._settled = False
 
     # ------------------------------------------------------------------ 실행
 
@@ -76,16 +83,24 @@ class TesseractEngine:
                 "tesseract 가 없다.  apt-get install tesseract-ocr tesseract-ocr-kor"
             )
 
-        # 지난 페이지에서 정해진 방향을 먼저 쓴다. 한 문서 안에서 방향은 대개 같다.
-        order = [self._hint] + [r for r in ROTATIONS if r != self._hint]
-        best: tuple[float, int, list[OcrWord]] = (-1.0, 0, [])
-        for rotation in order:
-            words = self._read(page, rotation)
-            mean = _mean_confidence(words)
-            if mean > best[0]:
-                best = (mean, rotation, words)
-            if mean >= ORIENTATION_THRESHOLD:
-                break  # 충분히 읽혔다. 나머지 방향은 돈만 쓴다.
+        # 방향은 한 문서 안에서 같다. 한 번 정해지면 그다음 페이지는 찾지 않는다.
+        # 열화가 심한 스캔본은 바로 놓여 있어도 평균 신뢰도가 문턱에 못 미쳐,
+        # 페이지마다 네 방향을 다 돌면 비용이 네 배가 된다.
+        words = self._read(page, self._hint)
+        mean = _mean_confidence(words)
+        best: tuple[float, int, list[OcrWord]] = (mean, self._hint, words)
+
+        if mean < ORIENTATION_THRESHOLD and not self._settled:
+            for rotation in (r for r in ROTATIONS if r != self._hint):
+                other = self._read(page, rotation)
+                score = _mean_confidence(other)
+                if score > best[0]:
+                    best = (score, rotation, other)
+                if score >= ORIENTATION_THRESHOLD:
+                    break
+            self._settled = True
+        elif mean >= ORIENTATION_THRESHOLD:
+            self._settled = True
 
         self.last_mean_confidence, self.last_rotation = best[0], best[1]
         self._hint = best[1]
@@ -94,7 +109,8 @@ class TesseractEngine:
     # ------------------------------------------------------------------ 내부
 
     def _read(self, page: pymupdf.Page, rotation: int) -> list[OcrWord]:
-        zoom = self.dpi / 72
+        # 원래 크기가 작은 페이지는 dpi 대로, 이미 큰 페이지는 목표 폭으로 줄인다.
+        zoom = min(self.dpi / 72, TARGET_WIDTH_PX / max(page.rect.width, 1))
         mat = pymupdf.Matrix(zoom, zoom).prerotate(rotation)
         pix = page.get_pixmap(matrix=mat)
 
