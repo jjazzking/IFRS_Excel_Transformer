@@ -35,8 +35,16 @@ class Hit:
 
 
 def _label(*chars: str) -> str:
-    """`일    시` 처럼 라벨 글자 사이를 벌려 쓰는 서식을 견디게 한다."""
+    """`일    시` 처럼 라벨 글자 사이를 벌려 쓰는 서식을 견디게 한다.
+
+    OCR 이 낱자를 벌려 놓는 경우에도 같은 관용이 그대로 듣는다.
+    """
     return r"\s*".join(chars)
+
+
+# 라벨 앞에 붙는 항목 번호. `1.` `2)` 뿐 아니라 `가.` `나.` 같은 한글 순서와
+# 글머리표도 쓰인다. 번호 뒤에 구분점을 요구해 라벨 첫 글자를 삼키지 않게 한다.
+ITEM_PREFIX = r"[ \t]*(?:\d{1,2}\s*[.)]|[가-힣]\s*[.)]|[-·*])?[ \t]*"
 
 
 def _first(hits: Iterable[Hit]) -> Hit | None:
@@ -62,7 +70,7 @@ def _label_lines(text: str, labels: list[str]) -> list[tuple[int, int, str]]:
     """`라벨 : 값` 형태의 줄에서 값 부분의 구간을 찾는다."""
     out = []
     for label in labels:
-        pattern = re.compile(r"(?m)^[\s\d.)·\-]*" + label + r"\s*[:：]?\s*(\S.*)$")
+        pattern = re.compile(r"(?m)^" + ITEM_PREFIX + label + r"\s*[:：]?\s*(\S.*)$")
         for m in pattern.finditer(text):
             out.append((m.start(1), m.end(1), m.group(1)))
     out.sort(key=lambda t: t[0])
@@ -100,8 +108,24 @@ def _parse_time(value: str, offset: int) -> Hit | None:
     return Hit(f"{hour:02d}:{minute:02d}", offset + m.start(), offset + m.end(), "TIME")
 
 
+# 개회·폐회가 라벨이 아니라 문장 안에 적히는 서식. 시각이 말 앞에 온다.
+#   "… 오전 11시 40분 개회를 선언하다."
+#   "… 성립하였음을 선언하고 14:30부터 의사를 진행하였다."
+_CLOCK = r"((?:오전|오후)?\s*\d{1,2}\s*(?:시|:)\s*\d{0,2}\s*분?)"
+# 시각과 그 말 사이에 `이사회의` 같은 몇 글자가 끼는 서식이 있어 좁은 창을 둔다.
+_GAP = r"[\s\S]{0,12}?"
+OPEN_PROSE_RE = re.compile(_CLOCK + r"\s*(?:부터\s*)?" + _GAP + r"(?:" + _label("개", "회") + r"를?\s*" + _label("선", "언")
+                           + r"|" + _label("의", "사") + r"를?\s*" + _label("진", "행") + r")")
+CLOSE_PROSE_RE = re.compile(_CLOCK + r"\s*" + _GAP + r"(?:" + _label("폐", "회") + r"|" + _label("산", "회")
+                            + r")를?\s*" + _label("선", "언"))
+
+
 def find_times(text: str) -> tuple[Hit | None, Hit | None]:
-    """개회·폐회 시각. 일시 줄에 시각이 같이 적힌 서식도 개회로 본다."""
+    """개회·폐회 시각.
+
+    서식이 세 갈래다. 라벨 줄(`폐 회 : 오전 11시`), 문장 안(`11시 40분 개회를
+    선언하다`), 그리고 일시 줄에 시각이 함께 적힌 것. 앞에서부터 차례로 본다.
+    """
     opened = closed = None
 
     for start, _, value in _label_lines(text, LINE_LABELS["opened"]):
@@ -114,6 +138,19 @@ def find_times(text: str) -> tuple[Hit | None, Hit | None]:
         if closed:
             closed.rule = "TIME_CLOSE_LABEL"
             break
+
+    if opened is None:
+        m = OPEN_PROSE_RE.search(text)
+        if m:
+            opened = _parse_time(m.group(1), m.start(1))
+            if opened:
+                opened.rule = "TIME_OPEN_PROSE"
+    if closed is None:
+        m = CLOSE_PROSE_RE.search(text)
+        if m:
+            closed = _parse_time(m.group(1), m.start(1))
+            if closed:
+                closed.rule = "TIME_CLOSE_PROSE"
 
     if opened is None:
         for start, _, value in _label_lines(text, LINE_LABELS["heldAt"]):
@@ -133,7 +170,7 @@ def find_place(text: str) -> Hit | None:
         if cleaned:
             return Hit(cleaned, start, start + len(value.rstrip()), "PLACE_LABEL")
 
-    combined = re.compile(r"(?m)^[\s\d.)·\-]*" + _label("일", "시") + r"\s*(?:및|과)\s*" + _label("장", "소") + r"\s*[:：]?\s*(\S.*)$")
+    combined = re.compile(r"(?m)^" + ITEM_PREFIX + _label("일", "시") + r"\s*(?:및|과)\s*" + _label("장", "소") + r"\s*[:：]?\s*(\S.*)$")
     for m in combined.finditer(text):
         value = m.group(1)
         parts = re.split(r"\s*[,，]\s*", value)
@@ -177,6 +214,33 @@ def _compile(template: str, subject: str) -> re.Pattern:
     )
 
 
+# 출석 명단 줄. `대표이사   노명희   출석` / `상근감사   전원건   불참(사유)`
+# 이름에 한자 병기(`서규현(徐圭賢)`)가 붙고, 출석 표기 앞에 `원격`·`서면` 이 붙는다.
+ROSTER_RE = re.compile(
+    r"(?m)^[ \t]*(대표이사|사내이사|사외이사|기타비상무이사|이사"
+    r"|상근감사|비상근감사|감사위원|감사)[ \t]+(\S{2,16})[ \t]+"
+    r"(?:원격|화상|서면|대리)?\s*(출석|참석|불참|결석|불출석)"
+)
+
+ATTENDED = {"출석", "참석"}
+
+
+def find_roster(text: str) -> dict:
+    """명단을 세어 총원·출석을 구한다. 총수 줄이 없는 서식의 마지막 수단이다."""
+    counts = {"directors": [0, 0], "auditCommittee": [0, 0]}
+    span = {"directors": None, "auditCommittee": None}
+    for m in ROSTER_RE.finditer(text):
+        title, _, mark = m.groups()
+        key = "auditCommittee" if "감사" in title else "directors"
+        counts[key][0] += 1
+        counts[key][1] += int(mark in ATTENDED)
+        if span[key] is None:
+            span[key] = [m.start(), m.end()]
+        else:
+            span[key][1] = m.end()
+    return {k: {"total": counts[k][0], "present": counts[k][1], "span": span[k]} for k in counts}
+
+
 def find_attendance(text: str, key: str) -> dict:
     """총 인원과 출석 인원. 규칙마다 신뢰도가 달라 우선순위대로 본다."""
     subject = SUBJECTS[key]
@@ -207,60 +271,153 @@ def find_attendance(text: str, key: str) -> dict:
         if m:
             result["present"] = Hit(int(m.group(1)), m.start(), m.end(), "COUNT_PRESENT_LABEL")
 
+    if result["total"] is None or result["present"] is None:
+        roster = find_roster(text)[key]
+        if roster["span"] and roster["total"]:
+            lo, hi = roster["span"]
+            if result["total"] is None:
+                result["total"] = Hit(roster["total"], lo, hi, "COUNT_ROSTER")
+            if result["present"] is None:
+                result["present"] = Hit(roster["present"], lo, hi, "COUNT_ROSTER")
+
     return {"total": result["total"], "present": result["present"], "conflicts": conflicts}
+
+
+def find_attendance_pair(text: str) -> dict:
+    """이사와 감사를 함께 읽는다. **감사가 아예 없는 회사**를 여기서 판정한다.
+
+    감사를 두지 않는 회사는 의사록에 감사 줄 자체가 없다. 그때 `미기재` 로 두면
+    필수 항목이 영영 비지만, 0 으로 단정하면 읽기 실패와 구분이 안 된다.
+    그래서 **이사 쪽을 제대로 읽었을 때에 한해** 0 으로 보고 규칙 이름을 남긴다.
+    """
+    directors = find_attendance(text, "directors")
+    audit = find_attendance(text, "auditCommittee")
+
+    read_directors = directors["total"] is not None and directors["present"] is not None
+    no_audit_word = not re.search(r"감\s*사(?!\s*보고)", text)
+    if read_directors and audit["total"] is None and audit["present"] is None:
+        roster = find_roster(text)["auditCommittee"]
+        if roster["total"] == 0 or no_audit_word:
+            anchor = directors["total"].start
+            audit["total"] = Hit(0, anchor, anchor, "COUNT_ABSENT_ZERO")
+            audit["present"] = Hit(0, anchor, anchor, "COUNT_ABSENT_ZERO")
+    return {"directors": directors, "auditCommittee": audit}
 
 
 # ---------------------------------------------------------------- 의안
 
 AGENDA_RE = re.compile(
     r"(?m)^[\s\W]{0,6}?(?:"
-    r"제\s*(?P<n1>\d+)\s*호\s*(?P<kind1>의\s*안|안\s*건|보\s*고\s*사\s*항)"
-    r"|(?P<kind2>의\s*안|안\s*건|보\s*고\s*사\s*항)\s*제\s*(?P<n2>\d+)\s*호"
+    r"[제第]\s*(?P<n1>\d+)\s*(?:[호號]\s*)?(?P<kind1>의\s*안|안\s*건|보\s*고\s*사\s*항)"
+    r"|(?P<kind2>의\s*안|안\s*건|보\s*고\s*사\s*항)\s*[제第]\s*(?P<n2>\d+)\s*[호號]"
     r"|(?P<kind3>보\s*고\s*사\s*항)\s*(?P<n3>\d+)\s*[.)]"
     r")"
 )
 
 # 의안 구간이 여기까지 이어지지 않게 끊는 말
-AGENDA_STOP_RE = re.compile(r"(?m)^[\s\W]{0,6}?(?:" + _label("폐", "회") + r"|" + _label("산", "회") + r"|이상[과와]?\s*같이|위와\s*같이\s*(?:결의|의결))")
+AGENDA_STOP_RE = re.compile(
+    r"(?m)^[\s\W]{0,6}?(?:" + _label("폐", "회") + r"|" + _label("산", "회")
+    + r"|이상[과와]?\s*같이|위와\s*같이\s*(?:결의|의결)"
+    + r"|위\s*의사의\s*경과|위\s*결의를\s*명확히|본\s*의사록을\s*작성"
+    + r"|의장은\s*이상으로써)"
+)
 
-TITLE_TRIM = " \t:：.·-–—」』】\"'「『【《》()"
+# 앞에서 떼는 것과 뒤에서 떼는 것을 나눈다. 닫는 괄호를 뒤에서 떼면
+# `…의 건(상법 제398조)` 이 잘린다.
+TITLE_LEAD = " \t:：.·-–—「『【\"'"
+TITLE_TAIL = " \t:：.·-–—\"'"
+
+
+# 제목 덩어리의 한계. 끝을 못 찾는 서식에서 본문까지 삼키지 않도록 막는다.
+TITLE_MAX_LINES = 3
+TITLE_MAX_CHARS = 200
+
+# 의안 제목은 `…의 건` 으로, 보고 제목은 `…보고` 로 끝난다. 뒤에 괄호주가 붙기도 한다.
+# **빈 줄에 기대지 않는다** — PDF 에서 뽑은 본문에는 빈 줄이 없다.
+TITLE_END_RE = re.compile(r"(?:건|보고)\s*(?:[(（][^)）]*[)）])?\s*$")
+
+
+def _title_block(text: str, start: int, limit: int) -> tuple[int, int]:
+    """제목이 끝나는 자리.
+
+    한 줄씩 늘려 가며 `…의 건` 으로 끝나는 지점에서 멈춘다. 긴 제목이 다음 줄로
+    넘어가는 서식과, 제목이 한 줄로 끝나는 서식을 같은 규칙으로 다룬다.
+    끝을 못 찾으면 첫 줄만 쓴다 — 본문을 삼키는 것보다 짧게 자르는 편이 낫다.
+    """
+    cap = min(limit, start + TITLE_MAX_CHARS)
+    blank = text.find("\n\n", start)
+    if blank != -1:
+        cap = min(cap, blank)
+
+    at, lines, first_end = start, 0, None
+    while lines < TITLE_MAX_LINES:
+        nl = text.find("\n", at)
+        line_end = cap if nl == -1 or nl > cap else nl
+        if first_end is None:
+            first_end = line_end
+        if TITLE_END_RE.search(re.sub(r"\s+", " ", text[start:line_end]).strip()):
+            return start, line_end
+        if line_end >= cap:
+            break
+        at, lines = line_end + 1, lines + 1
+    return start, first_end if first_end is not None else cap
 
 
 def _title_in(text: str, start: int, end: int) -> tuple[str, int, int]:
-    """제목에서 앞뒤 장식(`:`, 따옴표 등)을 떼고, **뗀 뒤의 구간**을 돌려준다.
+    """제목에서 앞뒤 장식을 떼고, **뗀 뒤의 구간**을 돌려준다.
 
     값과 근거 구간이 정확히 같아야 한다. 근거가 한 글자라도 값보다 넓으면 화면에서
     하이라이트가 엉뚱한 곳까지 덮는다.
     """
     raw = text[start:end]
-    title = raw.strip(TITLE_TRIM)
+    title = raw.lstrip(TITLE_LEAD).rstrip(TITLE_TAIL)
     if not title:
         return "", start, end
     at = start + raw.find(title)
     return title, at, at + len(title)
 
 
+# 구역 머리말 없이 `1. 제목` 으로만 적는 서식. 라벨 줄(`1. 일시: …`)과 구분해야 하므로
+# **한국 의사록에서 의안 제목이 `…의 건` 으로 끝난다는 관행**을 판별에 쓴다.
+# 내용어를 보지 않으므로 회사가 달라도 그대로 듣는다.
+BARE_AGENDA_RE = re.compile(r"(?m)^[ \t]*(\d{1,2})[ \t]*[.)][ \t]*(?=\S)")
+# 의안 제목은 `…의 건` 으로 끝난다. 다만 뒤에 괄호주가 붙는 경우가 있다
+# (`…승인의 건(상법 제398조)`, `…변경의 건(주주총회 부의)`).
+AGENDA_TAIL_RE = re.compile(r"건\s*(?:[(（][^)）]*[)）])?\s*$")
+
+
+def _bare_agenda(text: str) -> list[re.Match]:
+    out = []
+    for m in BARE_AGENDA_RE.finditer(text):
+        start, end = _title_block(text, m.end(), len(text))
+        title = re.sub(r"\s+", " ", text[start:end]).strip()
+        if "：" in title or ":" in title or not AGENDA_TAIL_RE.search(title):
+            continue
+        out.append(m)
+    return out
+
+
 def find_agenda(text: str) -> list[dict]:
     """의안 경계와 제목. 본문은 다음 의안이 시작하기 직전까지로 자른다."""
     marks = list(AGENDA_RE.finditer(text))
+    if not marks:
+        marks = _bare_agenda(text)
     if not marks:
         return []
 
     items = []
     for i, m in enumerate(marks):
-        number = int(m.group("n1") or m.group("n2") or m.group("n3"))
-        kind_raw = (m.group("kind1") or m.group("kind2") or m.group("kind3") or "").replace(" ", "")
-        kind = "보고" if kind_raw == "보고사항" else "결의"
+        if m.re is BARE_AGENDA_RE:
+            number, kind = int(m.group(1)), "결의"
+        else:
+            number = int(m.group("n1") or m.group("n2") or m.group("n3"))
+            kind_raw = (m.group("kind1") or m.group("kind2") or m.group("kind3") or "").replace(" ", "")
+            kind = "보고" if kind_raw == "보고사항" else "결의"
 
-        line_end = text.find("\n", m.end())
-        if line_end == -1:
-            line_end = len(text)
-        title, title_start, title_end = _title_in(text, m.end(), line_end)
-        # 제목이 다음 줄로 넘어간 서식
-        if not title:
-            nxt = text.find("\n", line_end + 1)
-            nxt = len(text) if nxt == -1 else nxt
-            title, title_start, title_end = _title_in(text, line_end, nxt)
+        limit = marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        block_start, block_end = _title_block(text, m.end(), limit)
+        title, title_start, title_end = _title_in(text, block_start, block_end)
+        title = re.sub(r"\s+", " ", title)
 
         body_start = title_end
         body_end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
@@ -282,12 +439,17 @@ def find_agenda(text: str) -> list[dict]:
 
 # ---------------------------------------------------------------- 가결 여부
 
+# 결의 낱말. 본문에는 심의 과정의 말이 섞이므로 **마지막에 나오는 것**이 결론이다.
+VOTE_WORD_RE = re.compile(r"가\s*결|부\s*결|보\s*류|연\s*기|철\s*회|승\s*인|의\s*결|채\s*택")
+
+# 결론 문장 안에서만 본다. 순서가 뜻을 가른다 — `수정하여 가결` 은 수정가결이다.
+# 수정 언급 없이 가결이면 원안가결로 본다. 상법 실무의 분류가 그렇고,
+# `이를 가결하다` 처럼 원안이라는 말이 생략되는 서식이 많다.
 RESOLUTION_RULES = [
     ("부결", re.compile(r"부\s*결")),
-    ("보류", re.compile(r"보\s*류|연\s*기|철\s*회|차기\s*이사회")),
-    ("원안가결", re.compile(r"원안\s*(?:대로|과\s*같이)?\s*(?:가결|승인|의결|채택)|원안\s*가결")),
-    ("수정가결", re.compile(r"수정\s*(?:하여|한\s*후|안\s*대로)?\s*(?:가결|승인|의결)")),
-    ("가결", re.compile(r"가\s*결|승\s*인|의\s*결|채\s*택")),
+    ("보류", re.compile(r"보\s*류|연\s*기(?!한)|철\s*회|차기\s*이사회")),
+    ("수정가결", re.compile(r"수\s*정")),
+    ("원안가결", re.compile(r"가\s*결|승\s*인|의\s*결|채\s*택")),
 ]
 
 VOTE_RE = {
@@ -295,18 +457,38 @@ VOTE_RE = {
     "against": re.compile(r"반\s*대\s*[:：]?\s*(\d+)\s*[명인표]"),
     "abstain": re.compile(r"기\s*권\s*[:：]?\s*(\d+)\s*[명인표]"),
 }
-UNANIMOUS_RE = re.compile(r"만장일치|전원\s*찬성|이의\s*없이")
+UNANIMOUS_RE = re.compile(r"만장일치|전원\s*찬성|이의\s*없이|전원이\s*찬성")
+
+
+def _conclusion(body: str) -> tuple[int, int] | None:
+    """결론 문장의 구간. 마지막 결의 낱말이 든 문장 하나만 돌려준다.
+
+    본문 전체를 보면 심의 과정의 `연기`·`철회` 같은 말이 결론을 덮어쓴다.
+    실제로 그 때문에 가결을 보류로 잘못 읽은 건이 81건 있었다.
+    """
+    last = None
+    for m in VOTE_WORD_RE.finditer(body):
+        last = m
+    if last is None:
+        return None
+    head = max(body.rfind("다.", 0, last.start()) + 2, body.rfind("\n\n", 0, last.start()) + 2, 0)
+    return head, min(len(body), last.end() + 12)
 
 
 def find_resolution(text: str, body_start: int, body_end: int, kind: str) -> dict:
     body = text[body_start:body_end]
     out: dict = {"resolution": None, "votes": {}, "unanimous": None}
 
-    for label, pattern in RESOLUTION_RULES:
-        m = pattern.search(body)
-        if m:
-            out["resolution"] = Hit(label, body_start + m.start(), body_start + m.end(), f"RESOLUTION_{label}")
-            break
+    span = _conclusion(body)
+    if span:
+        lo, hi = span
+        sentence = body[lo:hi]
+        for label, pattern in RESOLUTION_RULES:
+            m = pattern.search(sentence)
+            if m:
+                at = body_start + lo + m.start()
+                out["resolution"] = Hit(label, at, at + len(m.group(0)), f"RESOLUTION_{label}")
+                break
     if out["resolution"] is None and kind == "보고":
         out["resolution"] = Hit("해당없음", body_start, body_start, "RESOLUTION_REPORT_ONLY")
 
