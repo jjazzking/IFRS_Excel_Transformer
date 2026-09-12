@@ -327,9 +327,11 @@ python3 scripts/eval_minutes.py samples/minutes out/minutes --detail
 쓰지 않고 원문에서 잘라냅니다 — 법적 문서의 원문이 바뀌면 증빙으로 쓸 수 없기 때문입니다.
 
 설계와 측정 결과는 [`docs/minutes-plan.md`](docs/minutes-plan.md) 에 있습니다.
+스캔 페이지에 OCR 을 붙이는 설계는 [`docs/minutes-ocr.md`](docs/minutes-ocr.md) 에 따로 있습니다.
 
 ---
 
 함께 볼 문서: [`docs/naming.md`](docs/naming.md) (기능 작명) ·
 [`docs/roadmap.md`](docs/roadmap.md) (확장 구상) ·
-[`docs/minutes-plan.md`](docs/minutes-plan.md) (의사록 읽기 설계).
+[`docs/minutes-plan.md`](docs/minutes-plan.md) (의사록 읽기 설계) ·
+[`docs/minutes-ocr.md`](docs/minutes-ocr.md) (스캔 페이지 OCR 설계).
