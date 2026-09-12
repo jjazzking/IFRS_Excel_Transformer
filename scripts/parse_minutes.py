@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import minutes_rules as rules  # noqa: E402
+from minutes_ocr import LOW_CONFIDENCE, ORIENTATION_THRESHOLD, engine_or_none  # noqa: E402
 from minutes_text import MinutesText  # noqa: E402
 
 SCHEMA_VERSION = 1
@@ -52,15 +53,15 @@ def _j(hit, text) -> dict | None:
 # ---------------------------------------------------------------- 뽑기
 
 
-def parse(path: Path) -> dict:
-    text = MinutesText(path)
+def parse(path: Path, ocr=None) -> dict:
+    text = MinutesText(path, ocr=ocr)
     body = text.text
 
     date = rules.find_date(body)
     opened, closed = rules.find_times(body)
     place = rules.find_place(body)
-    directors = rules.find_attendance(body, "directors")
-    audit = rules.find_attendance(body, "auditCommittee")
+    pair = rules.find_attendance_pair(body)
+    directors, audit = pair["directors"], pair["auditCommittee"]
 
     agenda = []
     for item in rules.find_agenda(body):
@@ -106,7 +107,12 @@ def parse(path: Path) -> dict:
 
     doc = {
         "schemaVersion": SCHEMA_VERSION,
-        "extraction": {"method": "rules", "llmUsed": False, "ruleVersion": RULE_VERSION},
+        "extraction": {
+            "method": "rules",
+            "llmUsed": False,
+            "ruleVersion": RULE_VERSION,
+            "ocr": getattr(ocr, "name", None),
+        },
         "source": text.summary(),
         "meeting": {
             "heldAt": {
@@ -144,6 +150,30 @@ def _flag(flags: list, code: str, level: str, message: str, where: str | None = 
     flags.append({"code": code, "level": level, "message": message, "where": where})
 
 
+def _evidence_spans(doc: dict) -> list[tuple[str, tuple[int, int]]]:
+    """스키마 안의 모든 근거 구간을 `경로, (시작, 끝)` 로 훑는다."""
+    found: list[tuple[str, tuple[int, int]]] = []
+
+    def walk(node: object, path: str) -> None:
+        if isinstance(node, dict):
+            ev = node.get("evidence")
+            if isinstance(ev, dict) and "start" in ev:
+                found.append((path, (ev["start"], ev["end"])))
+            if "start" in node and "end" in node and "bbox" in node:
+                found.append((path, (node["start"], node["end"])))
+            for key, value in node.items():
+                if key != "evidence":
+                    walk(value, f"{path}.{key}" if path else key)
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]")
+
+    walk(doc.get("meeting"), "meeting")
+    walk(doc.get("attendance"), "attendance")
+    walk(doc.get("agenda"), "agenda")
+    return found
+
+
 def validate(doc: dict, text: MinutesText, counts: dict) -> dict:
     """모델 없이 도는 교차검증. 값싸고, 재현되고, 실제로 잘 잡는다.
 
@@ -152,10 +182,25 @@ def validate(doc: dict, text: MinutesText, counts: dict) -> dict:
     """
     flags: list[dict] = []
 
-    if text.scan_pages:
+    if text.unread_pages:
         _flag(flags, "SCAN_PAGE", "P1",
-              f"이미지 페이지 {text.scan_pages} — 규칙으로 읽지 못한다. OCR 이 필요하다.",
+              f"이미지 페이지 {text.unread_pages} — 읽지 못했다. OCR 이 필요하다.", "source")
+    elif text.scan_pages:
+        _flag(flags, "SCAN_PAGE", "P1",
+              f"이미지 페이지 {text.scan_pages} 를 OCR 로 읽었다. 원문 그대로가 아니므로 사람이 한 번 본다.",
               "source")
+
+    for page in text.pages:
+        if page.ocr_confidence is not None and page.ocr_confidence < ORIENTATION_THRESHOLD:
+            _flag(flags, "OCR_ORIENTATION", "P1",
+                  f"{page.index + 1}쪽 평균 신뢰도 {page.ocr_confidence:.0f} — 방향이 틀어졌거나 품질이 낮다.",
+                  "source")
+
+    for where, span in _evidence_spans(doc):
+        worst = text.min_confidence(span[0], span[1])
+        if worst is not None and worst < LOW_CONFIDENCE:
+            _flag(flags, "OCR_LOW_CONF", "P1",
+                  f"OCR 신뢰도 {worst:.0f} 인 낱말이 섞여 있다. 숫자 한 글자가 결과를 바꾼다.", where)
 
     for path, label in REQUIRED_FIELDS:
         node: object = doc
@@ -243,6 +288,8 @@ def main() -> int:
     ap.add_argument("target", type=Path, help="PDF 파일 또는 PDF 가 든 폴더")
     ap.add_argument("-o", "--out", type=Path, default=Path("out/minutes"), help="JSON 을 쓸 폴더")
     ap.add_argument("--print", dest="show", action="store_true", help="요약을 화면에도 출력")
+    ap.add_argument("--ocr", metavar="엔진", default=None,
+                    help="스캔 페이지를 읽을 OCR 엔진 (tesseract). 기본은 끔")
     args = ap.parse_args()
 
     if args.target.is_dir():
@@ -257,9 +304,10 @@ def main() -> int:
         return 1
 
     args.out.mkdir(parents=True, exist_ok=True)
+    ocr = engine_or_none(args.ocr)
     total_flags = 0
     for pdf in pdfs:
-        doc = parse(pdf)
+        doc = parse(pdf, ocr=ocr)
         (args.out / f"{pdf.stem}.json").write_text(
             json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8"
         )

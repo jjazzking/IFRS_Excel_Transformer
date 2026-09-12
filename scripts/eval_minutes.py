@@ -35,9 +35,14 @@ TARGETS = {
 
 
 def _norm(value) -> str:
+    """공백을 **전부** 지우고 비교한다.
+
+    OCR 은 낱자 사이를 벌려 놓는다 (`금 융 기관`). 본문은 고치지 않으므로
+    (길이 보존 불변식) 비교하는 쪽에서 접는다. 표시와 저장은 원문 그대로다.
+    """
     if value is None:
         return ""
-    return re.sub(r"\s+", " ", str(value)).strip()
+    return re.sub(r"\s+", "", str(value)).strip()
 
 
 def compare(parsed: dict, golden: dict) -> list[tuple[str, bool, str, str]]:

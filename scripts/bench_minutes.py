@@ -26,6 +26,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import minutes_rules as rules  # noqa: E402
+from minutes_ocr import engine_or_none  # noqa: E402
+from minutes_text import MinutesText  # noqa: E402
 
 # 생성기 정답셋의 제목에는 조사 자리표가 남아 있다 (`주식회사(으)로부터의`).
 # 본문에는 조사가 골라져 찍히므로, 채점할 때만 자리표를 지운다.
@@ -131,37 +133,81 @@ def score(got: dict, want: dict, misses: dict, name: str) -> dict:
     return out
 
 
+def body_of(golden_path: Path, source: str, ocr) -> str | None:
+    """채점에 쓸 본문. 서식 경로마다 어디서 글자가 오는지가 다르다."""
+    if source == "text":
+        sibling = golden_path.with_suffix(".txt")
+        return sibling.read_text(encoding="utf-8") if sibling.exists() else None
+    name = golden_path.stem + ("_scan.pdf" if source == "scan" else ".pdf")
+    pdf = golden_path.with_name(name)
+    if not pdf.exists():
+        return None
+    return MinutesText(pdf, ocr=ocr).text
+
+
+def run_group(paths: list[Path], source: str, ocr, tally: dict, misses: dict) -> tuple[int, int]:
+    ok_n = total_n = 0
+    for jf in paths:
+        body = body_of(jf, source, ocr)
+        if body is None:
+            continue
+        want = golden_of(json.loads(jf.read_text(encoding="utf-8")))
+        got = extract(body)
+        for field, (ok, n) in score(got, want, misses, jf.stem).items():
+            tally[field][0] += ok
+            tally[field][1] += n
+            ok_n, total_n = ok_n + ok, total_n + n
+    return ok_n, total_n
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="모의 의사록으로 규칙 대량 채점")
-    ap.add_argument("gen_dir", type=Path, help="minutes_generator 출력 폴더 (.txt + .json)")
-    ap.add_argument("--limit", type=int, default=0, help="앞에서 N건만")
+    ap.add_argument("gen_dir", type=Path, help="minutes_generator 출력 폴더. 하위 폴더가 있으면 폴더별로 나눠 잰다")
+    ap.add_argument("--limit", type=int, default=0, help="폴더마다 앞에서 N건만")
     ap.add_argument("--show", type=int, default=4, help="필드마다 실패 예시 몇 개")
+    ap.add_argument("--source", choices=("text", "pdf", "scan"), default="text",
+                    help="본문을 어디서 읽나. text=생성기 본문, pdf=깨끗한 PDF, scan=열화본")
+    ap.add_argument("--ocr", metavar="엔진", default=None, help="스캔본을 읽을 OCR 엔진 (tesseract)")
     args = ap.parse_args()
 
-    pairs = []
-    for jf in sorted(args.gen_dir.glob("*.json")):
-        tf = jf.with_suffix(".txt")
-        if tf.exists():
-            pairs.append((tf, jf))
+    ocr = engine_or_none(args.ocr)
+    groups: dict[str, list[Path]] = {}
+    own = sorted(args.gen_dir.glob("*.json"))
+    if own:
+        groups[args.gen_dir.name] = own
+    for sub in sorted(d for d in args.gen_dir.iterdir() if d.is_dir()):
+        found = sorted(sub.glob("*.json"))
+        if found:
+            groups[sub.name] = found
     if args.limit:
-        pairs = pairs[: args.limit]
-    if not pairs:
-        print(f"표본이 없다: {args.gen_dir}/*.json + .txt", file=sys.stderr)
+        groups = {k: v[: args.limit] for k, v in groups.items()}
+    if not groups:
+        print(f"표본이 없다: {args.gen_dir}", file=sys.stderr)
         return 1
 
     tally = {f: [0, 0] for f in FIELDS}
     misses: dict[str, list] = {f: [] for f in FIELDS}
     report_gap = Counter()
+    per_group: list[tuple[str, int, int, int]] = []
 
-    for tf, jf in pairs:
-        want = golden_of(json.loads(jf.read_text(encoding="utf-8")))
-        got = extract(tf.read_text(encoding="utf-8"))
-        for field, (ok, n) in score(got, want, misses, tf.stem).items():
-            tally[field][0] += ok
-            tally[field][1] += n
-        report_gap[got["reportCount"] - want["reportCount"]] += 1
+    for name, paths in groups.items():
+        before = {f: list(v) for f, v in tally.items()}
+        run_group(paths, args.source, ocr, tally, misses)
+        ok = sum(tally[f][0] - before[f][0] for f in FIELDS)
+        total = sum(tally[f][1] - before[f][1] for f in FIELDS)
+        per_group.append((name, len(paths), ok, total))
 
-    print(f"\n표본 {len(pairs)}건 · 규칙 전용 · 생성기 정답셋 대비\n")
+    label = {"text": "생성기 본문", "pdf": "깨끗한 PDF", "scan": "스캔 열화본"}[args.source]
+    engine = f" · OCR {args.ocr}" if args.ocr else ""
+    if len(per_group) > 1:
+        print(f"\n[갈래별] {label}{engine}\n")
+        print(f"{'갈래':<16}{'건수':>6}{'정확도':>10}{'맞음/전체':>14}")
+        print("─" * 48)
+        for name, count, ok, total in per_group:
+            if total:
+                print(f"{name:<16}{count:>6}{ok / total:>9.1%}{f'{ok}/{total}':>14}")
+    samples = sum(c for _, c, _, _ in per_group)
+    print(f"\n표본 {samples}건 · 규칙 전용 · {label}{engine} · 생성기 정답셋 대비\n")
     print(f"{'필드':<12}{'정확도':>9}{'맞음/전체':>14}")
     print("─" * 36)
     tot_ok = tot_n = 0
@@ -171,9 +217,6 @@ def main() -> int:
         print(f"{field:<12}{ok / n:>8.1%}{f'{ok}/{n}':>14}")
     print("─" * 36)
     print(f"{'전체':<12}{tot_ok / tot_n:>8.1%}{f'{tot_ok}/{tot_n}':>14}")
-
-    gaps = ", ".join(f"{k:+d}건 {v}" for k, v in sorted(report_gap.items()) if k)
-    print(f"\n보고사항 검출 차이: 정확 {report_gap[0]}건" + (f" · {gaps}" if gaps else ""))
 
     print("\n실패 예시 (정답 → 뽑은 값)")
     for field in FIELDS:
