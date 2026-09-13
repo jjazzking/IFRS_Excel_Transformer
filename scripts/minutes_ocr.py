@@ -36,6 +36,18 @@ DEFAULT_DPI = 150
 # 그래서 배율이 아니라 **목표 가로 픽셀**로 맞춘다. A4 를 150dpi 로 뜬 크기다.
 TARGET_WIDTH_PX = 1240
 
+# 쪽 나누기 방식. 6(한 덩어리)이 기본값이지만 의사록에는 맞지 않는다. 제목·라벨·본문의
+# 글자 크기가 다르고 표처럼 벌려 쓴 줄이 섞여 있어서, 4(크기가 다른 한 단)가 훨씬 낫다.
+# 복사기 사본 53%→95%, 오래된 종이 52%→91% 로 올랐다 (`docs/minutes-ocr.md` 4-4).
+DEFAULT_PSM = "4"
+
+# 갈래마다 유리한 쪽이 다르다. 4 는 열화가 심한 사본에서, 6 은 깨끗한 스캔에서 낫다.
+# 그래서 문서마다 둘 다 읽어 보고 평균 신뢰도가 높은 쪽을 쓴다. 방향을 고르는 방식과 같다.
+PSM_CANDIDATES = ("4", "6")
+
+# 숫자·금액·영문 약어가 섞여 있으므로 영어를 함께 건다. 한국어만 걸면 숫자에서 손해를 본다.
+DEFAULT_LANG = "kor+eng"
+
 # 페이지 평균 신뢰도가 이 아래면 방향이 틀어졌다고 보고 돌려 가며 다시 읽는다.
 # 정상 88 대 90도 회전 43 으로 뚜렷이 갈린다. 방향 감지(OSD)는 쓰지 않는다 —
 # 한국어 페이지에서 90도를 180도라고 답했다.
@@ -64,12 +76,14 @@ class TesseractEngine:
 
     name = "tesseract"
 
-    def __init__(self, lang: str = "kor", dpi: int = DEFAULT_DPI, psm: str = "6"):
-        self.lang, self.dpi, self.psm = lang, dpi, psm
+    def __init__(self, lang: str = DEFAULT_LANG, dpi: int = DEFAULT_DPI, psm: str | None = None):
+        """`psm` 을 주면 그 방식으로 고정한다. 안 주면 문서마다 골라 쓴다."""
+        self.lang, self.dpi, self.psm = lang, dpi, psm or DEFAULT_PSM
         self.last_rotation = 0
         self.last_mean_confidence = 0.0
         self._hint = 0
         self._settled = False
+        self._psm: str | None = None if psm is None else psm
 
     # ------------------------------------------------------------------ 실행
 
@@ -86,14 +100,12 @@ class TesseractEngine:
         # 방향은 한 문서 안에서 같다. 한 번 정해지면 그다음 페이지는 찾지 않는다.
         # 열화가 심한 스캔본은 바로 놓여 있어도 평균 신뢰도가 문턱에 못 미쳐,
         # 페이지마다 네 방향을 다 돌면 비용이 네 배가 된다.
-        words = self._read(page, self._hint)
-        mean = _mean_confidence(words)
+        words, mean, psm = self._read_best_psm(page, self._hint)
         best: tuple[float, int, list[OcrWord]] = (mean, self._hint, words)
 
         if mean < ORIENTATION_THRESHOLD and not self._settled:
             for rotation in (r for r in ROTATIONS if r != self._hint):
-                other = self._read(page, rotation)
-                score = _mean_confidence(other)
+                other, score, _ = self._read_best_psm(page, rotation)
                 if score > best[0]:
                     best = (score, rotation, other)
                 if score >= ORIENTATION_THRESHOLD:
@@ -108,7 +120,21 @@ class TesseractEngine:
 
     # ------------------------------------------------------------------ 내부
 
-    def _read(self, page: pymupdf.Page, rotation: int) -> list[OcrWord]:
+    def _read_best_psm(self, page: pymupdf.Page, rotation: int) -> tuple[list[OcrWord], float, str]:
+        """쪽 나누기 방식을 문서마다 고른다. 한 번 정해지면 그다음 페이지는 그대로 쓴다."""
+        if self._psm is not None:
+            words = self._read(page, rotation, self._psm)
+            return words, _mean_confidence(words), self._psm
+        best: tuple[list[OcrWord], float, str] = ([], -1.0, PSM_CANDIDATES[0])
+        for psm in PSM_CANDIDATES:
+            words = self._read(page, rotation, psm)
+            mean = _mean_confidence(words)
+            if mean > best[1]:
+                best = (words, mean, psm)
+        self._psm = best[2]
+        return best
+
+    def _read(self, page: pymupdf.Page, rotation: int, psm: str | None = None) -> list[OcrWord]:
         # 원래 크기가 작은 페이지는 dpi 대로, 이미 큰 페이지는 목표 폭으로 줄인다.
         zoom = min(self.dpi / 72, TARGET_WIDTH_PX / max(page.rect.width, 1))
         mat = pymupdf.Matrix(zoom, zoom).prerotate(rotation)
@@ -124,7 +150,7 @@ class TesseractEngine:
             png = Path(tmp) / "page.png"
             pix.save(png)
             proc = subprocess.run(
-                ["tesseract", str(png), "stdout", "-l", self.lang, "--psm", self.psm, "tsv"],
+                ["tesseract", str(png), "stdout", "-l", self.lang, "--psm", psm or self.psm, "tsv"],
                 capture_output=True, text=True,
             )
         if proc.returncode != 0:
@@ -158,9 +184,14 @@ def _mean_confidence(words: list[OcrWord]) -> float:
 
 
 def engine_or_none(name: str | None) -> object | None:
-    """이름으로 엔진을 고른다. `None` 이면 OCR 을 쓰지 않는다 (기본값)."""
+    """이름으로 엔진을 고른다. `None` 이면 OCR 을 쓰지 않는다 (기본값).
+
+    `tesseract` 는 쪽 나누기 방식을 문서마다 고른다. `tesseract:4` 처럼 뒤에 숫자를
+    붙이면 그 방식으로 고정한다 — 설정을 비교할 때 쓴다.
+    """
     if not name:
         return None
-    if name == "tesseract":
-        return TesseractEngine()
+    base, _, psm = name.partition(":")
+    if base == "tesseract":
+        return TesseractEngine(psm=psm or None)
     raise SystemExit(f"모르는 OCR 엔진: {name} (지금은 tesseract 만 있다)")
