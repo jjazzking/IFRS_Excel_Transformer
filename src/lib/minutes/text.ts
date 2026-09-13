@@ -96,6 +96,24 @@ function isTextItem(item: unknown): item is TextItem {
   return typeof (item as TextItem)?.str === 'string';
 }
 
+const DECIMAL_DIGIT = /\p{Nd}/u;
+
+/**
+ * ASCII 가 아닌 십진 숫자를 `0`~`9` 로 옮긴다 (전각 `２`, 아라비아-인도 `٣` 등).
+ *
+ * 파이썬 판은 `unicodedata.digit` 으로 **모든** 십진 숫자를 옮긴다. 여기서도 같은
+ * 범위를 덮어야, `\d` 가 유니코드인 파이썬 정규식과 ASCII 인 JS 정규식이 결국
+ * 같은 글자를 보게 된다. 유니코드의 십진 숫자는 0~9 가 잇달아 놓이므로, 몇 칸
+ * 내려가야 숫자가 아닌 글자가 나오는지가 곧 그 숫자의 값이다.
+ */
+function asciiDigit(ch: string): string | null {
+  const code = ch.codePointAt(0)!;
+  for (let value = 0; value < 10; value++) {
+    if (!DECIMAL_DIGIT.test(String.fromCodePoint(code - value - 1))) return String(value);
+  }
+  return null;
+}
+
 /**
  * 길이를 보존하는 정규화만 한다 — 오프셋이 밀리면 근거 추적이 전부 무너진다.
  * 파이썬 판의 `_normalize_keeping_length` 와 같은 일을 한다.
@@ -107,9 +125,9 @@ function normalizeKeepingLength(word: string): string {
     if (ch === ' ' || ch === ' ' || ch === ' ' || ch === ' '
         || ch === '​' || ch === '　' || ch === '\t') {
       out += ' ';
-    } else if (code >= 0xff10 && code <= 0xff19) {
-      // 전각 숫자. 전각 기호 변환보다 **먼저** 와야 한다 (구간이 겹친다).
-      out += String.fromCharCode(code - 0xff10 + 0x30);
+    } else if (code >= 0x80 && DECIMAL_DIGIT.test(ch)) {
+      // 숫자를 전각 기호 변환보다 **먼저** 본다 (전각 숫자는 두 범위에 겹친다).
+      out += asciiDigit(ch) ?? ch;
     } else if (code >= 0xff01 && code <= 0xff5e) {
       out += String.fromCharCode(code - 0xfee0); // 전각 영문·기호
     } else {

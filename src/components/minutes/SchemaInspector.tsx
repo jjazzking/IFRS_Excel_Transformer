@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Crosshair, Filter, Info, ListTree } from 'lucide-react';
-import { Evidence, MinutesDocument, ReviewFlag } from '../../lib/minutes/types';
+import { AlertTriangle, Crosshair, Filter, ListTree } from 'lucide-react';
+import {
+  AgendaItem,
+  Evidence,
+  MinutesDocument,
+  ResolutionValue,
+  ReviewFlag,
+} from '../../lib/minutes/types';
 
 interface SchemaInspectorProps {
   doc: MinutesDocument;
@@ -21,6 +27,15 @@ interface Row {
 const LEVEL_STYLE: Record<ReviewFlag['level'], string> = {
   P1: 'bg-rose-50 text-rose-700 border-rose-200',
   P2: 'bg-amber-50 text-amber-800 border-amber-200',
+};
+
+/** 가결 여부는 조서에서 가장 먼저 보는 값이라 색으로도 구분한다. */
+const RESOLUTION_STYLE: Record<ResolutionValue, string> = {
+  원안가결: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  수정가결: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  부결: 'bg-rose-50 text-rose-700 border-rose-200',
+  보류: 'bg-amber-50 text-amber-800 border-amber-200',
+  해당없음: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
 function countLabel(present: number | null, total: number | null): string | null {
@@ -76,9 +91,18 @@ export const SchemaInspector: React.FC<SchemaInspectorProps> = ({ doc, selected,
     doc.review.flags.filter(f => f.where === path || f.where?.startsWith(path + '.'));
 
   const sourceFlags = doc.review.flags.filter(f => f.where === 'source');
-  const visible = onlyFlagged
+  const agendaFlags = doc.review.flags.filter(f => f.where === 'agenda');
+
+  const visibleRows = onlyFlagged
     ? rows.filter(r => r.value === null || flagsFor(r.path).length > 0)
     : rows;
+
+  const needsReview = (item: AgendaItem) =>
+    item.resolution.value === null
+    || !item.title.value
+    || flagsFor(`agenda[${item.number.ordinal}]`).length > 0;
+
+  const visibleAgenda = onlyFlagged ? doc.agenda.filter(needsReview) : doc.agenda;
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-2">
@@ -114,10 +138,10 @@ export const SchemaInspector: React.FC<SchemaInspectorProps> = ({ doc, selected,
 
         <section className="space-y-2">
           <h3 className="text-[11px] font-semibold text-slate-500 tracking-tight">회의</h3>
-          {visible.length === 0 ? (
-            <p className="text-xs text-slate-500 py-2">검토가 필요한 항목이 없습니다.</p>
+          {visibleRows.length === 0 ? (
+            <p className="text-xs text-slate-500 py-1">검토가 필요한 항목이 없습니다.</p>
           ) : (
-            visible.map(row => (
+            visibleRows.map(row => (
               <FieldRow
                 key={row.path}
                 row={row}
@@ -129,20 +153,135 @@ export const SchemaInspector: React.FC<SchemaInspectorProps> = ({ doc, selected,
           )}
         </section>
 
-        <section className="space-y-1.5">
+        <section className="space-y-2">
           <h3 className="text-[11px] font-semibold text-slate-500 tracking-tight flex items-center gap-1.5">
-            <ListTree className="w-3.5 h-3.5" /> 의안
+            <ListTree className="w-3.5 h-3.5" />
+            의안 {doc.agenda.length}건
           </h3>
-          <div className="flex gap-2 text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 leading-relaxed">
-            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-400" />
-            <span>
-              의안 규칙은 아직 브라우저로 옮기기 전입니다 (지금은{' '}
-              <code className="bg-slate-200 px-1 rounded">scripts/parse_minutes.py</code> 에만
-              있습니다). <span className="text-slate-500">의안이 없는 문서라는 뜻이 아닙니다.</span>
-            </span>
-          </div>
+          {agendaFlags.map((f, i) => <FlagLine key={i} flag={f} />)}
+          {visibleAgenda.length === 0 ? (
+            <p className="text-xs text-slate-500 py-1">
+              {doc.agenda.length === 0 ? '의안을 찾지 못했습니다.' : '검토가 필요한 의안이 없습니다.'}
+            </p>
+          ) : (
+            visibleAgenda.map(item => (
+              <AgendaCard
+                key={`${item.kind}-${item.number.ordinal}`}
+                item={item}
+                flags={flagsFor(`agenda[${item.number.ordinal}]`)}
+                selected={selected}
+                onSelect={onSelect}
+              />
+            ))
+          )}
         </section>
       </div>
+    </div>
+  );
+};
+
+const AgendaCard: React.FC<{
+  item: AgendaItem;
+  flags: ReviewFlag[];
+  selected: string | null;
+  onSelect: (path: string, evidence: Evidence | null) => void;
+}> = ({ item, flags, selected, onSelect }) => {
+  const path = `agenda[${item.number.ordinal}]`;
+  const active = selected === path;
+  const { fsImpact, resolution, summary } = item;
+
+  return (
+    <div
+      className={`rounded-lg border px-2.5 py-2 space-y-1.5 transition ${
+        active ? 'border-emerald-400 bg-emerald-50/60' : 'border-slate-200 bg-white hover:border-slate-300'
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <span className="shrink-0 text-[10px] font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
+          {item.kind} 제{item.number.ordinal}호
+        </span>
+        {resolution.value ? (
+          <span
+            className={`shrink-0 text-[10px] font-medium border rounded px-1.5 py-0.5 ${
+              RESOLUTION_STYLE[resolution.value]
+            }`}
+          >
+            {resolution.value}
+          </span>
+        ) : (
+          <span className="shrink-0 text-[10px] font-medium border border-rose-200 bg-rose-50 text-rose-700 rounded px-1.5 py-0.5">
+            가결 여부 불명
+          </span>
+        )}
+        <button
+          onClick={() => onSelect(path, item.body)}
+          title="이 의안의 본문 구간 보기"
+          className="ml-auto shrink-0 flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded px-1.5 py-0.5 transition cursor-pointer"
+        >
+          <Crosshair className="w-3.5 h-3.5" />
+          {item.body.page}쪽
+        </button>
+      </div>
+
+      {item.title.value ? (
+        <button
+          onClick={() => onSelect(path, item.title.evidence)}
+          className="block text-left text-sm text-slate-900 font-medium break-all hover:text-emerald-800 cursor-pointer"
+        >
+          {item.title.value}
+        </button>
+      ) : (
+        <p className="text-xs text-slate-400 italic">의안제목이 비어 있습니다</p>
+      )}
+
+      {summary.value && (
+        <p className="text-[11px] text-slate-600 leading-relaxed break-all">
+          <span className="text-slate-400">발췌 </span>
+          “{summary.value}”
+        </p>
+      )}
+
+      {(resolution.unanimous || Object.keys(resolution.votes).length > 0) && (
+        <p className="text-[11px] text-slate-500 tabular-nums">
+          {resolution.unanimous && <span className="text-slate-600">만장일치</span>}
+          {Object.keys(resolution.votes).length > 0 && (
+            <span className={resolution.unanimous ? 'ml-2' : ''}>
+              찬성 {resolution.votes.for ?? '-'} · 반대 {resolution.votes.against ?? '-'} · 기권{' '}
+              {resolution.votes.abstain ?? '-'}
+            </span>
+          )}
+        </p>
+      )}
+
+      {(fsImpact.standards.length > 0 || fsImpact.amounts.length > 0) && (
+        <div className="pt-1 border-t border-slate-100 space-y-1">
+          {fsImpact.amounts.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {fsImpact.amounts.map((a, i) => (
+                <button
+                  key={i}
+                  onClick={() => onSelect(`${path}.amount[${i}]`, a.evidence)}
+                  title="원문에서 이 금액이 나온 자리 보기"
+                  className="text-[10px] font-medium tabular-nums text-slate-700 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 hover:border-emerald-400 hover:text-emerald-800 transition cursor-pointer"
+                >
+                  {a.raw}
+                </button>
+              ))}
+            </div>
+          )}
+          {fsImpact.standards.length > 0 && (
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              <span className="text-slate-400">기준서 후보 </span>
+              {fsImpact.standards.map(c => c.replace('k-ifrs-', '제') + '호').join(' · ')}
+              {fsImpact.reasoning && <span className="text-slate-400"> — {fsImpact.reasoning}</span>}
+              <br />
+              <span className="text-slate-400">{fsImpact.note}</span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {flags.map((f, i) => <FlagLine key={i} flag={f} />)}
     </div>
   );
 };
