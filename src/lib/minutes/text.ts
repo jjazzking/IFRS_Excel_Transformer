@@ -21,6 +21,7 @@ import type {
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 
 import { Evidence, MinutesSource, PageKind } from './types';
+import { ORIENTATION_THRESHOLD, OcrWord, TesseractEngine } from './ocr';
 
 // 워커를 번들에 포함시킨다. CDN 을 쓰지 않는 이유는 이 앱이 GitHub Pages 정적
 // 호스팅이고, 무엇보다 **의사록 파일이 브라우저 밖으로 나가지 않아야** 하기
@@ -68,6 +69,9 @@ export interface Word {
   bbox: [number, number, number, number]; // 배율 1 · 좌상단 원점
   page: number; // 0-based
   line: number;
+  source: 'text' | 'ocr';
+  /** OCR 로 읽은 낱말만. 0~100 */
+  confidence?: number;
 }
 
 export interface Page {
@@ -77,6 +81,9 @@ export interface Page {
   end: number;
   width: number; // 배율 1 에서의 크기
   height: number;
+  /** OCR 이 고른 방향. 스캔 페이지를 실제로 읽었을 때만 채워진다. */
+  ocrRotation?: number;
+  ocrConfidence?: number;
 }
 
 /** 공백으로 자른 글자 조각 하나와 그 자리. */
@@ -159,6 +166,11 @@ function piecesOf(item: TextItem, transform: number[]): Piece[] {
   return out;
 }
 
+export interface LoadOptions {
+  /** 주면 **스캔 페이지에서만** 부른다. 안 주면 스캔 페이지는 읽지 않고 표시만 남는다. */
+  ocr?: TesseractEngine | null;
+}
+
 export class MinutesText {
   readonly pages: Page[] = [];
   readonly words: Word[] = [];
@@ -170,7 +182,7 @@ export class MinutesText {
     private readonly task: PDFDocumentLoadingTask
   ) {}
 
-  static async load(file: File): Promise<MinutesText> {
+  static async load(file: File, options: LoadOptions = {}): Promise<MinutesText> {
     // pdf.js 는 넘겨받은 버퍼를 워커로 넘기면서 비워 버린다. 사본을 준다.
     const bytes = new Uint8Array(await file.arrayBuffer());
     const task = pdfjs.getDocument({
@@ -181,7 +193,7 @@ export class MinutesText {
     });
     const pdf = await task.promise;
     const self = new MinutesText(file.name, pdf, task);
-    await self.build();
+    await self.build(options.ocr ?? null);
     return self;
   }
 
@@ -190,7 +202,7 @@ export class MinutesText {
     return this.task.destroy();
   }
 
-  private async build(): Promise<void> {
+  private async build(ocr: TesseractEngine | null): Promise<void> {
     const chunks: string[] = [];
     let cursor = 0;
 
@@ -215,10 +227,19 @@ export class MinutesText {
       const nativeChars = pieces.reduce((n, p) => n + p.text.length, 0);
       const kind: PageKind = nativeChars >= SCAN_PAGE_CHAR_THRESHOLD ? 'text' : 'scan';
 
+      let ocrRotation: number | undefined;
+      let ocrConfidence: number | undefined;
+
       if (kind === 'text') {
         cursor = this.appendPage(pieces, chunks, cursor, pageNo);
+      } else if (ocr) {
+        // 스캔 페이지에서만 엔진을 부른다. 낱말은 이미 낱말이므로 다시 묶지 않는다.
+        const words = await ocr.read(page);
+        cursor = this.appendOcr(words, chunks, cursor, pageNo);
+        ocrRotation = ocr.lastRotation;
+        ocrConfidence = ocr.lastMeanConfidence;
       }
-      // 스캔 페이지는 읽지 않는다. `SCAN_PAGE` 로 표시하고 넘어간다 (OCR 미이식).
+      // 엔진이 없으면 스캔 페이지는 읽지 않는다. `SCAN_PAGE` 로 표시하고 넘어간다.
 
       this.pages.push({
         index: pageNo,
@@ -227,6 +248,8 @@ export class MinutesText {
         end: cursor,
         width: viewport.width,
         height: viewport.height,
+        ocrRotation,
+        ocrConfidence,
       });
     }
 
@@ -262,6 +285,7 @@ export class MinutesText {
         bbox: [word.left, word.top, word.right, word.bottom],
         page: pageNo,
         line: word.line,
+        source: 'text',
       });
       cursor += norm.length;
       word = null;
@@ -288,6 +312,45 @@ export class MinutesText {
       }
     }
     flush();
+    return cursor;
+  }
+
+  /**
+   * OCR 이 읽은 낱말을 본문에 잇는다.
+   *
+   * 텍스트 경로와 달리 **다시 묶지 않는다** — 엔진이 이미 낱말 단위로 답했고,
+   * 그 경계가 엔진이 아는 가장 좋은 답이다. 여기서 기하로 다시 자르면 엔진의
+   * 판단을 우리 어림짐작으로 덮어쓰는 셈이 된다.
+   */
+  private appendOcr(
+    words: OcrWord[],
+    chunks: string[],
+    cursor: number,
+    pageNo: number
+  ): number {
+    let previousLine: number | null = null;
+
+    for (const word of words) {
+      const sep = previousLine === null ? '' : word.line === previousLine ? ' ' : '\n';
+      if (sep) {
+        chunks.push(sep);
+        cursor += sep.length;
+      }
+      previousLine = word.line;
+
+      const norm = normalizeKeepingLength(word.text);
+      chunks.push(norm);
+      this.words.push({
+        start: cursor,
+        end: cursor + norm.length,
+        bbox: word.bbox,
+        page: pageNo,
+        line: word.line,
+        source: 'ocr',
+        confidence: word.confidence,
+      });
+      cursor += norm.length;
+    }
     return cursor;
   }
 
@@ -323,17 +386,32 @@ export class MinutesText {
     return [...merged.values()].map(b => b.map(v => Math.round(v * 10) / 10));
   }
 
+  /**
+   * 구간에 걸친 낱말의 **최저** 신뢰도. 평균이 아니라 최저를 본다.
+   *
+   * 평균 88 인 페이지 안에 신뢰도 24 짜리 낱말이 섞여 있었고, 틀린 것은 그
+   * 낱말이었다. 금액·인원수처럼 한 글자가 결과를 바꾸는 필드에서 특히 그렇다.
+   */
+  minConfidence(start: number, end: number): number | null {
+    const scores = this.wordsIn(start, end)
+      .map(w => w.confidence)
+      .filter((c): c is number => c !== undefined);
+    return scores.length > 0 ? Math.min(...scores) : null;
+  }
+
   /** 구간 하나를 근거로 만든다. 글자는 여기서 원문을 잘라 담는다. */
   evidence(start: number, end: number): Evidence {
     const lo = Math.max(0, start);
     const hi = Math.min(this.text.length, end);
+    const hits = this.wordsIn(lo, hi);
     return {
       page: this.pageOf(lo),
       start: lo,
       end: hi,
       text: this.text.slice(lo, hi).trim(),
       bbox: this.bboxesFor(lo, hi),
-      source: 'text',
+      // 한 낱말이라도 OCR 로 읽었으면 그 근거는 원문 그대로가 아니다.
+      source: hits.some(w => w.source === 'ocr') ? 'ocr' : 'text',
     };
   }
 
@@ -343,9 +421,18 @@ export class MinutesText {
     return this.pages.filter(p => p.kind === 'scan').map(p => p.index + 1);
   }
 
-  /** 읽지 못한 쪽번호. 브라우저 판은 OCR 이 없어 스캔 페이지가 그대로 여기 남는다. */
+  /** 읽지 못한 쪽번호. OCR 을 붙이면 여기가 빈다. */
   get unreadPages(): number[] {
-    return this.scanPages;
+    return this.pages
+      .filter(p => p.kind === 'scan' && p.ocrRotation === undefined)
+      .map(p => p.index + 1);
+  }
+
+  /** 방향이 틀어졌거나 품질이 낮아 OCR 이 헤맨 쪽. */
+  get shakyOcrPages(): number[] {
+    return this.pages
+      .filter(p => p.ocrConfidence !== undefined && p.ocrConfidence < ORIENTATION_THRESHOLD)
+      .map(p => p.index + 1);
   }
 
   summary(): MinutesSource {
@@ -356,6 +443,13 @@ export class MinutesText {
       charCount: this.text.length,
       scanPages: this.scanPages,
       unreadPages: this.unreadPages,
+      ocr: this.pages
+        .filter(p => p.ocrRotation !== undefined)
+        .map(p => ({
+          page: p.index + 1,
+          rotation: p.ocrRotation!,
+          meanConfidence: Math.round((p.ocrConfidence ?? 0) * 10) / 10,
+        })),
     };
   }
 }

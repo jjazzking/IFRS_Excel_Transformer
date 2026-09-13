@@ -21,6 +21,7 @@ import {
   ReviewFlag,
 } from './types';
 import { MinutesText } from './text';
+import { LOW_CONFIDENCE, ORIENTATION_THRESHOLD } from './ocr';
 import {
   AttendanceKey,
   AttendanceResult,
@@ -141,6 +142,30 @@ function agendaItem(found: ReturnType<typeof findAgenda>[number], text: MinutesT
   };
 }
 
+/** 스키마 안의 모든 근거 구간을 `경로, (시작, 끝)` 로 훑는다. */
+function evidenceSpans(doc: MinutesDocument): [string, [number, number]][] {
+  const found: [string, [number, number]][] = [];
+  const add = (where: string, ev: Evidence | null | undefined) => {
+    if (ev) found.push([where, [ev.start, ev.end]]);
+  };
+
+  add('meeting.heldAt', doc.meeting.heldAt.evidence);
+  add('meeting.place', doc.meeting.place?.evidence);
+  add('attendance.directors', doc.attendance.directors.evidence);
+  add('attendance.auditCommittee', doc.attendance.auditCommittee.evidence);
+
+  for (const item of doc.agenda) {
+    const where = `agenda[${item.number.ordinal}]`;
+    add(where, item.number.evidence);
+    add(where, item.title.evidence);
+    add(where, item.body);
+    add(where, item.summary.evidence);
+    add(where, item.resolution.evidence);
+    for (const amount of item.fsImpact.amounts) add(where, amount.evidence);
+  }
+  return found;
+}
+
 export function parseMinutes(text: MinutesText): MinutesDocument {
   const body = text.text;
 
@@ -198,6 +223,26 @@ function validate(
     flag(flags, 'SCAN_PAGE', 'P1',
       `이미지 페이지 [${text.unreadPages.join(', ')}] — 읽지 못했다. 그 쪽의 값은 비어 있다.`,
       'source');
+  } else if (text.scanPages.length > 0) {
+    flag(flags, 'SCAN_PAGE', 'P1',
+      `이미지 페이지 [${text.scanPages.join(', ')}] 를 OCR 로 읽었다. `
+      + '원문 그대로가 아니므로 사람이 한 번 본다.', 'source');
+  }
+
+  for (const page of text.shakyOcrPages) {
+    const mean = text.pages[page - 1].ocrConfidence ?? 0;
+    flag(flags, 'OCR_ORIENTATION', 'P1',
+      `${page}쪽 평균 신뢰도 ${mean.toFixed(0)} — 방향이 틀어졌거나 품질이 낮다.`, 'source');
+  }
+
+  // 근거마다 **최저** 신뢰도를 본다. 평균이 높아도 숫자 한 글자가 틀리면 값이 바뀐다.
+  for (const [where, span] of evidenceSpans(doc)) {
+    const worst = text.minConfidence(span[0], span[1]);
+    if (worst !== null && worst < LOW_CONFIDENCE) {
+      flag(flags, 'OCR_LOW_CONF', 'P1',
+        `OCR 신뢰도 ${worst.toFixed(0)} 인 낱말이 섞여 있다. 숫자 한 글자가 결과를 바꾼다.`,
+        where);
+    }
   }
 
   for (const [path, name] of REQUIRED_FIELDS) {

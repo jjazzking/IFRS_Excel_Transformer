@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Crosshair, Filter, ListTree } from 'lucide-react';
+import { AlertTriangle, Crosshair, Filter, ListTree, ScanLine } from 'lucide-react';
 import {
   AgendaItem,
   Evidence,
@@ -133,6 +133,13 @@ export const SchemaInspector: React.FC<SchemaInspectorProps> = ({ doc, selected,
             {doc.source.pageCount}쪽 · 글자 {doc.source.charCount.toLocaleString()}자
             {doc.source.scanPages.length > 0 && ` · 이미지 쪽 ${doc.source.scanPages.join(', ')}`}
           </p>
+          {doc.source.ocr.map(o => (
+            <p key={o.page} className="text-[11px] text-sky-700 tabular-nums">
+              <ScanLine className="w-3 h-3 inline-block mr-1 align-[-2px]" />
+              {o.page}쪽을 OCR 로 읽었습니다
+              {o.rotation ? ` (${o.rotation}° 돌려서)` : ''} · 평균 신뢰도 {o.meanConfidence}
+            </p>
+          ))}
           {sourceFlags.map((f, i) => <FlagLine key={i} flag={f} />)}
         </section>
 
@@ -229,6 +236,7 @@ const AgendaCard: React.FC<{
           className="block text-left text-sm text-slate-900 font-medium break-all hover:text-emerald-800 cursor-pointer"
         >
           {item.title.value}
+          {item.title.evidence.source === 'ocr' && <span className="ml-1"><OcrMark /></span>}
         </button>
       ) : (
         <p className="text-xs text-slate-400 italic">의안제목이 비어 있습니다</p>
@@ -238,6 +246,7 @@ const AgendaCard: React.FC<{
         <p className="text-[11px] text-slate-600 leading-relaxed break-all">
           <span className="text-slate-400">발췌 </span>
           “{summary.value}”
+          {summary.evidence?.source === 'ocr' && <span className="ml-1"><OcrMark /></span>}
         </p>
       )}
 
@@ -320,12 +329,27 @@ const FieldRow: React.FC<{
       <p className="mt-1 text-[11px] text-slate-500 break-all">
         <span className="text-slate-400">근거 </span>
         “{row.evidence.text}”
+        {row.evidence.source === 'ocr' && <span className="ml-1"><OcrMark /></span>}
         {row.rule && <span className="ml-1 text-slate-400">· {row.rule}</span>}
       </p>
     )}
 
     {flags.map((f, i) => <FlagLine key={i} flag={f} />)}
   </div>
+);
+
+/**
+ * OCR 로 읽은 근거에는 표를 단다. 화면에서 달라야 하는 이유는 하나다 —
+ * **그 글자는 원문 그대로가 아니다.** 사람이 한 번 봐야 할 자리라는 뜻이다.
+ */
+const OcrMark: React.FC = () => (
+  <span
+    title="OCR 로 읽은 글자입니다 — 원문 그대로가 아닙니다"
+    className="inline-flex items-center gap-0.5 align-middle text-[10px] font-medium text-sky-700 bg-sky-50 border border-sky-200 rounded px-1 py-px"
+  >
+    <ScanLine className="w-2.5 h-2.5" />
+    OCR
+  </span>
 );
 
 const FlagLine: React.FC<{ flag: ReviewFlag }> = ({ flag }) => (

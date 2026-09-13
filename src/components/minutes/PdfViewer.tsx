@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { FileWarning, ImageOff } from 'lucide-react';
+import { FileWarning, ImageOff, ScanLine } from 'lucide-react';
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist/types/src/display/api';
 import type { Page } from '../../lib/minutes/text';
 import { Evidence } from '../../lib/minutes/types';
@@ -80,10 +80,20 @@ const PdfPage: React.FC<{
       <canvas ref={canvasRef} className="block w-full h-full" />
 
       {page.kind === 'scan' && (
-        <div className="absolute inset-x-0 top-0 flex items-center gap-1.5 bg-amber-100/90 border-b border-amber-300 px-2 py-1 text-[11px] text-amber-900">
-          <ImageOff className="w-3.5 h-3.5 shrink-0" />
-          이미지 페이지 — 글자를 읽지 못했습니다. 이 쪽의 값은 비어 있습니다.
-        </div>
+        page.ocrRotation === undefined ? (
+          <div className="absolute inset-x-0 top-0 flex items-center gap-1.5 bg-amber-100/90 border-b border-amber-300 px-2 py-1 text-[11px] text-amber-900">
+            <ImageOff className="w-3.5 h-3.5 shrink-0" />
+            이미지 페이지 — 글자를 읽지 못했습니다. 이 쪽의 값은 비어 있습니다.
+          </div>
+        ) : (
+          <div className="absolute inset-x-0 top-0 flex items-center gap-1.5 bg-sky-100/90 border-b border-sky-300 px-2 py-1 text-[11px] text-sky-900">
+            <ScanLine className="w-3.5 h-3.5 shrink-0" />
+            이미지 페이지 — OCR 로 읽었습니다
+            {page.ocrRotation ? ` (${page.ocrRotation}° 돌려서)` : ''}
+            {page.ocrConfidence !== undefined && ` · 평균 신뢰도 ${page.ocrConfidence.toFixed(0)}`}
+            . 원문 그대로가 아닙니다.
+          </div>
+        )
       )}
 
       {failed && (

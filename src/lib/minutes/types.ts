@@ -25,13 +25,22 @@ export interface Hit<T> {
 
 export type PageKind = 'text' | 'scan';
 
+/** OCR 로 읽은 쪽 하나 — 어느 방향으로 읽었고 그때 평균 신뢰도가 얼마였는지. */
+export interface OcrPageReport {
+  page: number;
+  rotation: number;
+  meanConfidence: number;
+}
+
 export interface MinutesSource {
   fileName: string;
   pageCount: number;
   pageKinds: PageKind[];
   charCount: number;
   scanPages: number[];
+  /** 읽지 못한 쪽. OCR 을 켜면 여기가 빈다. */
   unreadPages: number[];
+  ocr: OcrPageReport[];
 }
 
 export interface MinutesMeeting {
