@@ -85,7 +85,7 @@ SAMPLES: list[dict] = [
                            "auditCommittee": {"total": 3, "present": 3}},
             "agenda": [
                 {"number": 1, "kind": "결의", "title": "운영자금 조달을 위한 유상증자의 건", "resolution": "원안가결"},
-                {"number": 2, "kind": "결의", "title": "본사 사옥 임대차 계약 체결의 건", "resolution": "가결"},
+                {"number": 2, "kind": "결의", "title": "본사 사옥 임대차 계약 체결의 건", "resolution": "원안가결"},
                 {"number": 1, "kind": "보고", "title": "제25기 재무제표 외부감사 진행상황 보고", "resolution": "해당없음"},
             ],
         },
@@ -172,7 +172,7 @@ SAMPLES: list[dict] = [
             "attendance": {"directors": {"total": 5, "present": 5},
                            "auditCommittee": {"total": 2, "present": 2}},
             "agenda": [
-                {"number": 1, "kind": "결의", "title": "공장 증설을 위한 유형자산 취득의 건", "resolution": "가결"},
+                {"number": 1, "kind": "결의", "title": "공장 증설을 위한 유형자산 취득의 건", "resolution": "원안가결"},
                 {"number": 2, "kind": "결의", "title": "금융기관 차입 한도 약정 체결의 건", "resolution": "원안가결"},
             ],
         },
@@ -211,7 +211,7 @@ SAMPLES: list[dict] = [
                            "auditCommittee": {"total": 3, "present": 2}},
             "agenda": [
                 {"number": 1, "kind": "결의", "title": "임원 주식매수선택권 부여의 건", "resolution": "원안가결"},
-                {"number": 3, "kind": "결의", "title": "특수관계자와의 부동산 임대차 거래 승인의 건", "resolution": "가결"},
+                {"number": 3, "kind": "결의", "title": "특수관계자와의 부동산 임대차 거래 승인의 건", "resolution": "원안가결"},
             ],
         },
     },

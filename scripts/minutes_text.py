@@ -37,6 +37,8 @@ class Word:
     bbox: tuple[float, float, float, float]
     page: int
     line: int
+    source: str = "text"  # 'text' | 'ocr'
+    confidence: float | None = None  # OCR 로 읽은 낱말만. 0~100
 
 
 @dataclass
@@ -48,6 +50,8 @@ class Page:
     width: float
     height: float
     rotation: int
+    ocr_rotation: int | None = None  # OCR 이 고른 방향
+    ocr_confidence: float | None = None  # 그 방향에서의 평균 신뢰도
 
 
 @dataclass
@@ -75,8 +79,15 @@ class Evidence:
 class MinutesText:
     """PDF 한 건의 본문과 좌표계."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, ocr=None):
+        """`ocr` 를 주면 **스캔 페이지에서만** 그 엔진을 부른다.
+
+        안 주면 지금까지와 똑같이 돈다 — 스캔 페이지는 읽지 않고 표시만 남긴다.
+        OCR 이 없는 환경에서 깨지지 않아야 하고, 스캔본을 다루지 않는 사람에게
+        설치를 강요할 이유도 없다.
+        """
         self.path = Path(path)
+        self.ocr = ocr
         self.pages: list[Page] = []
         self.words: list[Word] = []
         self.text: str = ""
@@ -95,19 +106,30 @@ class MinutesText:
                 cursor += len(PAGE_SEPARATOR)
 
             page_start = cursor
-            # (x0, y0, x1, y1, word, block, line, word_no) — 읽는 순서대로 정렬한다.
-            raw = sorted(page.get_text("words"), key=lambda w: (w[5], w[6], w[7]))
+            native = sorted(page.get_text("words"), key=lambda w: (w[5], w[6], w[7]))
+            native_chars = sum(len(w[4]) for w in native)
+            kind = "text" if native_chars >= SCAN_PAGE_CHAR_THRESHOLD else "scan"
 
-            prev_line: tuple[int, int] | None = None
-            for x0, y0, x1, y1, word, block, line, _ in raw:
-                this_line = (block, line)
+            rotation = confidence = None
+            if kind == "text":
+                items = [(w[4], (w[0], w[1], w[2], w[3]), (w[5], w[6]), "text", None) for w in native]
+            elif self.ocr is not None:
+                words = self.ocr(page)
+                rotation = getattr(self.ocr, "last_rotation", None)
+                confidence = getattr(self.ocr, "last_mean_confidence", None)
+                items = [(w.text, w.bbox, (0, w.line), "ocr", w.confidence) for w in words]
+            else:
+                items = []  # 읽지 않는다. `SCAN_PAGE` 로 표시하고 넘어간다.
+
+            prev_line = None
+            for text, bbox, line_key, source, conf in items:
                 if prev_line is None:
                     sep = ""
-                elif this_line != prev_line:
+                elif line_key != prev_line:
                     sep = "\n"
                 else:
                     sep = " "
-                prev_line = this_line
+                prev_line = line_key
 
                 if sep:
                     chunks.append(sep)
@@ -115,23 +137,25 @@ class MinutesText:
 
                 # 전각 숫자·영문과 특수 공백을 정규화한다. 길이가 변하면 오프셋이
                 # 깨지므로, 길이를 보존하는 변환만 한다.
-                norm = _normalize_keeping_length(word)
+                norm = _normalize_keeping_length(text)
                 chunks.append(norm)
                 self.words.append(
-                    Word(start=cursor, end=cursor + len(norm), bbox=(x0, y0, x1, y1), page=page_no, line=line)
+                    Word(start=cursor, end=cursor + len(norm), bbox=tuple(bbox), page=page_no,
+                         line=line_key[1], source=source, confidence=conf)
                 )
                 cursor += len(norm)
 
-            page_text_len = cursor - page_start
             self.pages.append(
                 Page(
                     index=page_no,
-                    kind="text" if page_text_len >= SCAN_PAGE_CHAR_THRESHOLD else "scan",
+                    kind=kind,
                     start=page_start,
                     end=cursor,
                     width=page.rect.width,
                     height=page.rect.height,
                     rotation=page.rotation,
+                    ocr_rotation=rotation,
+                    ocr_confidence=confidence,
                 )
             )
 
@@ -163,10 +187,25 @@ class MinutesText:
                 box[3] = max(box[3], w.bbox[3])
         return list(merged.values())
 
-    def evidence(self, start: int, end: int, source: str = "text") -> Evidence:
+    def words_in(self, start: int, end: int) -> list[Word]:
+        return [w for w in self.words if w.start < end and w.end > start]
+
+    def min_confidence(self, start: int, end: int) -> float | None:
+        """구간에 걸친 낱말의 **최저** 신뢰도. 평균이 아니라 최저를 본다.
+
+        평균 88 인 페이지 안에 신뢰도 24 짜리 낱말이 섞여 있었고, 틀린 것은 그
+        낱말이었다. 금액·인원수처럼 한 글자가 결과를 바꾸는 필드에서 특히 그렇다.
+        """
+        scores = [w.confidence for w in self.words_in(start, end) if w.confidence is not None]
+        return min(scores) if scores else None
+
+    def evidence(self, start: int, end: int, source: str | None = None) -> Evidence:
         """구간 하나를 근거로 만든다. 글자는 여기서 원문을 잘라 담는다 — 누구도 다시 쓰지 않는다."""
         start = max(0, start)
         end = min(len(self.text), end)
+        hits = self.words_in(start, end)
+        if source is None:
+            source = "ocr" if any(w.source == "ocr" for w in hits) else "text"
         return Evidence(
             page=self.page_of(start),
             start=start,
@@ -180,8 +219,13 @@ class MinutesText:
 
     @property
     def scan_pages(self) -> list[int]:
-        """OCR 이 필요한 쪽번호 (1-based). 규칙만으로는 이 페이지를 읽지 못한다."""
+        """이미지 페이지의 쪽번호 (1-based)."""
         return [p.index + 1 for p in self.pages if p.kind == "scan"]
+
+    @property
+    def unread_pages(self) -> list[int]:
+        """읽지 못한 쪽번호. OCR 을 붙이면 여기가 빈다."""
+        return [p.index + 1 for p in self.pages if p.kind == "scan" and p.ocr_rotation is None]
 
     def summary(self) -> dict:
         return {
@@ -190,6 +234,12 @@ class MinutesText:
             "pageKinds": [p.kind for p in self.pages],
             "charCount": len(self.text),
             "scanPages": self.scan_pages,
+            "unreadPages": self.unread_pages,
+            "ocr": [
+                {"page": p.index + 1, "rotation": p.ocr_rotation,
+                 "meanConfidence": round(p.ocr_confidence, 1) if p.ocr_confidence else None}
+                for p in self.pages if p.ocr_rotation is not None
+            ],
         }
 
 

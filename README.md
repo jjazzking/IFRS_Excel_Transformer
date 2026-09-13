@@ -304,12 +304,49 @@ python3 scripts/parse_minutes.py samples/minutes -o out/minutes --print
 python3 scripts/eval_minutes.py samples/minutes out/minutes --detail
 ```
 
-| 필드 | 규칙 전용 정확도 (합성 표본 4건) |
+스캔 페이지가 섞여 있으면 `--ocr tesseract` 를 붙입니다. **기본은 꺼져 있고**,
+끄면 그 페이지를 읽지 않고 `SCAN_PAGE` 로 표시만 남깁니다.
+
+```bash
+apt-get install tesseract-ocr tesseract-ocr-kor
+python3 scripts/parse_minutes.py samples/minutes -o out/minutes --ocr tesseract --print
+```
+
+**성능은 손대지 않은 시드에서 한 번만 잰 숫자입니다.**
+
+| 봉인 표본 (시드 9001~) | 전체 정확도 |
 | --- | ---: |
-| 일시 · 장소 · 총·출석 이사 수 · 총·출석 감사위원 수 | 100% |
-| 의안제목 · 가결 여부 | 90% |
-| 의안 경계 · 폐회시각 | 75% |
-| **전체** | **93%** |
+| 본문 500건 — 규칙만, 모델 없음 | **100.0%** (6,248/6,248) |
+| 스캔 열화본 70건 — 규칙 + OCR | **69.9%** (619/886) |
+
+규칙을 고칠 때 이 표본은 보지 않았습니다. 규칙이 이 생성기의 서식 공간을 다 덮는다는
+뜻입니다. 다만 **실제 의사록 성능은 아닙니다** — 생성기가 아는 서식을 다 덮었다는
+것이지 현실의 서식 분포를 덮었다는 것이 아닙니다.
+
+참고로 작업용 구간(시드 1~1000)에서는 이렇게 움직였습니다. 고치는 데 쓴 자료이므로
+**이 숫자들은 성능이 아닙니다.**
+
+| 작업용 구간 | 전체 |
+| --- | ---: |
+| 직접 만든 표본 4건 | 93% |
+| 모의 의사록 1,000건 — 규칙 손대기 전 | 44.7% |
+| 모의 의사록 1,000건 — 서식 계열을 넓힌 뒤 | 100.0% |
+
+가운데 줄이 과적합의 크기입니다. 규칙을 먼저 쓰고 표본을 나중에 지었으니 93% 는 일반화
+성능이 아니었습니다.
+
+### 스캔본은 갈래마다 다릅니다
+
+| 갈래 | 정확도 |
+| --- | ---: |
+| 열화 없음 | 94.1% |
+| 스마트폰 촬영 · 저해상도 · 사무실 스캔 | 78~83% |
+| 오래된 종이 · 복사기 사본 | 72~75% |
+| **팩스 (흑백 2치화)** | **16.2%** |
+
+70% 에서 막힌 것은 규칙이 아니라 OCR 입니다. 복사기 갈래는 신뢰도가 92 로 높은데도
+72% 입니다. 글자를 거의 맞게 읽지만 `…의 건` 이 `…의 견` 이 되는 식이라 정규식으로는
+못 고칩니다. 팩스는 원본을 다시 받는 편이 빠릅니다.
 
 **틀린 4건이 전부 스캔 페이지 하나에서 나왔습니다.** 텍스트 레이어가 있는 표본 3건은 모든
 필드 100% 입니다. 그림에는 글자가 없으므로 그 페이지는 OCR 없이 읽을 수 없고, 규칙은 조용히
@@ -322,14 +359,17 @@ python3 scripts/eval_minutes.py samples/minutes out/minutes --detail
 | `scripts/parse_minutes.py` | 오케스트레이션 + 교차검증(정족수·번호 연속성·찬반 합계) + JSON |
 | `scripts/eval_minutes.py` | 정답 대비 필드별 정확도 채점 |
 | `scripts/make_sample_minutes.py` | 서식 변형을 담은 합성 표본 생성 (실제 의사록은 저장소에 둘 수 없음) |
+| `scripts/bench_minutes.py` | 모의 의사록 생성기 출력으로 규칙을 대량 채점 |
 
 값은 모두 **원문 어디에서 왔는지**(쪽·문자 구간·좌표)를 달고 나옵니다. 글자는 규칙이 다시
 쓰지 않고 원문에서 잘라냅니다 — 법적 문서의 원문이 바뀌면 증빙으로 쓸 수 없기 때문입니다.
 
 설계와 측정 결과는 [`docs/minutes-plan.md`](docs/minutes-plan.md) 에 있습니다.
+스캔 페이지에 OCR 을 붙이는 설계는 [`docs/minutes-ocr.md`](docs/minutes-ocr.md) 에 따로 있습니다.
 
 ---
 
 함께 볼 문서: [`docs/naming.md`](docs/naming.md) (기능 작명) ·
 [`docs/roadmap.md`](docs/roadmap.md) (확장 구상) ·
-[`docs/minutes-plan.md`](docs/minutes-plan.md) (의사록 읽기 설계).
+[`docs/minutes-plan.md`](docs/minutes-plan.md) (의사록 읽기 설계) ·
+[`docs/minutes-ocr.md`](docs/minutes-ocr.md) (스캔 페이지 OCR 설계).
