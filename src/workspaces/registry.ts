@@ -5,9 +5,9 @@
  * 붙여넣는다. 찾는 대상만 다르다 (기준서 문단 / 이자율 / 환율 / 소송 사건).
  * 첫 화면은 이 목록을 카드로 늘어놓은 것이고, 카드를 누르면 그 작업대로 들어간다.
  */
-import { BookOpen, Gavel, LucideIcon, Percent, Landmark } from 'lucide-react';
+import { BookOpen, Gavel, LucideIcon, Percent, Landmark, ScrollText } from 'lucide-react';
 
-export type WorkspaceId = 'standards' | 'rates' | 'fx' | 'litigation';
+export type WorkspaceId = 'standards' | 'rates' | 'fx' | 'minutes' | 'litigation';
 
 export type WorkspaceStatus = 'ready' | 'preparing';
 
@@ -27,7 +27,7 @@ export interface WorkspaceMeta {
   /** 준비 중일 때, 무엇이 준비되면 열리는지 */
   blockedBy?: string;
   /** 카드 색 (tailwind 클래스 조각) */
-  accent: 'emerald' | 'sky' | 'amber' | 'violet';
+  accent: 'emerald' | 'sky' | 'amber' | 'violet' | 'rose';
 }
 
 export const WORKSPACES: WorkspaceMeta[] = [
@@ -67,6 +67,18 @@ export const WORKSPACES: WorkspaceMeta[] = [
     icon: Landmark,
     status: 'ready',
     accent: 'amber',
+  },
+  {
+    id: 'minutes',
+    name: '의사록 읽기',
+    tagline: '이사회 의사록에서 회의 사실과 의안을 뽑는다',
+    description:
+      '의사록 PDF 를 규칙만으로 읽어 일시·장소·출석 인원을 뽑고, 각 값이 원문 어디에서 나왔는지 함께 보여준다. 파일은 브라우저 밖으로 나가지 않는다.',
+    leftPane: '의사록 원본 PDF',
+    rightPane: '뽑아낸 정규 스키마 + 검토 필요 표시',
+    icon: ScrollText,
+    status: 'ready',
+    accent: 'rose',
   },
   {
     id: 'litigation',
