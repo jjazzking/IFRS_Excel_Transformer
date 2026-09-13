@@ -41,6 +41,12 @@ const ACCENT: Record<
     ring: 'hover:border-violet-400 hover:shadow-violet-100',
     arrow: 'text-violet-600',
   },
+  rose: {
+    chip: 'bg-rose-50 text-rose-700 border-rose-200',
+    icon: 'bg-rose-600 text-white',
+    ring: 'hover:border-rose-400 hover:shadow-rose-100',
+    arrow: 'text-rose-600',
+  },
 };
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpen, badges }) => (

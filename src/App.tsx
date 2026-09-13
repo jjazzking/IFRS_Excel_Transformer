@@ -1,7 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import { HomeScreen } from './components/HomeScreen';
 import StandardsWorkspace from './workspaces/StandardsWorkspace';
 import FxWorkspace from './workspaces/FxWorkspace';
+
+// 의사록 작업대만 따로 떼어 둔다. pdf.js 가 500kB 가까이 되는데, 기준서·환율만
+// 쓰는 사람이 그걸 받을 이유가 없다. `#/minutes` 로 들어갈 때만 받는다.
+const MinutesWorkspace = lazy(() => import('./workspaces/MinutesWorkspace'));
 import { useRoute } from './hooks/useRoute';
 import { ALL_STANDARDS } from './data/standardsData';
 import { FX_INDEX } from './data/fxData';
@@ -35,7 +39,21 @@ export default function App() {
   if (route === 'fx') {
     return <FxWorkspace onBackHome={() => go('home')} />;
   }
+  if (route === 'minutes') {
+    return (
+      <Suspense fallback={<WorkspaceLoading name="의사록 읽기" />}>
+        <MinutesWorkspace onBackHome={() => go('home')} />
+      </Suspense>
+    );
+  }
 
   // 준비 중인 작업대는 카드에서 눌리지 않으므로 여기까지 오지 않는다.
   return <HomeScreen onOpen={go} badges={badges} />;
 }
+
+/** 지연 로딩하는 작업대를 받아 오는 동안 보여줄 화면. 흰 화면을 남기지 않는다. */
+const WorkspaceLoading: React.FC<{ name: string }> = ({ name }) => (
+  <div className="h-screen bg-slate-100 grid place-items-center text-sm text-slate-500">
+    {name} 작업대를 불러오는 중…
+  </div>
+);
