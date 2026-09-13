@@ -2,5 +2,5 @@
   "name": "기준서 데스크",
   "description": "조서를 만들 때 찾아야 하는 것들을 한 자리에 — 왼쪽에서 찾고, 오른쪽 엑셀 미리보기에서 그대로 조서에 붙여넣는다",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }
