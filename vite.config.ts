@@ -14,12 +14,12 @@ import {defineConfig, Plugin} from 'vite';
 //   tesseract/core       — OCR 엔진 (WebAssembly). 세 갈래를 두고 브라우저가
 //                          지원하는 것 하나만 받아 간다.
 //   tesseract/worker...  — OCR 을 별도 스레드에서 돌리는 스크립트.
-//   tesseract/lang       — 한국어 모델. 스캔 페이지를 처음 만났을 때만 받는다.
+//   tesseract/lang       — 한국어·영어 모델. 스캔 페이지를 처음 만났을 때만 받는다.
 
 const PDFJS_ASSET_DIRS = ['cmaps', 'standard_fonts'];
 
 /**
- * 한국어 모델을 어느 것으로 낼지.
+ * OCR 모델을 어느 것으로 낼지.
  *   fast — `4.0.0_best_int`, 1.5MB. 정수화한 모델이라 작고 빠르다.
  *   best — `4.0.0`, 6.9MB. 실수 모델이라 크고 느리지만 더 잘 읽는다.
  * 고른 근거는 `docs/minutes-ocr.md` 에 있다.
@@ -27,6 +27,9 @@ const PDFJS_ASSET_DIRS = ['cmaps', 'standard_fonts'];
 const OCR_LANG_VARIANT: 'fast' | 'best' = 'fast';
 
 const OCR_LANG_DIR = { fast: '4.0.0_best_int', best: '4.0.0' };
+
+/** 함께 거는 모델. 파이썬 판의 `kor+eng` 와 같다. */
+const OCR_LANGS = ['kor', 'eng'];
 
 /** OCR 엔진은 LSTM 만 쓰므로 `-lstm` 갈래만 낸다. 한 브라우저는 그중 하나만 받는다. */
 const OCR_CORE_FILES = [
@@ -54,9 +57,15 @@ function sideAssets(root: string): Map<string, string> {
 
   // 고른 모델은 `lang/` 으로 낸다. 두 모델을 견줄 때는 개발 서버에서 아래
   // `lang-fast/`·`lang-best/` 를 직접 가리킨다 (배포본에는 안 들어간다).
-  const langOf = (v: 'fast' | 'best') =>
-    at('@tesseract.js-data', 'kor', OCR_LANG_DIR[v], 'kor.traineddata.gz');
-  out.set('tesseract/lang/kor.traineddata.gz', langOf(OCR_LANG_VARIANT));
+  //
+  // 한국어만으로는 금액·날짜·영문 약어에서 손해를 본다. 영어를 함께 건다
+  // (`docs/minutes-ocr.md` 4-4).
+  for (const lang of OCR_LANGS) {
+    out.set(
+      `tesseract/lang/${lang}.traineddata.gz`,
+      at('@tesseract.js-data', lang, OCR_LANG_DIR[OCR_LANG_VARIANT], `${lang}.traineddata.gz`)
+    );
+  }
 
   return out;
 }
@@ -72,10 +81,12 @@ function sideAssetsPlugin(): Plugin {
       const table = sideAssets(root);
       // 모델 비교용 — 두 모델을 같은 서버에서 동시에 집을 수 있게 한다.
       for (const v of ['fast', 'best'] as const) {
-        table.set(
-          `tesseract/lang-${v}/kor.traineddata.gz`,
-          path.resolve(root, 'node_modules/@tesseract.js-data/kor', OCR_LANG_DIR[v], 'kor.traineddata.gz')
-        );
+        for (const lang of OCR_LANGS) {
+          table.set(
+            `tesseract/lang-${v}/${lang}.traineddata.gz`,
+            path.resolve(root, 'node_modules/@tesseract.js-data', lang, OCR_LANG_DIR[v], `${lang}.traineddata.gz`)
+          );
+        }
       }
       server.middlewares.use((req, res, next) => {
         const url = (req.url ?? '').split('?')[0].replace(/^\//, '');

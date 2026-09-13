@@ -49,6 +49,21 @@ export const ORIENTATION_THRESHOLD = 70;
 
 const ROTATIONS = [0, 90, 180, 270] as const;
 
+/**
+ * 쪽 나누기 방식. 기본값 6(글자 크기가 고른 한 덩어리)은 의사록에 맞지 않는다 —
+ * 제목·라벨·본문의 크기가 다르고 표처럼 벌려 쓴 줄이 섞여 있다. 4(크기가 다른 한 단)로
+ * 바꾸자 복사기 사본이 53.1%→95.1%, 오래된 종이가 51.7%→90.7% 로 올랐다
+ * (`docs/minutes-ocr.md` 4-4).
+ *
+ * 다만 갈래마다 유리한 쪽이 다르다 — 4 는 열화가 심한 사본에서, 6 은 깨끗한
+ * 스캔에서 낫다. 그래서 문서마다 둘 다 읽어 보고 평균 신뢰도가 높은 쪽을 쓴다.
+ * 방향을 고르는 방식과 같다.
+ */
+const PSM_CANDIDATES: PSM[] = [PSM.SINGLE_COLUMN, PSM.SINGLE_BLOCK];
+
+/** 숫자·금액·영문 약어가 섞여 있으므로 영어를 함께 건다. 한국어만 걸면 숫자에서 손해다. */
+const DEFAULT_LANG = 'kor+eng';
+
 /** 이 아래로 떨어진 낱말은 실제로 틀린 낱말이었다. 검증에서 필드를 내리는 데 쓴다. */
 export const LOW_CONFIDENCE = 60;
 
@@ -58,6 +73,10 @@ const ASSETS = new URL('tesseract/', document.baseURI).href;
 export interface OcrOptions {
   /** 모델을 다른 자리에서 받고 싶을 때 (모델 비교에 쓴다). 기본은 `tesseract/lang/`. */
   langPath?: string;
+  /** 설정을 견줄 때만 쓴다. 기본은 `kor+eng`. */
+  lang?: string;
+  /** 주면 그 쪽 나누기 방식으로 고정한다. 안 주면 문서마다 고른다. */
+  psm?: PSM;
   /**
    * 받아 둔 모델을 브라우저에 쟁여 둘지. 기본은 쟁여 둔다 — 다음 의사록부터는
    * 내려받기가 없다. **모델을 견줄 때는 꺼야 한다.** 쟁여 둔 것이 이름(`kor`)으로
@@ -78,6 +97,8 @@ export class TesseractEngine {
   private worker: Worker | null = null;
   private hint = 0;
   private settled = false;
+  /** 이 문서에서 고른 쪽 나누기 방식. 한 번 정해지면 그다음 페이지는 그대로 쓴다. */
+  private psm: PSM | null = null;
 
   constructor(private readonly options: OcrOptions = {}) {}
 
@@ -85,18 +106,14 @@ export class TesseractEngine {
     if (this.worker) return this.worker;
     this.options.onProgress?.('OCR 엔진을 받는 중…');
 
-    this.worker = await createWorker('kor', OEM.LSTM_ONLY, {
+    this.worker = await createWorker(this.options.lang ?? DEFAULT_LANG, OEM.LSTM_ONLY, {
       corePath: ASSETS + 'core',
       workerPath: ASSETS + 'worker.min.js',
       langPath: this.options.langPath ?? ASSETS + 'lang',
       cacheMethod: this.options.cache === false ? 'none' : 'write',
       gzip: true,
     });
-    // 파이썬 판의 `--psm 6` 과 같다 — 페이지를 하나의 글 덩어리로 본다.
-    await this.worker.setParameters({
-      tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-      user_defined_dpi: String(DEFAULT_DPI),
-    });
+    await this.worker.setParameters({ user_defined_dpi: String(DEFAULT_DPI) });
     return this.worker;
   }
 
@@ -107,6 +124,7 @@ export class TesseractEngine {
   reset(): void {
     this.hint = 0;
     this.settled = false;
+    this.psm = this.options.psm ?? null;
     this.lastRotation = 0;
     this.lastMeanConfidence = 0;
   }
@@ -126,13 +144,14 @@ export class TesseractEngine {
    */
   async read(page: PDFPageProxy): Promise<OcrWord[]> {
     await this.ready();
+    if (this.psm === null && this.options.psm !== undefined) this.psm = this.options.psm;
 
-    let best = await this.attempt(page, this.hint);
+    let best = await this.readBestPsm(page, this.hint);
 
     if (best.mean < ORIENTATION_THRESHOLD && !this.settled) {
       for (const rotation of ROTATIONS) {
         if (rotation === this.hint) continue;
-        const other = await this.attempt(page, rotation);
+        const other = await this.readBestPsm(page, rotation);
         if (other.mean > best.mean) best = other;
         if (other.mean >= ORIENTATION_THRESHOLD) break;
       }
@@ -149,9 +168,30 @@ export class TesseractEngine {
 
   // ------------------------------------------------------------------ 내부
 
-  private async attempt(
+  /** 쪽 나누기 방식을 문서마다 고른다. 한 번 정해지면 그다음 페이지는 그대로 쓴다. */
+  private async readBestPsm(
     page: PDFPageProxy,
     rotation: number
+  ): Promise<{ words: OcrWord[]; mean: number; rotation: number }> {
+    if (this.psm !== null) return this.attempt(page, rotation, this.psm);
+
+    let best: { words: OcrWord[]; mean: number; rotation: number } | null = null;
+    let chosen = PSM_CANDIDATES[0];
+    for (const psm of PSM_CANDIDATES) {
+      const tried = await this.attempt(page, rotation, psm);
+      if (best === null || tried.mean > best.mean) {
+        best = tried;
+        chosen = psm;
+      }
+    }
+    this.psm = chosen;
+    return best!;
+  }
+
+  private async attempt(
+    page: PDFPageProxy,
+    rotation: number,
+    psm: PSM
   ): Promise<{ words: OcrWord[]; mean: number; rotation: number }> {
     const worker = await this.ready();
     this.options.onProgress?.(
@@ -169,6 +209,7 @@ export class TesseractEngine {
     canvas.height = Math.floor(shot.height);
     await page.render({ canvas, viewport: shot }).promise;
 
+    await worker.setParameters({ tessedit_pageseg_mode: psm });
     const { data } = await worker.recognize(canvas, {}, { blocks: true, text: false });
     canvas.width = canvas.height = 0; // 캔버스 뒤의 그림 메모리를 바로 놓아 준다
 
