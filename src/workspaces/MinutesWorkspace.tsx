@@ -5,6 +5,7 @@ import { SchemaInspector } from '../components/minutes/SchemaInspector';
 import { CollapsedRail, Splitter } from '../components/LayoutControls';
 import { useResizableLayout } from '../hooks/useResizableLayout';
 import { MinutesText } from '../lib/minutes/text';
+import { TesseractEngine } from '../lib/minutes/ocr';
 import { parseMinutes } from '../lib/minutes/parse';
 import { Evidence, MinutesDocument } from '../lib/minutes/types';
 
@@ -24,6 +25,7 @@ export default function MinutesWorkspace({ onBackHome }: MinutesWorkspaceProps) 
 
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<Evidence | null>(null);
@@ -34,8 +36,13 @@ export default function MinutesWorkspace({ onBackHome }: MinutesWorkspaceProps) 
     setError(null);
     setSelected(null);
     setHighlight(null);
+    setProgress('여는 중…');
+
+    // 엔진은 **스캔 페이지를 만났을 때만** 실제로 자기 몸을 받아 온다. 텍스트
+    // 의사록만 보는 사람에게는 한 바이트도 나가지 않는다.
+    const ocr = new TesseractEngine({ onProgress: setProgress });
     try {
-      const text = await MinutesText.load(file);
+      const text = await MinutesText.load(file, { ocr });
       setLoaded(prev => {
         // 앞 파일의 pdf.js 자원을 놓아 준다. 여러 건을 이어 볼 때 쌓인다.
         void prev?.text.destroy();
@@ -44,7 +51,9 @@ export default function MinutesWorkspace({ onBackHome }: MinutesWorkspaceProps) 
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
+      void ocr.destroy();
       setBusy(false);
+      setProgress(null);
     }
   }, []);
 
@@ -97,7 +106,7 @@ export default function MinutesWorkspace({ onBackHome }: MinutesWorkspaceProps) 
             <ShieldCheck className="w-3.5 h-3.5" />
             브라우저 안에서만 읽습니다 — 파일도 본문도 서버로 보내지 않습니다
           </span>
-          {busy && <span className="text-[11px] text-slate-500">읽는 중…</span>}
+          {busy && <span className="text-[11px] text-slate-500">{progress ?? '읽는 중…'}</span>}
           {error && <span className="text-[11px] text-rose-600">열지 못했습니다 — {error}</span>}
         </div>
       </div>

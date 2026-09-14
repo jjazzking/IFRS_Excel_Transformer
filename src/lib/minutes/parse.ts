@@ -10,20 +10,30 @@
  * 사실을 검증에서 따지지 않는다** — 못 찾은 것과 아직 안 본 것은 다르다.
  */
 import {
+  AgendaItem,
+  AgendaVotes,
   AttendanceGroup,
   Evidence,
   FlagLevel,
+  ImpactAmount,
   MinutesDocument,
+  ResolutionValue,
   ReviewFlag,
 } from './types';
 import { MinutesText } from './text';
+import { LOW_CONFIDENCE, ORIENTATION_THRESHOLD } from './ocr';
 import {
   AttendanceKey,
   AttendanceResult,
   RuleHit,
+  VoteKey,
+  extractiveSummary,
+  findAgenda,
   findAttendancePair,
   findDate,
+  findImpact,
   findPlace,
+  findResolution,
   findTimes,
 } from './rules';
 
@@ -32,7 +42,7 @@ const SCHEMA_VERSION = 1;
 /** 파이썬 판과 같은 규칙을 옮겼으므로 같은 판 번호를 쓴다. 두 산출물을 견줄 수 있어야 한다. */
 const RULE_VERSION = '2026-09-11';
 
-/** 필수 항목 중 문서 레벨에 해당하는 것. 비어 있으면 검토 대상이다. */
+/** 필수 12항목 중 대화전문을 뺀 것. 비어 있으면 검토 대상이다. */
 const REQUIRED_FIELDS: [string, string][] = [
   ['meeting.heldAt.date', '일시'],
   ['meeting.place', '장소'],
@@ -73,6 +83,89 @@ function at(doc: MinutesDocument, path: string): unknown {
   return node ?? null;
 }
 
+/** 의안 하나를 스키마 모양으로 옮긴다. 구간은 전부 근거로 바꿔 담는다. */
+function agendaItem(found: ReturnType<typeof findAgenda>[number], text: MinutesText): AgendaItem {
+  const body = text.text;
+  const [start, end] = found.bodyRange;
+
+  const resolution = findResolution(body, start, end, found.kind);
+  const summary = extractiveSummary(body, start, end);
+  const impact = findImpact(body, found.title.value, start, end);
+
+  const votes: AgendaVotes = {};
+  for (const key of Object.keys(resolution.votes) as VoteKey[]) {
+    votes[key] = resolution.votes[key]!.value;
+  }
+
+  const amounts: ImpactAmount[] = impact.amounts.map(a => ({
+    raw: a.raw,
+    value: a.value,
+    unit: a.unit,
+    evidence: text.evidence(a.start, a.end),
+  }));
+
+  return {
+    number: {
+      ordinal: found.number,
+      value: found.marker.value,
+      rule: found.marker.rule,
+      evidence: text.evidence(found.marker.start, found.marker.end),
+    },
+    kind: found.kind,
+    title: {
+      value: found.title.value,
+      rule: found.title.rule,
+      evidence: text.evidence(found.title.start, found.title.end),
+    },
+    body: text.evidence(start, end),
+    summary: summary
+      ? {
+          method: 'extractive',
+          value: summary.value,
+          rule: summary.rule,
+          evidence: text.evidence(summary.start, summary.end),
+        }
+      : { method: 'extractive', value: null, rule: 'SUMMARY_NONE', evidence: null },
+    resolution: {
+      value: (resolution.resolution?.value as ResolutionValue | undefined) ?? null,
+      evidence: evidenceOf(resolution.resolution, text),
+      votes,
+      unanimous: Boolean(resolution.unanimous?.value),
+    },
+    fsImpact: {
+      hasImpact: impact.hasImpact,
+      reasoning: impact.reasons.join(' · ') || null,
+      standards: impact.standards,
+      amounts,
+      note: '규칙이 고른 검토 후보다. 영향 여부는 사람이 판단한다.',
+    },
+  };
+}
+
+/** 스키마 안의 모든 근거 구간을 `경로, (시작, 끝)` 로 훑는다. */
+function evidenceSpans(doc: MinutesDocument): [string, [number, number]][] {
+  const found: [string, [number, number]][] = [];
+  const add = (where: string, ev: Evidence | null | undefined) => {
+    if (ev) found.push([where, [ev.start, ev.end]]);
+  };
+
+  add('meeting.heldAt', doc.meeting.heldAt.evidence);
+  add('meeting.place', doc.meeting.place?.evidence);
+  add('attendance.directors', doc.attendance.directors.evidence);
+  add('attendance.auditCommittee', doc.attendance.auditCommittee.evidence);
+
+  for (const item of doc.agenda) {
+    const where = `agenda[${item.number.ordinal}]`;
+    add(where, item.number.evidence);
+    add(where, item.title.evidence);
+    add(where, item.body);
+    add(where, item.summary.evidence);
+    add(where, item.resolution.evidence);
+    for (const amount of item.fsImpact.amounts) add(where, amount.evidence);
+  }
+  return found;
+}
+
 export function parseMinutes(text: MinutesText): MinutesDocument {
   const body = text.text;
 
@@ -80,6 +173,7 @@ export function parseMinutes(text: MinutesText): MinutesDocument {
   const [opened, closed] = findTimes(body);
   const place = findPlace(body);
   const counts = findAttendancePair(body);
+  const agenda = findAgenda(body);
 
   const doc: MinutesDocument = {
     schemaVersion: SCHEMA_VERSION,
@@ -87,7 +181,7 @@ export function parseMinutes(text: MinutesText): MinutesDocument {
       method: 'rules',
       llmUsed: false,
       ruleVersion: RULE_VERSION,
-      scope: 'document',
+      scope: 'full',
     },
     source: text.summary(),
     meeting: {
@@ -105,7 +199,7 @@ export function parseMinutes(text: MinutesText): MinutesDocument {
       directors: group(counts.directors, text),
       auditCommittee: group(counts.auditCommittee, text),
     },
-    agenda: [],
+    agenda: agenda.map(found => agendaItem(found, text)),
     review: { flags: [], needsReviewCount: 0, p1Count: 0 },
   };
 
@@ -129,6 +223,26 @@ function validate(
     flag(flags, 'SCAN_PAGE', 'P1',
       `이미지 페이지 [${text.unreadPages.join(', ')}] — 읽지 못했다. 그 쪽의 값은 비어 있다.`,
       'source');
+  } else if (text.scanPages.length > 0) {
+    flag(flags, 'SCAN_PAGE', 'P1',
+      `이미지 페이지 [${text.scanPages.join(', ')}] 를 OCR 로 읽었다. `
+      + '원문 그대로가 아니므로 사람이 한 번 본다.', 'source');
+  }
+
+  for (const page of text.shakyOcrPages) {
+    const mean = text.pages[page - 1].ocrConfidence ?? 0;
+    flag(flags, 'OCR_ORIENTATION', 'P1',
+      `${page}쪽 평균 신뢰도 ${mean.toFixed(0)} — 방향이 틀어졌거나 품질이 낮다.`, 'source');
+  }
+
+  // 근거마다 **최저** 신뢰도를 본다. 평균이 높아도 숫자 한 글자가 틀리면 값이 바뀐다.
+  for (const [where, span] of evidenceSpans(doc)) {
+    const worst = text.minConfidence(span[0], span[1]);
+    if (worst !== null && worst < LOW_CONFIDENCE) {
+      flag(flags, 'OCR_LOW_CONF', 'P1',
+        `OCR 신뢰도 ${worst.toFixed(0)} 인 낱말이 섞여 있다. 숫자 한 글자가 결과를 바꾼다.`,
+        where);
+    }
   }
 
   for (const [path, name] of REQUIRED_FIELDS) {
@@ -162,9 +276,44 @@ function validate(
       `폐회(${endTime})가 개회(${startTime})보다 앞선다.`, 'meeting.heldAt');
   }
 
-  // 의안 검증(AGENDA_NONE·RESOLUTION_MISSING·VOTE_SUM·AGENDA_SEQ·SPAN_OVERLAP)은
-  // 의안 규칙을 옮긴 뒤에 켠다. 규칙이 없는 채로 `의안을 못 찾았다` 고 말하면
-  // 읽기 실패처럼 보여 사람을 엉뚱한 곳으로 보낸다.
+  if (doc.agenda.length === 0) {
+    flag(flags, 'AGENDA_NONE', 'P1', '의안을 하나도 찾지 못했다. 서식이 다르거나 스캔본이다.', 'agenda');
+  } else {
+    for (const kind of ['결의', '보고'] as const) {
+      const nums = doc.agenda.filter(a => a.kind === kind).map(a => a.number.ordinal);
+      if (nums.length > 0 && nums.some((n, i) => n !== i + 1)) {
+        flag(flags, 'AGENDA_SEQ', 'P2',
+          `${kind} 의안번호가 이어지지 않는다: ${nums.join(', ')} — 페이지 누락일 수 있다.`, 'agenda');
+      }
+    }
+  }
+
+  for (const item of doc.agenda) {
+    const where = `agenda[${item.number.ordinal}]`;
+    if (item.resolution.value === null) {
+      flag(flags, 'RESOLUTION_MISSING', 'P1', '가결 여부를 읽지 못했다.', where);
+    }
+    const votes = Object.values(item.resolution.votes);
+    const present = doc.attendance.directors.present;
+    if (votes.length > 0 && present !== null) {
+      const sum = votes.reduce((a, b) => a + b, 0);
+      if (sum > present) {
+        flag(flags, 'VOTE_SUM', 'P1',
+          `찬반 합계 ${sum}명이 출석 이사 ${present}명을 넘는다.`, where);
+      }
+    }
+    if (!item.title.value) {
+      flag(flags, 'EMPTY_REQUIRED', 'P2', '의안제목이 비어 있다.', where);
+    }
+  }
+
+  // 의안 구간이 겹치면 앞 의안의 결의문이 뒤 의안의 결론으로 읽힌다.
+  for (let i = 1; i < doc.agenda.length; i++) {
+    if (doc.agenda[i - 1].body.end > doc.agenda[i].body.start) {
+      flag(flags, 'SPAN_OVERLAP', 'P2', '의안 구간이 겹친다.', 'agenda');
+      break;
+    }
+  }
 
   return {
     flags,
