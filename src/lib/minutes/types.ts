@@ -6,13 +6,25 @@
  * 양쪽을 같이 고친다.
  */
 
-/** 값 하나가 원문 어디에서 왔는지. 스키마의 모든 필드에 같은 모양으로 붙는다. */
-export interface Evidence {
+/** 근거가 걸친 쪽 하나와 그 쪽에서의 자리. */
+export interface EvidencePage {
   page: number; // 1-based (사람이 보는 쪽번호)
+  bbox: number[][]; // 줄 단위 사각형 [x0, y0, x1, y1] · 배율 1 · 좌상단 원점
+}
+
+/**
+ * 값 하나가 원문 어디에서 왔는지. 스키마의 모든 필드에 같은 모양으로 붙는다.
+ *
+ * 사각형을 **쪽별로** 담는다. 의안 본문처럼 쪽을 넘어가는 구간이 있어서다.
+ * 한 덩어리로 담으면 2쪽의 사각형이 1쪽 위에 그려진다 — 엉뚱한 쪽에 칠해진
+ * 자국은 값이 틀린 것보다 알아채기 어렵다.
+ */
+export interface Evidence {
+  page: number; // 구간이 **시작하는** 쪽. 화면이 먼저 데려가는 자리다
   start: number; // 본문 문자열에서의 구간
   end: number;
   text: string; // 원문에서 잘라낸 것 — 누구도 다시 쓰지 않는다
-  bbox: number[][]; // 줄 단위 사각형 [x0, y0, x1, y1]
+  pages: EvidencePage[]; // 구간이 걸친 모든 쪽. 낱말을 하나도 못 찾으면 빈다
   source: 'text' | 'ocr' | 'model';
 }
 

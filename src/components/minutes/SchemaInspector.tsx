@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Crosshair, Filter, ListTree, ScanLine } from 'lucide-react';
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Crosshair,
+  Filter,
+  ListTree,
+  ScanLine,
+} from 'lucide-react';
 import {
   AgendaItem,
   Evidence,
@@ -193,6 +201,8 @@ const AgendaCard: React.FC<{
   selected: string | null;
   onSelect: (path: string, evidence: Evidence | null) => void;
 }> = ({ item, flags, selected, onSelect }) => {
+  // 원문 전체는 접어 둔다. 의안 여럿을 훑을 때 먼저 보는 것은 제목과 가결 여부다.
+  const [openBody, setOpenBody] = useState(false);
   const path = `agenda[${item.number.ordinal}]`;
   // 안쪽의 좁은 자리(제목·발췌·금액)를 골라도 이 카드는 고른 것으로 남는다.
   const active = selected === path || Boolean(selected?.startsWith(path + '.'));
@@ -269,6 +279,38 @@ const AgendaCard: React.FC<{
           “{summary.value}”
           {summary.evidence?.source === 'ocr' && <span className="ml-1"><OcrMark /></span>}
         </button>
+      )}
+
+      {item.body.text && (
+        <div className="pt-0.5">
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              // 펴면서 원문의 그 구간으로도 같이 데려간다 — 두 벌을 나란히 본다.
+              setOpenBody(v => !v);
+              if (!openBody) onSelect(path, item.body);
+            }}
+            className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-emerald-800 transition cursor-pointer"
+          >
+            {openBody ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            의안 원문 {openBody ? '접기' : '전체 보기'}
+            <span className="text-slate-400 tabular-nums">
+              · {item.body.text.length.toLocaleString()}자
+              {item.body.pages.length > 1
+                ? ` · ${item.body.pages[0].page}~${item.body.pages[item.body.pages.length - 1].page}쪽`
+                : ` · ${item.body.page}쪽`}
+            </span>
+            {item.body.source === 'ocr' && <OcrMark />}
+          </button>
+
+          {openBody && (
+            // 잘라낸 원문 그대로다. 줄바꿈과 띄어쓰기를 건드리지 않아야 왼쪽에
+            // 칠해진 자리와 글자가 서로 맞는다.
+            <p className="mt-1 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-relaxed text-slate-700">
+              {item.body.text}
+            </p>
+          )}
+        </div>
       )}
 
       {(resolution.unanimous || Object.keys(resolution.votes).length > 0) && (

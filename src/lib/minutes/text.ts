@@ -20,7 +20,7 @@ import type {
 } from 'pdfjs-dist/types/src/display/api';
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 
-import { Evidence, MinutesSource, PageKind } from './types';
+import { Evidence, EvidencePage, MinutesSource, PageKind } from './types';
 import { ORIENTATION_THRESHOLD, OcrWord, TesseractEngine } from './ocr';
 
 // 워커를 번들에 포함시킨다. CDN 을 쓰지 않는 이유는 이 앱이 GitHub Pages 정적
@@ -368,8 +368,13 @@ export class MinutesText {
     return this.words.filter(w => w.start < end && w.end > start);
   }
 
-  /** 구간에 걸친 낱말들의 좌표를 줄 단위로 묶는다. 하이라이트 사각형이 된다. */
-  bboxesFor(start: number, end: number): number[][] {
+  /**
+   * 구간에 걸친 낱말들의 좌표를 줄 단위로 묶고, **쪽별로** 나눠 담는다.
+   *
+   * 쪽을 나누지 않으면 2쪽의 사각형이 1쪽 좌표로 그려진다. 의안 본문은 쪽을
+   * 넘어가는 일이 흔해서 이 구분이 없으면 엉뚱한 자리가 칠해진다.
+   */
+  evidencePages(start: number, end: number): EvidencePage[] {
     const merged = new Map<string, number[]>();
     for (const w of this.wordsIn(start, end)) {
       const key = `${w.page}:${w.line}`;
@@ -383,7 +388,18 @@ export class MinutesText {
         box[3] = Math.max(box[3], w.bbox[3]);
       }
     }
-    return [...merged.values()].map(b => b.map(v => Math.round(v * 10) / 10));
+
+    const byPage = new Map<number, number[][]>();
+    for (const [key, box] of merged) {
+      // 낱말이 들고 있는 쪽번호는 0-based 다. 사람이 보는 번호로 올린다.
+      const page = Number(key.split(':')[0]) + 1;
+      const boxes = byPage.get(page) ?? [];
+      boxes.push(box.map(v => Math.round(v * 10) / 10));
+      byPage.set(page, boxes);
+    }
+    return [...byPage.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([page, bbox]) => ({ page, bbox }));
   }
 
   /**
@@ -404,12 +420,16 @@ export class MinutesText {
     const lo = Math.max(0, start);
     const hi = Math.min(this.text.length, end);
     const hits = this.wordsIn(lo, hi);
+    const pages = this.evidencePages(lo, hi);
     return {
-      page: this.pageOf(lo),
+      // **낱말이 정답이다.** 오프셋으로 세면 쪽 사이 구분자에 걸친 구간이 앞쪽
+      // 으로 밀려, 2쪽에 있는 값을 1쪽이라고 말하게 된다. 낱말이 하나도 없을
+      // 때만(빈 구간) 오프셋으로 어림한다.
+      page: pages.length > 0 ? pages[0].page : this.pageOf(lo),
       start: lo,
       end: hi,
       text: this.text.slice(lo, hi).trim(),
-      bbox: this.bboxesFor(lo, hi),
+      pages,
       // 한 낱말이라도 OCR 로 읽었으면 그 근거는 원문 그대로가 아니다.
       source: hits.some(w => w.source === 'ocr') ? 'ocr' : 'text',
     };

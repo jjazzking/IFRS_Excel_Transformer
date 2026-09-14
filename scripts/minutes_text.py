@@ -36,7 +36,9 @@ class Word:
     end: int
     bbox: tuple[float, float, float, float]
     page: int
-    line: int
+    # (블록, 줄) 통째로 든다. 줄 번호만 들면 **블록이 다른 줄이 같은 줄로 묶여**
+    # 하이라이트 사각형 하나가 서로 상관없는 두 줄을 덮는다.
+    line: tuple[int, int]
     source: str = "text"  # 'text' | 'ocr'
     confidence: float | None = None  # OCR 로 읽은 낱말만. 0~100
 
@@ -55,14 +57,30 @@ class Page:
 
 
 @dataclass
-class Evidence:
-    """값 하나가 원문 어디에서 왔는지. 스키마의 모든 필드에 같은 모양으로 붙는다."""
+class EvidencePage:
+    """근거가 걸친 쪽 하나와 그 쪽에서의 자리."""
 
     page: int  # 1-based (사람이 보는 쪽번호)
+    bbox: list[list[float]] = field(default_factory=list)
+
+    def to_json(self) -> dict:
+        return {"page": self.page, "bbox": [[round(v, 1) for v in b] for b in self.bbox]}
+
+
+@dataclass
+class Evidence:
+    """값 하나가 원문 어디에서 왔는지. 스키마의 모든 필드에 같은 모양으로 붙는다.
+
+    사각형을 **쪽별로** 담는다. 의안 본문처럼 쪽을 넘어가는 구간이 있어서다.
+    한 덩어리로 담으면 2쪽의 사각형이 1쪽 위에 그려진다 — 엉뚱한 쪽에 칠해진
+    자국은 값이 틀린 것보다 알아채기 어렵다.
+    """
+
+    page: int  # 구간이 **시작하는** 쪽. 화면이 먼저 데려가는 자리다
     start: int
     end: int
     text: str
-    bbox: list[list[float]] = field(default_factory=list)
+    pages: list[EvidencePage] = field(default_factory=list)
     source: str = "text"  # 'text' | 'ocr' | 'model'
 
     def to_json(self) -> dict:
@@ -71,7 +89,7 @@ class Evidence:
             "start": self.start,
             "end": self.end,
             "text": self.text,
-            "bbox": [[round(v, 1) for v in b] for b in self.bbox],
+            "pages": [p.to_json() for p in self.pages],
             "source": self.source,
         }
 
@@ -141,7 +159,7 @@ class MinutesText:
                 chunks.append(norm)
                 self.words.append(
                     Word(start=cursor, end=cursor + len(norm), bbox=tuple(bbox), page=page_no,
-                         line=line_key[1], source=source, confidence=conf)
+                         line=line_key, source=source, confidence=conf)
                 )
                 cursor += len(norm)
 
@@ -171,10 +189,14 @@ class MinutesText:
                 return page.index + 1
         return self.pages[-1].index + 1 if self.pages else 1
 
-    def bboxes_for(self, start: int, end: int) -> list[list[float]]:
-        """구간에 걸친 낱말들의 좌표를 줄 단위로 묶는다. 하이라이트 사각형이 된다."""
+    def evidence_pages(self, start: int, end: int) -> list[EvidencePage]:
+        """구간에 걸친 낱말들의 좌표를 줄 단위로 묶고, **쪽별로** 나눠 담는다.
+
+        쪽을 나누지 않으면 2쪽의 사각형이 1쪽 좌표로 그려진다. 의안 본문은 쪽을
+        넘어가는 일이 흔해서 이 구분이 없으면 엉뚱한 자리가 칠해진다.
+        """
         hits = [w for w in self.words if w.start < end and w.end > start]
-        merged: dict[tuple[int, int], list[float]] = {}
+        merged: dict[tuple[int, tuple[int, int]], list[float]] = {}
         for w in hits:
             key = (w.page, w.line)
             box = merged.get(key)
@@ -185,7 +207,12 @@ class MinutesText:
                 box[1] = min(box[1], w.bbox[1])
                 box[2] = max(box[2], w.bbox[2])
                 box[3] = max(box[3], w.bbox[3])
-        return list(merged.values())
+
+        by_page: dict[int, list[list[float]]] = {}
+        for (page, _line), box in merged.items():
+            # 낱말이 들고 있는 쪽번호는 0-based 다. 사람이 보는 번호로 올린다.
+            by_page.setdefault(page + 1, []).append(box)
+        return [EvidencePage(page=page, bbox=boxes) for page, boxes in sorted(by_page.items())]
 
     def words_in(self, start: int, end: int) -> list[Word]:
         return [w for w in self.words if w.start < end and w.end > start]
@@ -206,12 +233,16 @@ class MinutesText:
         hits = self.words_in(start, end)
         if source is None:
             source = "ocr" if any(w.source == "ocr" for w in hits) else "text"
+        pages = self.evidence_pages(start, end)
         return Evidence(
-            page=self.page_of(start),
+            # **낱말이 정답이다.** 오프셋으로 세면 쪽 사이 구분자에 걸친 구간이
+            # 앞쪽으로 밀려, 2쪽에 있는 값을 1쪽이라고 말하게 된다. 낱말이 하나도
+            # 없을 때만(빈 구간) 오프셋으로 어림한다.
+            page=pages[0].page if pages else self.page_of(start),
             start=start,
             end=end,
             text=self.text[start:end].strip(),
-            bbox=self.bboxes_for(start, end),
+            pages=pages,
             source=source,
         )
 

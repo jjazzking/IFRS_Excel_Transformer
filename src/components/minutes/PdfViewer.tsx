@@ -74,7 +74,8 @@ const PdfPage: React.FC<{
 
   const width = page.width * scale;
   const height = page.height * scale;
-  const boxes = highlight?.page === page.index + 1 ? highlight.bbox : [];
+  // 이 쪽에 속한 사각형만 그린다. 근거가 쪽을 넘어가면 양쪽 다 칠해진다.
+  const boxes = highlight?.pages.find(p => p.page === page.index + 1)?.bbox ?? [];
 
   return (
     <div
@@ -168,7 +169,8 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ pdf, pages, highlight, foc
     const pageTop =
       target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
 
-    const boxes = highlight.bbox;
+    // 데려갈 자리는 **구간이 시작하는 쪽**의 사각형이다.
+    const boxes = highlight.pages.find(p => p.page === highlight.page)?.bbox ?? [];
     // 근거 사각형이 없으면(OCR 이 자리를 못 준 경우) 쪽 전체를 가운데로 본다.
     const top = boxes.length > 0 ? Math.min(...boxes.map(b => b[1])) * scale : 0;
     const bottom = boxes.length > 0 ? Math.max(...boxes.map(b => b[3])) * scale : target.clientHeight;
