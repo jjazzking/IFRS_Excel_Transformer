@@ -7,8 +7,13 @@ import { Evidence } from '../../lib/minutes/types';
 interface PdfViewerProps {
   pdf: PDFDocumentProxy;
   pages: Page[];
-  /** 지금 고른 필드의 근거. 그 자리를 칠하고 그 쪽으로 스크롤한다. */
+  /** 지금 고른 필드의 근거. 그 자리를 칠하고 그 자리로 스크롤한다. */
   highlight: Evidence | null;
+  /**
+   * 고른 횟수. 같은 근거를 다시 누르면 값은 그대로라 `highlight` 만으로는
+   * 아무 일도 일어나지 않는다. 이 숫자가 바뀌므로 다시 가운데로 데려간다.
+   */
+  focusKey?: number;
 }
 
 /** 한 쪽을 캔버스에 그리고, 그 위에 근거 사각형을 덮는다. */
@@ -124,8 +129,11 @@ const PdfPage: React.FC<{
   );
 };
 
-export const PdfViewer: React.FC<PdfViewerProps> = ({ pdf, pages, highlight }) => {
+export const PdfViewer: React.FC<PdfViewerProps> = ({ pdf, pages, highlight, focusKey = 0 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  // 마지막으로 데려간 자리. 배율만 바뀐 것인지(폭 조절) 사람이 새로 고른 것인지
+  // 가른다 — 폭을 끄는 동안 부드럽게 흐르면 화면이 따라붙지 못한다.
+  const focusRef = useRef<string | null>(null);
   // 0 은 '아직 재지 않았다' 는 뜻이다. 폭을 재기 전에 임의의 배율로 한 번 그리면
   // 그 그림은 곧바로 버려지고, 취소된 그리기가 화면에 잔상을 남긴다.
   const [scale, setScale] = useState(0);
@@ -146,12 +154,37 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ pdf, pages, highlight }) =
     return () => observer.disconnect();
   }, [pages]);
 
-  // 근거를 고르면 그 쪽으로 데려간다. 사람이 쪽번호를 찾아 내려갈 이유가 없다.
+  // 근거를 고르면 **그 줄이** 화면 가운데 오게 데려간다. 쪽 단위로만 맞추면
+  // 한 쪽이 화면보다 길 때 정작 칠해진 자리가 화면 밖에 남는다. 배율이 바뀌어도
+  // (패널 폭 조절 등) 같은 자리를 다시 가운데로 잡아 준다.
   useEffect(() => {
-    if (!highlight) return;
-    const target = scrollRef.current?.querySelector(`[data-page="${highlight.page}"]`);
-    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [highlight]);
+    if (!highlight || scale <= 0) return;
+    const container = scrollRef.current;
+    const target = container?.querySelector<HTMLElement>(`[data-page="${highlight.page}"]`);
+    if (!container || !target) return;
+
+    // 쪽이 스크롤 안쪽 어디에 놓였는지. 캔버스가 아직 안 그려졌어도 크기는
+    // 배율에서 정해 두었으므로 이 값은 이미 맞다.
+    const pageTop =
+      target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+
+    const boxes = highlight.bbox;
+    // 근거 사각형이 없으면(OCR 이 자리를 못 준 경우) 쪽 전체를 가운데로 본다.
+    const top = boxes.length > 0 ? Math.min(...boxes.map(b => b[1])) * scale : 0;
+    const bottom = boxes.length > 0 ? Math.max(...boxes.map(b => b[3])) * scale : target.clientHeight;
+
+    const view = container.clientHeight;
+    const height = bottom - top;
+    // 의안 본문처럼 화면보다 긴 구간은 가운데를 맞추면 시작이 위로 밀려 나간다.
+    // 그럴 때는 **구간의 머리**를 화면 위쪽 1/6 지점에 둔다.
+    const offset = height > view * 0.8 ? top - view / 6 : top + height / 2 - view / 2;
+
+    const token = `${focusKey}:${highlight.page}:${highlight.start}:${highlight.end}`;
+    const behavior: ScrollBehavior = focusRef.current === token ? 'auto' : 'smooth';
+    focusRef.current = token;
+
+    container.scrollTo({ top: Math.max(0, pageTop + offset), behavior });
+  }, [highlight, focusKey, scale]);
 
   return (
     <div ref={scrollRef} className="h-full overflow-auto bg-slate-200 rounded-xl p-4">

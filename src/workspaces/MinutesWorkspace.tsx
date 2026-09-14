@@ -29,7 +29,16 @@ export default function MinutesWorkspace({ onBackHome }: MinutesWorkspaceProps) 
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<Evidence | null>(null);
+  // 같은 자리를 다시 골랐을 때도 화면을 다시 그 자리로 데려가기 위한 셈. 근거
+  // 객체는 그대로라 값만으로는 '다시 눌렀다' 를 알 수 없다.
+  const [focusKey, setFocusKey] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const select = useCallback((path: string, evidence: Evidence | null) => {
+    setSelected(path);
+    setHighlight(evidence);
+    setFocusKey(n => n + 1);
+  }, []);
 
   const open = useCallback(async (file: File) => {
     setBusy(true);
@@ -114,7 +123,12 @@ export default function MinutesWorkspace({ onBackHome }: MinutesWorkspaceProps) 
       <main ref={containerRef} className="flex-1 min-h-0 flex p-3">
         <section className="flex-1 min-w-0 min-h-0">
           {loaded ? (
-            <PdfViewer pdf={loaded.text.pdf} pages={loaded.text.pages} highlight={highlight} />
+            <PdfViewer
+              pdf={loaded.text.pdf}
+              pages={loaded.text.pages}
+              highlight={highlight}
+              focusKey={focusKey}
+            />
           ) : (
             <EmptyState onPick={() => inputRef.current?.click()} />
           )}
@@ -144,10 +158,7 @@ export default function MinutesWorkspace({ onBackHome }: MinutesWorkspaceProps) 
                     <SchemaInspector
                       doc={loaded.doc}
                       selected={selected}
-                      onSelect={(path, evidence) => {
-                        setSelected(path);
-                        setHighlight(evidence);
-                      }}
+                      onSelect={select}
                     />
                   </div>
                 </>
