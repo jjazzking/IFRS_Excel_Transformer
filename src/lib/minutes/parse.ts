@@ -37,7 +37,11 @@ import {
   findTimes,
 } from './rules';
 
-const SCHEMA_VERSION = 1;
+/**
+ * 2 판: 근거의 사각형을 쪽별로 담는다 (`Evidence.pages`). 1 판은 한 덩어리라
+ * 쪽을 넘어가는 구간이 엉뚱한 쪽에 칠해졌다.
+ */
+const SCHEMA_VERSION = 2;
 
 /** 파이썬 판과 같은 규칙을 옮겼으므로 같은 판 번호를 쓴다. 두 산출물을 견줄 수 있어야 한다. */
 const RULE_VERSION = '2026-09-11';
@@ -66,11 +70,38 @@ function evidenceOf<T>(hit: RuleHit<T> | null, text: MinutesText): Evidence | nu
   return hit ? text.evidence(hit.start, hit.end) : null;
 }
 
+/**
+ * 총원과 출석이 **따로 적힌 서식**에서 둘을 한 근거로 묶을 수 있는 거리.
+ *
+ * `이사 총수 : 3명` 다음 줄에 `출석 이사 수 : 3명` 이 오는 표 서식이 흔하다.
+ * 총원 쪽만 칠하면 사람이 보는 값(`3 / 3 명 출석`)의 절반만 짚어 주는 셈이다.
+ * 다만 두 자리가 멀찍이 떨어져 있으면 사이의 남의 줄까지 칠하게 되므로, 몇 줄
+ * 안쪽일 때만 묶는다.
+ */
+const ATTENDANCE_SPAN_GAP = 120;
+
+/**
+ * 인원 한 묶음. 근거는 **총원과 출석을 함께** 가리킨다 — 화면이 두 값을 한 줄로
+ * 보여 주므로 근거도 그 두 자리를 다 짚어야 말이 맞는다.
+ */
 function group(result: AttendanceResult, text: MinutesText): AttendanceGroup {
+  const { total, present } = result;
+  let evidence = evidenceOf(total, text);
+
+  if (total && present) {
+    const lo = Math.min(total.start, present.start);
+    const hi = Math.max(total.end, present.end);
+    // 한 규칙이 둘을 함께 잡았으면(`재적이사 7명 중 6명 출석`) 구간이 이미 같다.
+    const gap = Math.max(total.start, present.start) - Math.min(total.end, present.end);
+    if (gap <= ATTENDANCE_SPAN_GAP) evidence = text.evidence(lo, hi);
+  } else if (total === null) {
+    evidence = evidenceOf(present, text);
+  }
+
   return {
-    total: result.total?.value ?? null,
-    present: result.present?.value ?? null,
-    evidence: evidenceOf(result.total, text),
+    total: total?.value ?? null,
+    present: present?.value ?? null,
+    evidence,
   };
 }
 

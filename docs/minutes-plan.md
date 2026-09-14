@@ -232,7 +232,7 @@ python3 scripts/eval_minutes.py samples/minutes out/minutes --detail
 
 ```
 MinutesDocument
-├ schemaVersion: 1                     스키마가 바뀌어도 예전 산출물을 읽을 수 있게
+├ schemaVersion: 2                     스키마가 바뀌어도 예전 산출물을 읽을 수 있게
 ├ extraction: { method: 'rules', llmUsed: false, ruleVersion }
 ├ source: { fileName, pageCount, pageKinds: ('text'|'scan')[], scanPages }
 ├ meeting
@@ -259,10 +259,15 @@ MinutesDocument
 **모든 필드에 붙는 근거 구조**는 하나로 통일한다.
 
 ```
-Evidence = { page, start, end, text, bbox[], source: 'text'|'ocr'|'model' }
+Evidence = { page, start, end, text, pages[], source: 'text'|'ocr'|'model' }
+              └ 구간이 시작하는 쪽        └ { page, bbox[] } — 걸친 쪽마다 하나
 ```
 
 `text` 는 **코드가 원문에서 잘라낸 것**이지 누가 다시 쓴 것이 아니다 (1장 원칙).
+
+사각형을 **쪽별로** 담는 것이 2 판의 차이다. 1 판은 한 덩어리라, 쪽을 넘어가는 의안
+본문의 뒤쪽 사각형이 앞 쪽 위에 그려졌다. `page` 도 오프셋이 아니라 **첫 낱말**에서
+센다 — 쪽 사이 구분자에 걸친 구간이 앞쪽으로 밀리던 자리다.
 
 ### 짚어 둘 두 가지
 

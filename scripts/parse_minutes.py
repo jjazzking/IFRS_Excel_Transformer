@@ -28,7 +28,9 @@ import minutes_rules as rules  # noqa: E402
 from minutes_ocr import LOW_CONFIDENCE, ORIENTATION_THRESHOLD, engine_or_none  # noqa: E402
 from minutes_text import MinutesText  # noqa: E402
 
-SCHEMA_VERSION = 1
+# 2 판: 근거의 사각형을 쪽별로 담는다 (`Evidence.pages`). 1 판은 한 덩어리라
+# 쪽을 넘어가는 구간이 엉뚱한 쪽에 칠해졌다.
+SCHEMA_VERSION = 2
 RULE_VERSION = "2026-09-11"
 
 # 필수 12항목 중 대화전문을 뺀 것. 비어 있으면 검토 대상이다.
@@ -42,8 +44,36 @@ REQUIRED_FIELDS = [
 ]
 
 
+# 총원과 출석이 **따로 적힌 서식**에서 둘을 한 근거로 묶을 수 있는 거리.
+# `이사 총수 : 3명` 다음 줄에 `출석 이사 수 : 3명` 이 오는 표 서식이 흔하다. 총원
+# 쪽만 칠하면 사람이 보는 값(`3 / 3 명 출석`)의 절반만 짚어 주는 셈이다. 다만 두
+# 자리가 멀찍이 떨어져 있으면 사이의 남의 줄까지 칠하게 되므로 몇 줄 안쪽일 때만 묶는다.
+ATTENDANCE_SPAN_GAP = 120
+
+
 def _v(hit) -> object:
     return hit.value if hit is not None else None
+
+
+def _attendance(group: dict, text) -> dict:
+    """인원 한 묶음. 근거는 **총원과 출석을 함께** 가리킨다 — 화면이 두 값을 한 줄로
+    보여 주므로 근거도 그 두 자리를 다 짚어야 말이 맞는다."""
+    total, present = group["total"], group["present"]
+    evidence = None
+
+    if total is not None and present is not None:
+        # 한 규칙이 둘을 함께 잡았으면(`재적이사 7명 중 6명 출석`) 구간이 이미 같다.
+        gap = max(total.start, present.start) - min(total.end, present.end)
+        if gap <= ATTENDANCE_SPAN_GAP:
+            evidence = text.evidence(
+                min(total.start, present.start), max(total.end, present.end)
+            ).to_json()
+    if evidence is None:
+        hit = total if total is not None else present
+        if hit is not None:
+            evidence = text.evidence(hit.start, hit.end).to_json()
+
+    return {"total": _v(total), "present": _v(present), "evidence": evidence}
 
 
 def _j(hit, text) -> dict | None:
@@ -124,16 +154,8 @@ def parse(path: Path, ocr=None) -> dict:
             "place": _j(place, text),
         },
         "attendance": {
-            "directors": {
-                "total": _v(directors["total"]),
-                "present": _v(directors["present"]),
-                "evidence": (_j(directors["total"], text) or {}).get("evidence"),
-            },
-            "auditCommittee": {
-                "total": _v(audit["total"]),
-                "present": _v(audit["present"]),
-                "evidence": (_j(audit["total"], text) or {}).get("evidence"),
-            },
+            "directors": _attendance(directors, text),
+            "auditCommittee": _attendance(audit, text),
         },
         "agenda": agenda,
     }
