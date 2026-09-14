@@ -194,13 +194,31 @@ const AgendaCard: React.FC<{
   onSelect: (path: string, evidence: Evidence | null) => void;
 }> = ({ item, flags, selected, onSelect }) => {
   const path = `agenda[${item.number.ordinal}]`;
-  const active = selected === path;
+  // 안쪽의 좁은 자리(제목·발췌·금액)를 골라도 이 카드는 고른 것으로 남는다.
+  const active = selected === path || Boolean(selected?.startsWith(path + '.'));
   const { fsImpact, resolution, summary } = item;
+
+  // 카드 아무 데나 누르면 이 의안의 본문 구간으로 데려간다. 안쪽의 제목·발췌·
+  // 금액은 더 좁은 자리를 가리키므로 그쪽이 이기게 둔다.
+  const pick = (e: React.MouseEvent, at: string, evidence: Evidence | null) => {
+    e.stopPropagation();
+    onSelect(at, evidence);
+  };
 
   return (
     <div
-      className={`rounded-lg border px-2.5 py-2 space-y-1.5 transition ${
-        active ? 'border-emerald-400 bg-emerald-50/60' : 'border-slate-200 bg-white hover:border-slate-300'
+      role="button"
+      tabIndex={0}
+      title="누르면 원문에서 이 의안이 나온 자리로 갑니다"
+      onClick={() => onSelect(path, item.body)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect(path, item.body);
+        }
+      }}
+      className={`rounded-lg border px-2.5 py-2 space-y-1.5 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+        active ? 'border-emerald-400 bg-emerald-50/60' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
       }`}
     >
       <div className="flex items-start gap-2">
@@ -220,19 +238,16 @@ const AgendaCard: React.FC<{
             가결 여부 불명
           </span>
         )}
-        <button
-          onClick={() => onSelect(path, item.body)}
-          title="이 의안의 본문 구간 보기"
-          className="ml-auto shrink-0 flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded px-1.5 py-0.5 transition cursor-pointer"
-        >
+        <span className="ml-auto shrink-0 flex items-center gap-1 text-[11px] text-emerald-700">
           <Crosshair className="w-3.5 h-3.5" />
           {item.body.page}쪽
-        </button>
+        </span>
       </div>
 
       {item.title.value ? (
         <button
-          onClick={() => onSelect(path, item.title.evidence)}
+          onClick={e => pick(e, path, item.title.evidence)}
+          title="원문에서 이 제목이 나온 자리 보기"
           className="block text-left text-sm text-slate-900 font-medium break-all hover:text-emerald-800 cursor-pointer"
         >
           {item.title.value}
@@ -243,11 +258,17 @@ const AgendaCard: React.FC<{
       )}
 
       {summary.value && (
-        <p className="text-[11px] text-slate-600 leading-relaxed break-all">
+        <button
+          onClick={e => pick(e, `${path}.summary`, summary.evidence)}
+          title="원문에서 이 문장이 나온 자리 보기"
+          className={`block w-full text-left text-[11px] text-slate-600 leading-relaxed break-all rounded px-1 -mx-1 py-0.5 transition ${
+            selected === `${path}.summary` ? 'bg-emerald-50' : 'hover:bg-emerald-50/60'
+          } cursor-pointer`}
+        >
           <span className="text-slate-400">발췌 </span>
           “{summary.value}”
           {summary.evidence?.source === 'ocr' && <span className="ml-1"><OcrMark /></span>}
-        </p>
+        </button>
       )}
 
       {(resolution.unanimous || Object.keys(resolution.votes).length > 0) && (
@@ -269,7 +290,7 @@ const AgendaCard: React.FC<{
               {fsImpact.amounts.map((a, i) => (
                 <button
                   key={i}
-                  onClick={() => onSelect(`${path}.amount[${i}]`, a.evidence)}
+                  onClick={e => pick(e, `${path}.amount[${i}]`, a.evidence)}
                   title="원문에서 이 금액이 나온 자리 보기"
                   className="text-[10px] font-medium tabular-nums text-slate-700 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 hover:border-emerald-400 hover:text-emerald-800 transition cursor-pointer"
                 >
@@ -301,9 +322,29 @@ const FieldRow: React.FC<{
   active: boolean;
   onSelect: () => void;
 }> = ({ row, flags, active, onSelect }) => (
+  // 칸 어디를 눌러도 원문 자리로 간다. 근거가 없는 칸은 갈 데가 없으므로 누를
+  // 수 없게 둔다 — 눌리는데 아무 일도 없는 것이 더 나쁘다.
   <div
-    className={`rounded-lg border px-2.5 py-2 transition ${
-      active ? 'border-emerald-400 bg-emerald-50/60' : 'border-slate-200 bg-white hover:border-slate-300'
+    role={row.evidence ? 'button' : undefined}
+    tabIndex={row.evidence ? 0 : undefined}
+    title={row.evidence ? '누르면 원문에서 이 값이 나온 자리로 갑니다' : undefined}
+    onClick={row.evidence ? onSelect : undefined}
+    onKeyDown={
+      row.evidence
+        ? e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSelect();
+            }
+          }
+        : undefined
+    }
+    className={`rounded-lg border px-2.5 py-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+      row.evidence ? 'cursor-pointer' : ''
+    } ${
+      active
+        ? 'border-emerald-400 bg-emerald-50/60'
+        : `border-slate-200 bg-white ${row.evidence ? 'hover:border-slate-300 hover:bg-slate-50' : ''}`
     }`}
   >
     <div className="flex items-baseline gap-2">
@@ -314,14 +355,10 @@ const FieldRow: React.FC<{
         <span className="text-sm text-slate-900 font-medium break-all">{row.value}</span>
       )}
       {row.evidence && (
-        <button
-          onClick={onSelect}
-          title="원문에서 이 값이 나온 자리 보기"
-          className="ml-auto shrink-0 flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded px-1.5 py-0.5 transition cursor-pointer"
-        >
+        <span className="ml-auto shrink-0 flex items-center gap-1 text-[11px] text-emerald-700">
           <Crosshair className="w-3.5 h-3.5" />
           {row.evidence.page}쪽
-        </button>
+        </span>
       )}
     </div>
 
