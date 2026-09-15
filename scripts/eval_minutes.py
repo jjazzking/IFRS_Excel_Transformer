@@ -31,6 +31,9 @@ TARGETS = {
     "의안 경계": 0.95,
     "의안제목": 0.95,
     "가결 여부": 0.95,
+    # 금액은 숫자·날짜와 같은 급이다. 틀리면 조서에 그대로 옮겨 적히고, 빈 칸과 달리
+    # 사람이 다시 보지 않는다 (`docs/minutes-ocr.md` 4-8).
+    "금액": 0.95,
 }
 
 
@@ -81,7 +84,18 @@ def compare(parsed: dict, golden: dict) -> list[tuple[str, bool, str, str]]:
         add(f"의안제목[{tag}]", want.get("title"), (got or {}).get("title", {}).get("value"))
         add(f"가결 여부[{tag}]", want.get("resolution"), (got or {}).get("resolution", {}).get("value"))
 
+        # 금액은 **그 의안 안에서** 찾아야 맞은 것이다. 다른 의안에 붙은 금액은
+        # 조서에서 엉뚱한 줄에 들어간다.
+        picked = {a.get("value") for a in ((got or {}).get("fsImpact") or {}).get("amounts", [])}
+        for cash in want.get("amounts", []):
+            rows.append((f"금액[{tag}]", float(cash) in picked, f"{cash:,}", _won(picked)))
+
     return rows
+
+
+def _won(values) -> str:
+    nums = sorted(v for v in values if isinstance(v, (int, float)))
+    return ", ".join(f"{v:,.0f}" for v in nums) if nums else ""
 
 
 def bucket(field: str) -> str:

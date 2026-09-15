@@ -64,8 +64,23 @@ def golden_of(gt: dict) -> dict:
         "place": m.get("place"),
         "directors": (m.get("total_directors"), m.get("present_directors")),
         "auditors": (m.get("total_auditors"), m.get("present_auditors")),
-        "agenda": [(a["index"], a["title"], a["vote"]["result"]) for a in gt.get("agenda", [])],
+        "agenda": [(a["index"], a["title"], a["vote"]["result"], _money(a)) for a in gt.get("agenda", [])],
         "reportCount": len(gt.get("reports", [])),
+    }
+
+
+# 정답셋의 사실 중 **금액인 것만.** 크기로 거르면 안 된다 — `new_shares` 는 114만
+# '주'인데 금액으로 세면 그 의안이 통째로 오답이 된다. 주식 수·이율·개월 수·지분율은
+# 금액이 아니다. 단가(`issue_price`·`unit_price`)도 뺀다: 본문에 늘 적히지는 않고,
+# 만 원 단위라 다른 숫자와 우연히 겹친다.
+MONEY_KEYS = ("limit", "amount", "total_amount")
+
+
+def _money(item: dict) -> set[float]:
+    facts = item.get("facts") or {}
+    return {
+        float(facts[k]) for k in MONEY_KEYS
+        if isinstance(facts.get(k), (int, float)) and not isinstance(facts.get(k), bool)
     }
 
 
@@ -83,7 +98,9 @@ def extract(text: str) -> dict:
             reports += 1
             continue
         res = rules.find_resolution(text, *item["bodyRange"], item["kind"])["resolution"]
-        resolved.append((item["number"], item["title"].value, res.value if res else None))
+        impact = rules.find_impact(text, item["title"].value, *item["bodyRange"])
+        resolved.append((item["number"], item["title"].value, res.value if res else None,
+                         {a["value"] for a in impact["amounts"] if a["value"] is not None}))
 
     v = lambda h: h.value if h is not None else None  # noqa: E731
     return {
@@ -98,7 +115,8 @@ def extract(text: str) -> dict:
     }
 
 
-FIELDS = ["일시", "개회시각", "폐회시각", "장소", "이사 수", "감사 수", "의안 경계", "의안제목", "가결 여부"]
+FIELDS = ["일시", "개회시각", "폐회시각", "장소", "이사 수", "감사 수", "의안 경계", "의안제목",
+          "가결 여부", "금액"]
 
 
 def score(got: dict, want: dict, misses: dict, name: str) -> dict:
@@ -124,12 +142,18 @@ def score(got: dict, want: dict, misses: dict, name: str) -> dict:
     check("의안 경계", want_idx == got_idx, f"{want_idx} → {got_idx}")
 
     got_by = {a[0]: a for a in got["agenda"]}
-    for idx, title, result in want["agenda"]:
+    for idx, title, result, cash in want["agenda"]:
         hit = got_by.get(idx)
         check("의안제목", bool(hit) and same_title(hit[1], title),
               f"{title} → {hit[1] if hit else '(못 찾음)'}")
         check("가결 여부", bool(hit) and hit[2] == result,
               f"{result} → {hit[2] if hit else '(못 찾음)'}")
+        # 금액은 **그 의안 안에서** 찾아야 맞은 것이다. 다른 의안에 붙으면 조서에서
+        # 엉뚱한 줄에 들어간다. 정답 금액마다 한 자리씩 준다.
+        picked = hit[3] if hit else set()
+        for want_won in sorted(cash):
+            check("금액", want_won in picked,
+                  f"{want_won:,.0f} → {', '.join(f'{v:,.0f}' for v in sorted(picked)) or '(못 찾음)'}")
     return out
 
 
