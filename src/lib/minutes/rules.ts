@@ -29,6 +29,9 @@ const label = (...chars: string[]) => chars.join('\\s*');
 const ITEM_PREFIX = '[ \\t]*(?:\\d{1,2}\\s*[.)]|[가-힣]\\s*[.)]|[-·*])?[ \\t]*';
 
 /** 라벨과 값을 가르는 글자. OCR 이 콜론을 `ㆍ`·`·` 로 읽는 일이 잦다. */
+// 라벨과 값을 가르는 글자. **`_`·`*`·`.` 을 넣어 봤다가 뺐다** — 그 오독은 전부
+// 의안 본문의 조건 나열에서 나고, 이 글자를 쓰는 자리는 머리말 라벨 줄이다.
+// 열화본 80건에서 한 자리도 달라지지 않았다 (`docs/minutes-ocr.md` 4-10).
 const COLON = '[:：ㆍ·∶;]';
 
 /**
@@ -869,11 +872,17 @@ const IMPACT_TRIGGERS: [string, string[], string][] = [
   ['재무제표\\s*승인|결산\\s*승인|감사보고', ['k-ifrs-1001', 'k-ifrs-1010'], '재무제표 승인일 · 보고기간후사건'],
 ];
 
+// 자릿점은 쉼표지만, OCR 이 쉼표를 마침표로 읽는 일이 가장 잦다 — 열화본에서 센
+// 오독 짝 중 1위이고 2위의 다섯 배였다 (`docs/minutes-ocr.md` 4-8). 그래서 마침표도
+// 자릿점 자리에 받아 두고, 자릿점인지 소수점인지는 `toNumber` 가 모양으로 가른다.
 const AMOUNT_RE = re(
-  '(?:금[ \\t]*)?(\\d[\\d,][ \\t\\d,]*\\d|\\d)(?:\\.\\d+)?[ \\t]*'
+  '(?:금[ \\t]*)?(\\d[\\d,.][ \\t\\d,.]*\\d|\\d)[ \\t]*'
   + '(억[ \\t]*원|백[ \\t]*만[ \\t]*원|천[ \\t]*원|만[ \\t]*원|원|USD|달러)',
   'g'
 );
+
+// 세 자리씩 끊긴 마침표 사슬은 소수점일 수 없다 — `5.000.000.000` 은 50억이다.
+const DOT_GROUPED = /^\d{1,3}(?:\.\d{3})+$/;
 
 const UNIT_SCALE: Record<string, number> = {
   '억원': 100_000_000,
@@ -883,9 +892,19 @@ const UNIT_SCALE: Record<string, number> = {
   '원': 1,
 };
 
+/**
+ * `5.000.000.000` 을 50억으로, `5.5` 를 5.5 로 읽는다.
+ *
+ * 쉼표는 언제나 자릿점이다. 마침표는 **세 자리씩 끊긴 사슬일 때만** 자릿점으로 보고,
+ * 그 밖에는 소수점으로 둔다. 한국 의사록 금액에 소수점 세 자리가 오는 일은 없고
+ * (`1.000억원` 이라 쓰지 않는다), 반대로 자릿점을 마침표로 읽는 오독은 흔하다.
+ * 가르지 않으면 50억이 조용히 0원으로 들어간다 — 값이 비는 것보다 나쁘다.
+ */
 function toNumber(digits: string, unit: string): number | null {
-  const base = Number(digits.replace(/[,\s]/g, ''));
-  if (!Number.isFinite(base)) return null;
+  let plain = digits.replace(/[,\s]/g, '');
+  if (DOT_GROUPED.test(plain)) plain = plain.replace(/\./g, '');
+  const base = Number(plain);
+  if (!Number.isFinite(base) || plain === '') return null;
   const key = unit.replace(/ /g, '');
   return key in UNIT_SCALE ? base * UNIT_SCALE[key] : base;
 }

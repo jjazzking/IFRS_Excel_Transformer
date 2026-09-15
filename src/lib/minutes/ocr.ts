@@ -62,7 +62,10 @@ const ROTATIONS = [0, 90, 180, 270] as const;
 const PSM_CANDIDATES: PSM[] = [PSM.SINGLE_COLUMN, PSM.SINGLE_BLOCK];
 
 /** 숫자·금액·영문 약어가 섞여 있으므로 영어를 함께 건다. 한국어만 걸면 숫자에서 손해다. */
-const DEFAULT_LANG = 'kor+eng';
+// 한국어만 건다. 영어를 함께 걸면 **영문이 한글을 훔친다** — `원`→`8`·`%`, `주`→`%`,
+// `의장은`→`ABS`. 단위를 잃으면 금액이 통째로 사라지므로 손해가 크다. 열화본 60건에서
+// 다섯 갈래 모두 `kor` 이 나았고 봉인 구간 30건에서도 같았다 (`docs/minutes-ocr.md` 4-8).
+const DEFAULT_LANG = 'kor';
 
 /** 이 아래로 떨어진 낱말은 실제로 틀린 낱말이었다. 검증에서 필드를 내리는 데 쓴다. */
 export const LOW_CONFIDENCE = 60;
@@ -73,7 +76,7 @@ const ASSETS = new URL('tesseract/', document.baseURI).href;
 export interface OcrOptions {
   /** 모델을 다른 자리에서 받고 싶을 때 (모델 비교에 쓴다). 기본은 `tesseract/lang/`. */
   langPath?: string;
-  /** 설정을 견줄 때만 쓴다. 기본은 `kor+eng`. */
+  /** 설정을 견줄 때만 쓴다. 기본은 `kor`. `kor+eng` 모델도 함께 깔려 있다. */
   lang?: string;
   /** 주면 그 쪽 나누기 방식으로 고정한다. 안 주면 문서마다 고른다. */
   psm?: PSM;

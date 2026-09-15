@@ -28,7 +28,10 @@ const OCR_LANG_VARIANT: 'fast' | 'best' = 'fast';
 
 const OCR_LANG_DIR = { fast: '4.0.0_best_int', best: '4.0.0' };
 
-/** 함께 거는 모델. 파이썬 판의 `kor+eng` 와 같다. */
+/**
+ * 깔아 두는 모델. 기본으로 거는 것은 `kor` 하나다 (`src/lib/minutes/ocr.ts`) — 영문이
+ * 한글을 훔치기 때문이다. `eng` 는 설정을 견줄 때만 쓰므로 **브라우저가 받지 않는다.**
+ */
 const OCR_LANGS = ['kor', 'eng'];
 
 /** OCR 엔진은 LSTM 만 쓰므로 `-lstm` 갈래만 낸다. 한 브라우저는 그중 하나만 받는다. */
