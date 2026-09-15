@@ -4,3 +4,10 @@ pymupdf>=1.24        # 의사록 PDF 본문·낱말 좌표 추출 (scripts/minut
 # 스캔 페이지 OCR 은 시스템 패키지다 (pip 가 아니다).
 #   apt-get install tesseract-ocr tesseract-ocr-kor
 # 없어도 규칙 전용 경로는 그대로 돈다 — `--ocr` 를 안 주면 부르지 않는다.
+
+# `scripts/finetune_ocr.py` 만 더 필요로 하는 것 (평소 경로에는 안 쓴다):
+#   pillow>=10.0   — 줄 이미지를 오려내고 상자 파일을 쓴다
+#   그리고 열화 프로파일은 `jjazzking/minutes_generator` 에서 빌려 온다.
+# 훈련 도구(lstmtraining·combine_tessdata)는 위 apt 패키지에 함께 들어 있다.
+# 출발 모델은 정수화판이 아니라 실수판이어야 한다 (`docs/minutes-ocr.md` 4-9).
+pillow>=10.0
