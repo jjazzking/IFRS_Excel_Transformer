@@ -8,7 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "desk": "electron .",
+    "desk:build": "vite build && electron-builder --win portable --publish never",
+    "desk:build:dir": "vite build && electron-builder --dir --publish never"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
@@ -26,9 +29,51 @@
     "@types/node": "^22.14.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
+  },
+  "description": "조서를 만들 때 찾아야 하는 것들을 한 자리에",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "kr.jjazzking.standards-desk",
+    "productName": "기준서 데스크",
+    "copyright": "",
+    "directories": {
+      "output": "release",
+      "buildResources": "electron/resources"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/main.cjs",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "기준서데스크-${version}-portable.exe"
+    },
+    "portable": {
+      "unicode": true,
+      "artifactName": "기준서데스크-${version}-portable.exe"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office"
+    },
+    "compression": "maximum"
   }
 }

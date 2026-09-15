@@ -1,0 +1,38 @@
+name: 데스크톱 실행파일
+
+# Windows 실행파일은 Windows 에서 만든다. 리눅스에서 wine 으로 굽는 길도 있지만,
+# 그렇게 나온 파일은 서명·리소스가 미묘하게 달라지고 무엇보다 **직접 켜 볼 수가 없다.**
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # deploy.yml 과 같은 이유로 버전을 고정한다 — 락파일 포맷이 bun 버전에 묶여 있다.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run lint
+
+      # `desk:build` 가 vite 빌드까지 함께 한다.
+      - name: Build portable exe
+        run: bun run desk:build
+        env:
+          # 서명 인증서가 없다. 없는 채로 굽고, 배포할 때 사내 서명을 붙인다.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standards-desk-windows-portable
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30
