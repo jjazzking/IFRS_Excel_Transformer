@@ -1,0 +1,88 @@
+name: 데스크톱 꾸러미
+
+# Windows 실행파일은 Windows 에서 만든다. 리눅스에서 wine 으로 굽는 길도 있지만,
+# 그렇게 나온 파일은 서명·리소스가 미묘하게 달라지고 무엇보다 **직접 켜 볼 수가 없다.**
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+# 태그를 밀면 릴리스를 만들어 붙인다. 그래야 받는 사람이 **GitHub 계정 없이**
+# 링크 하나로 받을 수 있다. Actions 의 artifact 는 로그인해야 보이고 30일 뒤 지워진다.
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # deploy.yml 과 같은 이유로 버전을 고정한다 — 락파일 포맷이 bun 버전에 묶여 있다.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run lint
+
+      # `desk:build` 가 vite 빌드까지 함께 한다.
+      - name: Build portable exe
+        run: bun run desk:build
+        env:
+          # 서명 인증서가 없다. 없는 채로 굽고, 배포할 때 사내 서명을 붙인다.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standards-desk-windows-portable
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  # 파이썬 꾸러미는 갈래를 타지 않는다 — 표준 라이브러리만 쓰므로 어디서 구워도 같다.
+  # 실행파일(.exe)을 못 돌리는 곳을 위한 길이다 (`docs/desktop.md`).
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: python3 desktop/pack.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standards-desk-python
+          path: release/*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  # 태그를 밀었을 때만 돈다. 두 꾸러미를 한 자리에 모아 공개 링크로 낸다.
+  release:
+    # **파이썬 꾸러미에만 매단다.** exe 는 서명도 없고 아직 손으로 켜 본 적이 없다.
+    # 그쪽이 깨져도 정작 필요한 꾸러미는 나가야 한다. exe 가 구워졌으면 함께 붙는다.
+    needs: [python]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          find artifacts -type f \( -name '*.zip' -o -name '*.exe' \) -print
+          gh release create "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --title "기준서 데스크 ${{ github.ref_name }}" \
+            --notes "설치 없이 켜집니다. 실행파일이 막힌 곳에서는 \`기준서데스크-파이썬.zip\` 을 받으세요 — 파이썬 3.7 이상만 있으면 되고 \`pip install\` 은 없습니다. 자세한 것은 docs/desktop.md." \
+            $(find artifacts -type f \( -name '*.zip' -o -name '*.exe' \))
