@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "desk": "electron .",
     "desk:build": "vite build && electron-builder --win portable --publish never",
-    "desk:build:dir": "vite build && electron-builder --dir --publish never"
+    "desk:build:dir": "vite build && electron-builder --dir --publish never",
+    "desk:zip": "vite build && python3 desktop/pack.py"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
