@@ -4,10 +4,10 @@
  "unit": 1,
  "source": "서울외국환중개 (www.smbs.biz)",
  "sourceUrl": "http://www.smbs.biz/ExRate/StdExRate.jsp",
- "fetchedAt": "2026-09-29T16:03:14+00:00",
+ "fetchedAt": "2026-09-30T16:02:03+00:00",
  "from": "2023-09-11",
- "to": "2026-09-29",
- "count": 743,
+ "to": "2026-09-30",
+ "count": 744,
  "rows": [
   {"date": "2023-09-11", "rate": 977.89, "change": 2.66, "crossRate": 1.36355},
   {"date": "2023-09-12", "rate": 981.15, "change": 3.26, "crossRate": 1.358},
@@ -751,6 +751,7 @@
   {"date": "2026-09-22", "rate": 986.5, "change": -2.46, "crossRate": 1.40325},
   {"date": "2026-09-23", "rate": 966.87, "change": -19.63, "crossRate": 1.4066},
   {"date": "2026-09-28", "rate": 955.17, "change": -11.7, "crossRate": 1.41545},
-  {"date": "2026-09-29", "rate": 959.33, "change": 4.16, "crossRate": 1.41765}
+  {"date": "2026-09-29", "rate": 959.33, "change": 4.16, "crossRate": 1.41765},
+  {"date": "2026-09-30", "rate": 957.16, "change": -2.17, "crossRate": 1.4192}
  ]
 }
