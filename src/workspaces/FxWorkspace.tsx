@@ -1,13 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, PanelRightClose, Table } from 'lucide-react';
-import { FxQueryPanel } from '../components/FxQueryPanel';
+import { FxQueryBuilder, FxQueryState } from '../components/FxQueryBuilder';
 import { FxRateTable } from '../components/FxRateTable';
+import { FxResultMatrix } from '../components/FxResultMatrix';
 import { SheetPreview } from '../components/SheetPreview';
 import { CollapsedRail, Splitter } from '../components/LayoutControls';
 import { useResizableLayout } from '../hooks/useResizableLayout';
 import { FxCurrencyData, FxRateRow, TableTheme } from '../types';
 import { FX_INDEX, FX_READY, FX_SOURCE, FX_UPDATED_AT, loadCurrency } from '../data/fxData';
 import { buildFxTable, currencyLabel, decimalsOf } from '../utils/fxSheet';
+import {
+  FX_KINDS,
+  FxOrientation,
+  FxPeriod,
+  buildFxMatrixTable,
+  listPeriods,
+  spotPeriod,
+} from '../utils/fxQuery';
 import { isIsoDate, monthsBefore, todayIso } from '../utils/dateRange';
 
 interface FxWorkspaceProps {
@@ -15,57 +24,116 @@ interface FxWorkspaceProps {
 }
 
 /**
- * 기본 기간은 최근 한 달. 기말 조서를 만들 때는 프리셋이나 달력으로 옮긴다.
+ * 고를 수 있는 날짜의 바깥 경계 — 통화마다 받은 구간이 조금씩 다를 수 있어 합집합으로 잡는다.
+ * 통화별로 구간 밖인 칸은 계산 단계에서 빈칸이 된다.
  *
  * 자료를 아직 한 번도 받지 않았으면 기준일이 없다. 그때도 화면은 떠야 하므로
  * 오늘로 대신한다 — 어차피 `FX_READY` 가 안내 화면을 대신 보여 준다.
  */
-function defaultRange(to: string): { from: string; to: string } {
-  const end = isIsoDate(to) ? to : todayIso();
-  return { from: monthsBefore(end, 1), to: end };
+function dataBounds(): { from: string; to: string } {
+  if (FX_INDEX.length === 0) {
+    const today = todayIso();
+    return { from: monthsBefore(today, 12), to: today };
+  }
+  const from = FX_INDEX.reduce((m, c) => (c.from < m ? c.from : m), FX_INDEX[0].from);
+  const to = FX_INDEX.reduce((m, c) => (c.to > m ? c.to : m), FX_INDEX[0].to);
+  return { from, to: isIsoDate(to) ? to : todayIso() };
 }
 
 export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
-  // 이 작업대는 2존이다 — 왼쪽에서 찾고(조회+일자별), 오른쪽에 엑셀 미리보기.
+  // 이 작업대는 2존이다 — 왼쪽에서 찾고(위: 단계별 조건, 아래: 결과), 오른쪽에 엑셀 미리보기.
   // 폭은 기준서 작업대와 따로 기억한다.
   const { containerRef, state: layout, dragging, startDrag, resetSide, toggleSide } =
     useResizableLayout({ storageKey: 'workpaper.layout.fx.v1', hasLeft: false });
 
-  const [code, setCode] = useState(FX_INDEX[0]?.code ?? 'USD');
-  const [data, setData] = useState<FxCurrencyData | null>(null);
+  const bounds = useMemo(dataBounds, []);
+
+  const [query, setQuery] = useState<FxQueryState>(() => ({
+    kind: null,
+    basis: null,
+    periodIds: [],
+    spotDates: [],
+    dailyPreset: null,
+    range: { from: monthsBefore(bounds.to, 1), to: bounds.to },
+    // 가장 많이 찾는 통화는 미리 골라 둔다. 바로 지울 수 있다.
+    codes: FX_INDEX.some(c => c.code === 'USD') ? ['USD'] : FX_INDEX.slice(0, 1).map(c => c.code),
+  }));
+  const updateQuery = useCallback(
+    (patch: Partial<FxQueryState>) => setQuery(prev => ({ ...prev, ...patch })),
+    []
+  );
+
+  const [datasets, setDatasets] = useState<Record<string, FxCurrencyData>>({});
   const [loading, setLoading] = useState(false);
-  const [range, setRange] = useState(() => defaultRange(FX_INDEX[0]?.to ?? ''));
   const [pickedDates, setPickedDates] = useState<Set<string>>(new Set());
   const [includeSummary, setIncludeSummary] = useState(true);
   const [includeOhlc, setIncludeOhlc] = useState(false);
+  const [orientation, setOrientation] = useState<FxOrientation>('currencyRows');
   const [theme, setTheme] = useState<TableTheme>('audit_gray');
 
-  const meta = useMemo(() => FX_INDEX.find(c => c.code === code), [code]);
-
+  // 고른 통화 중 아직 안 읽은 것만 가져온다. 한 번 읽은 통화는 fxData 가 기억한다.
   useEffect(() => {
+    const missing = query.codes.filter(c => !datasets[c]);
+    if (missing.length === 0) return;
     let cancelled = false;
     setLoading(true);
-    loadCurrency(code).then(loaded => {
+    Promise.all(missing.map(loadCurrency)).then(loaded => {
       if (cancelled) return;
-      setData(loaded);
+      setDatasets(prev => {
+        const next = { ...prev };
+        loaded.forEach(d => {
+          if (d) next[d.code] = d;
+        });
+        return next;
+      });
       setLoading(false);
-      // 통화를 바꾸면 담은 날짜를 비운다. 통화가 섞인 표는 조서에 쓸 수 없다.
-      setPickedDates(new Set());
-      // 새 통화의 자료가 지금 기간을 벗어나면 그 통화의 최근 한 달로 옮긴다.
-      if (loaded && (range.to > loaded.to || range.from < loaded.from)) {
-        setRange(defaultRange(loaded.to));
-      }
     });
     return () => {
       cancelled = true;
     };
-    // range 는 일부러 뺐다 — 기간을 바꿀 때마다 통화를 다시 읽을 이유가 없다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code]);
+  }, [query.codes, datasets]);
+
+  const { kind } = query;
+  const isMatrix = kind === 'closing' || kind === 'average' || kind === 'spot';
+
+  // 통화는 고른 순서가 아니라 목록 순서로 늘어놓는다 — 조서마다 순서가 달라지지 않게.
+  const currencies = useMemo(
+    () => FX_INDEX.filter(c => query.codes.includes(c.code)).map(c => datasets[c.code]).filter(Boolean),
+    [query.codes, datasets]
+  );
+
+  const periodOptions = useMemo<FxPeriod[]>(
+    () =>
+      (kind === 'closing' || kind === 'average') && query.basis
+        ? listPeriods(kind, query.basis, bounds)
+        : [],
+    [kind, query.basis, bounds]
+  );
+
+  // 통화가 행이면 최근 시점이 왼쪽(당기·전기 순, 주석 표 모양), 시점이 행이면 위에서 아래로 시간순.
+  const selectedPeriods = useMemo<FxPeriod[]>(() => {
+    const list =
+      kind === 'spot'
+        ? query.spotDates.map(spotPeriod)
+        : periodOptions.filter(p => query.periodIds.includes(p.id));
+    return [...list].sort((a, b) =>
+      orientation === 'currencyRows' ? b.to.localeCompare(a.to) : a.to.localeCompare(b.to)
+    );
+  }, [kind, query.spotDates, query.periodIds, periodOptions, orientation]);
+
+  // --- 일자별 추이 (한 통화) -----------------------------------------------
+  const dailyCode = kind === 'daily' ? query.codes[0] : undefined;
+  const data = dailyCode ? datasets[dailyCode] ?? null : null;
+
+  // 통화나 기간을 바꾸면 담은 날짜를 비운다. 통화가 섞인 표는 조서에 쓸 수 없다.
+  useEffect(() => setPickedDates(new Set()), [dailyCode]);
 
   const visibleRows = useMemo<FxRateRow[]>(
-    () => (data?.rows ?? []).filter(r => r.date >= range.from && r.date <= range.to),
-    [data, range]
+    () =>
+      query.dailyPreset
+        ? (data?.rows ?? []).filter(r => r.date >= query.range.from && r.date <= query.range.to)
+        : [],
+    [data, query.range, query.dailyPreset]
   );
 
   const pickedRows = useMemo(
@@ -78,6 +146,7 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
   const hasCross = useMemo(() => visibleRows.some(r => r.crossRate !== undefined), [visibleRows]);
 
   const table = useMemo(() => {
+    if (isMatrix && kind) return buildFxMatrixTable(kind, selectedPeriods, currencies, orientation);
     if (!data) return { columns: [], rows: [] };
     return buildFxTable(data, pickedRows, {
       columns: [
@@ -88,7 +157,7 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
       ],
       includeSummary,
     });
-  }, [data, pickedRows, includeOhlc, hasOhlc, hasCross, includeSummary]);
+  }, [isMatrix, kind, selectedPeriods, currencies, orientation, data, pickedRows, includeOhlc, hasOhlc, hasCross, includeSummary]);
 
   const togglePick = useCallback((date: string) => {
     setPickedDates(prev => {
@@ -104,6 +173,9 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
     [visibleRows]
   );
   const clearPicks = useCallback(() => setPickedDates(new Set()), []);
+
+  const kindLabel = FX_KINDS.find(k => k.value === kind)?.label ?? '환율';
+  const sheetName = isMatrix ? kindLabel : data ? currencyLabel(data) : '환율';
 
   if (!FX_READY) {
     return (
@@ -134,28 +206,46 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
       />
 
       <main ref={containerRef} className="flex-1 min-h-0 flex p-3">
-        {/* 왼쪽: 찾기 — 조회 조건과 일자별 고시 환율 */}
+        {/* 왼쪽: 찾기 — 위에서 단계별로 고르고, 아래에서 결과를 확인한다 */}
         <section className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
-          <FxQueryPanel
+          <FxQueryBuilder
+            query={query}
+            onChange={updateQuery}
+            periods={periodOptions}
             currencies={FX_INDEX}
-            code={code}
-            onChangeCode={setCode}
-            from={range.from}
-            to={range.to}
-            onChangeRange={(from, to) => setRange({ from, to })}
-            bounds={meta && { from: meta.from, to: meta.to }}
+            bounds={bounds}
           />
 
-          <FxRateTable
-            rows={visibleRows}
-            pickedDates={pickedDates}
-            onTogglePick={togglePick}
-            onPickAll={pickAll}
-            onClearPicks={clearPicks}
-            digits={digits}
-            hasOhlc={hasOhlc}
-            loading={loading}
-          />
+          {kind === 'daily' ? (
+            query.dailyPreset ? (
+              <FxRateTable
+                rows={visibleRows}
+                pickedDates={pickedDates}
+                onTogglePick={togglePick}
+                onPickAll={pickAll}
+                onClearPicks={clearPicks}
+                digits={digits}
+                hasOhlc={hasOhlc}
+                loading={loading && !data}
+              />
+            ) : (
+              <EmptyResult text="기간을 고르면 그 기간의 고시 환율이 날짜별로 나타납니다." />
+            )
+          ) : (
+            <FxResultMatrix
+              kind={kind ?? 'closing'}
+              periods={selectedPeriods}
+              currencies={currencies}
+              loading={loading}
+              emptyHint={
+                kind === null
+                  ? '위에서 찾을 자료의 유형부터 고르세요. 단계를 하나씩 고르면 다음 단계가 열립니다.'
+                  : kind === 'spot'
+                    ? '거래일을 넣으면 그날의 고시 환율이 나타납니다. 휴일이면 직전 고시일 것을 씁니다.'
+                    : '기준과 시점을 고르면 결과가 여기에 나타납니다. 시점을 여러 개 고르면 비교표가 됩니다.'
+              }
+            />
+          )}
         </section>
 
         {/* 오른쪽: 담기 — 조서에 붙일 표 */}
@@ -169,27 +259,51 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
             />
             <aside style={{ width: layout.right }} className="shrink-0 min-h-0 flex flex-col gap-2">
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-3 py-2 shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
-                  <input
-                    id="check-fx-summary"
-                    type="checkbox"
-                    checked={includeSummary}
-                    onChange={e => setIncludeSummary(e.target.checked)}
-                    className="accent-emerald-600 cursor-pointer"
-                  />
-                  기간 평균환율·기말환율 행 넣기
-                </label>
-                {hasOhlc && (
+                {isMatrix ? (
+                  <div className="flex rounded-md border border-slate-300 overflow-hidden text-[11px]">
+                    {(
+                      [
+                        ['currencyRows', '통화를 행으로'],
+                        ['periodRows', '시점을 행으로'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        onClick={() => setOrientation(value)}
+                        aria-pressed={orientation === value}
+                        className={`px-2 py-0.5 transition cursor-pointer border-r border-slate-200 last:border-r-0 ${
+                          orientation === value ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
                   <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
                     <input
-                      id="check-fx-ohlc"
+                      id="check-fx-summary"
                       type="checkbox"
-                      checked={includeOhlc}
-                      onChange={e => setIncludeOhlc(e.target.checked)}
+                      checked={includeSummary}
+                      onChange={e => setIncludeSummary(e.target.checked)}
                       className="accent-emerald-600 cursor-pointer"
                     />
-                    시가·고가·저가도
+                    기간 평균환율·기말환율 행 넣기
                   </label>
+                  {hasOhlc && (
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                      <input
+                        id="check-fx-ohlc"
+                        type="checkbox"
+                        checked={includeOhlc}
+                        onChange={e => setIncludeOhlc(e.target.checked)}
+                        className="accent-emerald-600 cursor-pointer"
+                      />
+                      시가·고가·저가도
+                    </label>
+                  )}
+                  </>
                 )}
                 <button
                   onClick={() => toggleSide('right')}
@@ -203,11 +317,15 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
               <div className="flex-1 min-h-0">
                 <SheetPreview
                   table={table}
-                  name={data ? currencyLabel(data) : code}
+                  name={sheetName}
                   theme={theme}
                   onChangeTheme={setTheme}
-                  onClearAll={clearPicks}
-                  emptyHint="왼쪽 표에서 조서에 넣을 날짜를 담으면 여기에 붙여넣을 모습 그대로 나타납니다. 기말환율만 쓸 때는 그 하루만, 평균환율이 필요하면 기간 전체를 담으세요."
+                  onClearAll={isMatrix ? () => updateQuery({ periodIds: [], spotDates: [] }) : clearPicks}
+                  emptyHint={
+                    isMatrix || kind === null
+                      ? '왼쪽에서 단계를 끝까지 고르면 조서에 붙여넣을 표가 여기에 그대로 나타납니다.'
+                      : '왼쪽 표에서 조서에 넣을 날짜를 담으면 여기에 붙여넣을 모습 그대로 나타납니다.'
+                  }
                 />
               </div>
             </aside>
@@ -226,6 +344,12 @@ export default function FxWorkspace({ onBackHome }: FxWorkspaceProps) {
     </div>
   );
 }
+
+const EmptyResult: React.FC<{ text: string }> = ({ text }) => (
+  <div className="flex-1 min-h-0 grid place-items-center bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <p className="text-sm text-slate-500 text-center leading-relaxed max-w-sm">{text}</p>
+  </div>
+);
 
 const FxNavbar: React.FC<{ onBackHome: () => void; subtitle: string }> = ({
   onBackHome,
