@@ -160,9 +160,10 @@ export function spotPeriod(date: string): FxPeriod {
 
 /**
  * 기준일에 고시가 없을 때 거슬러 올라가는 한도(달력일).
- * 추석·개천절·한글날이 겹친 연휴가 8일이었다. 그보다 길게 비면 자료가 빠진 것이다.
+ * 가장 긴 연휴는 2017년 추석이었다 — 9/29 다음 고시가 10/10 이다. 그보다 길게 비면
+ * 자료가 빠진 것이다. 받기 스크립트의 GAP_DAYS 와 같은 값을 쓴다.
  */
-const LOOKBACK_DAYS = 10;
+const LOOKBACK_DAYS = 12;
 
 export interface FxCell {
   rate: number;
