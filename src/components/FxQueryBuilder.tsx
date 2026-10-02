@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, Plus, X } from 'lucide-react';
 import { FxCurrencyMeta } from '../types';
 import {
@@ -48,6 +48,22 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
 }) => {
   const { kind, basis } = query;
 
+  // 고른 단계 버튼을 한 번 더 누르면 취소한다. 단, 그 아래 단계에 고른 것이 남아 있으면
+  // 취소하지 않는다 — 한 번 잘못 눌러 아래 단계까지 통째로 날아가면 다시 고르기 번거롭다.
+  // 통화는 처음부터 골라 져 있고 유형을 바꿔도 이어지므로 '아래 단계'로 치지 않는다.
+  const [blockedNote, setBlockedNote] = useState<string | null>(null);
+  const noteTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(noteTimer.current), []);
+  const showBlocked = (step: string) => {
+    setBlockedNote(step);
+    window.clearTimeout(noteTimer.current);
+    noteTimer.current = window.setTimeout(() => setBlockedNote(null), 2500);
+  };
+
+  const kindHasChildren =
+    basis !== null || query.spotDates.length > 0 || query.dailyPreset !== null;
+  const basisHasChildren = query.periodIds.length > 0;
+
   // 단계마다 '골랐는가'. 다음 단계는 앞 단계가 모두 골라졌을 때만 연다.
   const steps: { key: string; title: string; done: boolean; body: React.ReactNode }[] = [];
 
@@ -64,15 +80,21 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
             active={kind === k.value}
             label={k.label}
             hint={k.hint}
-            onClick={() =>
+            locked={kind === k.value && kindHasChildren}
+            onClick={() => {
+              if (kind === k.value) {
+                if (kindHasChildren) showBlocked('kind');
+                else onChange({ kind: null });
+                return;
+              }
               onChange({
                 kind: k.value,
                 basis: null,
                 periodIds: [],
                 // 일자별 추이는 한 통화만 본다. 여럿 골라 두었으면 맨 앞 하나만 남긴다.
                 ...(k.value === 'daily' && query.codes.length > 1 ? { codes: query.codes.slice(0, 1) } : {}),
-              })
-            }
+              });
+            }}
           />
         ))}
       </div>
@@ -93,7 +115,15 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
               active={basis === b.value}
               label={b.label}
               hint={b.hint}
-              onClick={() => onChange({ basis: b.value, periodIds: [] })}
+              locked={basis === b.value && basisHasChildren}
+              onClick={() => {
+                if (basis === b.value) {
+                  if (basisHasChildren) showBlocked('basis');
+                  else onChange({ basis: null });
+                  return;
+                }
+                onChange({ basis: b.value, periodIds: [] });
+              }}
             />
           ))}
         </div>
@@ -178,6 +208,11 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
                 {!s.done && <ChevronRight className="w-3 h-3 text-emerald-500" />}
               </p>
               {s.body}
+              {blockedNote === s.key && (
+                <p role="status" className="mt-1 text-[10px] text-amber-600">
+                  아래 단계에서 고른 것을 먼저 해제해야 취소됩니다.
+                </p>
+              )}
             </div>
           </li>
         ))}
@@ -193,12 +228,15 @@ const TierButton: React.FC<{
   active: boolean;
   label: string;
   hint?: string;
+  /** 골라져 있지만 아래 단계가 남아 있어 지금은 취소할 수 없다 */
+  locked?: boolean;
   onClick: () => void;
-}> = ({ id, active, label, hint, onClick }) => (
+}> = ({ id, active, label, hint, locked, onClick }) => (
   <button
     id={id}
     onClick={onClick}
     aria-pressed={active}
+    title={active ? (locked ? '아래 단계를 먼저 해제하면 취소할 수 있습니다' : '한 번 더 누르면 취소') : undefined}
     className={`text-left px-2.5 py-1.5 rounded-lg border transition cursor-pointer ${
       active
         ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
