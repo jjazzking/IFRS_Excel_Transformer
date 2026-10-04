@@ -57,4 +57,17 @@ jobs:
             exit 0
           fi
           git commit -m "chore(fx): 환율 자료 갱신 ($(date -u +%Y-%m-%d))"
-          git push origin HEAD:${{ github.ref_name }}
+          # 몇 년치를 받으면 수십 분이 걸리고, 그 사이 누가 같은 브랜치에 푸시하면
+          # 그냥 push 는 거부된다. 원격을 받아 그 위에 다시 얹고 푸시한다.
+          # 환율 파일이 겹치면 방금 받은 값(-X theirs = 다시 얹는 커밋 쪽)을 쓴다.
+          branch='${{ github.ref_name }}'
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase -X theirs origin "$branch"
+            if git push origin "HEAD:$branch"; then
+              exit 0
+            fi
+            echo "푸시 거부 — ${attempt}번째, 잠시 뒤 다시 시도한다."
+            sleep $((attempt * 5))
+          done
+          echo "::error::다섯 번 시도했지만 푸시하지 못했다."
+          exit 1
