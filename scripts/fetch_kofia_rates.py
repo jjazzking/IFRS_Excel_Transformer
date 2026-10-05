@@ -123,6 +123,7 @@ def main() -> int:
             years[y] = {r["date"]: r for r in doc.get("rows", [])}
         return years[y]
 
+    latest_order: list[str] = []
     got = skipped_empty = skipped_same = 0
     failures: list[str] = []
     consecutive = 0
@@ -153,6 +154,7 @@ def main() -> int:
             skipped_same += 1
             continue
         prev = snap
+        latest_order = [r.code for r in rows]
 
         for r in rows:
             if r.code not in catalog:
@@ -183,8 +185,11 @@ def main() -> int:
             (out_dir / f"avg-{y}.json").write_text(dump_year(doc), encoding="utf-8")
         files.append({k: doc[k] for k in ("year", "from", "to", "count")})
 
-    # 행 순서는 처음 본 순서, 곧 사이트 표의 순서다. 코드 순과는 다르다 — 사이트는 보증
-    # 회사채(702…)를 무보증(701…)보다 앞에 둔다.
+    # 행 순서는 가장 최근에 받은 날의 사이트 표 순서를 따른다. 코드 순과는 다르다 — 사이트는
+    # 보증 회사채(702…)를 무보증(701…)보다 앞에 둔다. 중간에 생긴 행(커버드본드 등)도 제자리에
+    # 오고, 지금은 없어진 행은 뒤에 남긴다.
+    if latest_order:
+        row_order = latest_order + [c for c in row_order if c not in latest_order]
     (out_dir / "index.json").write_text(
         json.dumps(
             {

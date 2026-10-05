@@ -14,10 +14,6 @@ on:
         description: '최근 몇 년치를 받을지'
         required: false
         default: '3'
-  # 첫 3년치는 이 브랜치에서 받는다 — 수집 스크립트가 바뀌면 다시 돈다.
-  push:
-    branches: [claude/festive-shannon-rjm2kj]
-    paths: [scripts/kofia.py, scripts/fetch_kofia_rates.py, .github/workflows/kofia-rates.yml]
 
 permissions:
   contents: write

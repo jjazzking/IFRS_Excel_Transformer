@@ -89,6 +89,12 @@
    "grade": ""
   },
   {
+   "code": "4050000",
+   "category": "커버드본드",
+   "type": "",
+   "grade": "AAA"
+  },
+  {
    "code": "5010110",
    "category": "금융채 I(은행채)",
    "type": "무보증",
@@ -273,12 +279,6 @@
    "category": "회사채 II(사모사채)",
    "type": "무보증",
    "grade": "A-"
-  },
-  {
-   "code": "4050000",
-   "category": "커버드본드",
-   "type": "",
-   "grade": "AAA"
   }
  ],
  "files": [
