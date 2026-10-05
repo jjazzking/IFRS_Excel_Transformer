@@ -110,3 +110,53 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# ── 2단계: 메뉴 서비스를 불러 시가평가 화면을 찾는다 ──────────────────────────
+SVC_URL = BASE + "/proframeWeb/XMLSERVICES/"
+
+
+def call(app: str, svc: str, fn: str, dto_xml: str) -> str | None:
+    body = (
+        '<?xml version="1.0" encoding="utf-8"?><message><proframeHeader>'
+        f"<pfmAppName>{app}</pfmAppName><pfmSvcName>{svc}</pfmSvcName><pfmFnName>{fn}</pfmFnName>"
+        "</proframeHeader><systemHeader></systemHeader>" + dto_xml + "</message>"
+    )
+    req = urllib.request.Request(
+        SVC_URL,
+        data=body.encode("utf-8"),
+        headers={
+            "User-Agent": UA,
+            "Content-Type": "application/xml; charset=UTF-8",
+            "Referer": BASE + "/websquare/websquare.html?w2xPath=/xml/main.xml",
+            "Origin": BASE,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=40) as r:
+            return r.read().decode("utf-8", "replace")
+    except Exception as e:  # noqa: BLE001
+        print(f"  ! {svc}.{fn}: {e}")
+        return None
+
+
+def stage2() -> None:
+    menu = call("BIS-COM", "BISComMenuSO", "selectMenuBIS", "<BISComMenuDTO><workGb>KOR</workGb></BISComMenuDTO>")
+    if not menu:
+        return
+    (DUMP / "menu.xml").write_text(menu, encoding="utf-8")
+    print(f"\n### 메뉴 응답 {len(menu)} chars")
+    paths = sorted(set(re.findall(r"(/xml/[A-Za-z0-9_/\-]+\.xml)", menu)))
+    print(f"메뉴 안 화면 경로 {len(paths)}개")
+    for path in paths:
+        text = get(path)
+        if text is None:
+            continue
+        out = DUMP / ("screen__" + path.strip("/").replace("/", "__"))
+        out.write_text(text, encoding="utf-8")
+        calls = sorted(set(re.findall(r'callProFrame\w*\(\s*"([\w-]+)"\s*,\s*"(\w+)"\s*,\s*"(\w+)"', text)))
+        title = re.search(r'<w2:caption[^>]*>([^<]*)<', text)
+        print(f"{path} | {title.group(1).strip() if title else ''} | {calls}")
+
+
+stage2()
