@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/css/sub.css" type="text/css"?>
+<?xml-stylesheet href="/css/basic.css" type="text/css"?>
+<?xml-stylesheet href="/css/form.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
+	xmlns:xf="http://www.w3.org/2002/xforms">
+	<head>
+		<w2:buildDate />
+		<xf:model>
+			<xf:instance>
+				<data xmlns="" />
+			</xf:instance>
+		</xf:model> 
+		<script type="javascript"><![CDATA[									        		
+        ]]></script>
+	</head>
+	<body> 
+		<xf:group id="maincontentWrapfooter" style="" class="" tagname="div">
+			<xf:group id="HelpBody" style="position:relative;width:740px;" class="mgr5" tagname="div">
+				<xf:group id="group17" style="background:#f6f6f6;" class="footerbox" tagname="div">
+					<xf:group class="footerCodib mgb5" id="group33" style="">
+						<w2:textbox class="footerCodtext" id="textbox28" label='CD수익률은 2023.10.4.부터 "CD수익률 산출업무규정"에 따라 매 영업일 16시를 기준으로 1회 산출 및 공시됨.' style="color:red"></w2:textbox>
+					</xf:group>
+					
+                    <xf:group id="group18" style="" class="footerCodib mgb5">
+						<w2:textbox id="textbox13" style="" class="footerCodtext"
+							label="CD는 신용평가 등급이 AAA인 시중은행 발행분을, CP는 신용평가등급이 A1인 발행회사 어음을 기준으로 함">
+						</w2:textbox>
+					</xf:group>
+					<xf:group id="group20" style="" class="footerCodib mgb5">
+						<w2:textbox id="textbox15" style="" class="footerCodtext"
+							label="최종호가수익률 중 회사채(3년)의 경우 기준물이 은행보증(93.7.1~98.3.15), 보증보험보증(98.3.16~98.8.31).&lt;br/&gt;무보증A+(98.9.1~00.9.30), 무보증AA-, BBB-(00.10.2~현재)순으로 변경됨">
+						</w2:textbox>
+					</xf:group>
+					<xf:group id="group21" style="" class="footerCodib mgb5">
+						<w2:textbox id="textbox16" style="" class="footerCodtext"
+							label="최종호가수익률(채권)은 13.10.28부터 소수점 3자리로 공시되었으며, 잔존만기별수익률은 13.10.28부로 중단됨">
+						</w2:textbox>
+					</xf:group>
+					<xf:group id="group22" style="" class="footerCodib mgb5">
+						<w2:textbox id="textbox17" style="" class="footerCodtext" label="2014년 하반기 수익률 보고회사"></w2:textbox>
+					</xf:group>
+					<xf:group id="group28" style="" class="footerCodib01 mgb5">
+						<w2:textbox id="textbox23" style="" class="footerCodtext"
+							label="최종호가수익률(10사) : KB투자증권, 신한금융투자, HMC투자증권, 부국증권, 하이투자증권, 대우증권, KTB투자증권,&lt;br/&gt; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;메리츠종금증권, 아이엠투자증권, 교보증권">
+						</w2:textbox>
+					</xf:group>
+					<xf:group class="footerCodib01 mgb5" id="group29" style="">
+						<w2:textbox class="footerCodtext" id="textbox24"
+							label="CD수익률(10사) : 하이투자증권, KB투자증권, 리딩투자증군, 하나대투증권,KTB투자증권, 흥국증권, &lt;br/&gt; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; 신한금융투자,서울외국환중개, 유진투자증권, NH농협증권"
+							style="">
+						</w2:textbox>
+					</xf:group>
+					<xf:group class="footerCodib01" id="group30" style="">
+						<w2:textbox class="footerCodtext" id="textbox25"
+							label="CP 91일물 수익률(8사) : KTB투자증권, 동부증권, NH농협증권, 현대증권, 메리츠종금증권, 우리투자증권,&lt;br/&gt; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp; 신한은행 ,외환은행"
+							style="">
+						</w2:textbox>
+					</xf:group>
+					<xf:group class="footerCodib mgb5" id="group32" style="">
+						<w2:textbox class="footerCodtext" id="textbox27" label="※ 수익률 산정의 기준시점 : (오전) 11시30분, (오후) : 16시 (단, ‘17.3.24까지 조회되는 오후 수익률은 15시30분 기준)" style="color:red"></w2:textbox>
+					</xf:group>					
+
+				</xf:group>
+			</xf:group>
+		</xf:group>
+	</body>
+</html>

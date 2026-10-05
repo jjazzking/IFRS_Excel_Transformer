@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/css/sub.css" type="text/css"?>
+<?xml-stylesheet href="/css/basic.css" type="text/css"?>
+<?xml-stylesheet href="/css/form.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
+	xmlns:xf="http://www.w3.org/2002/xforms">
+	<head>
+		<w2:buildDate />
+		<xf:model>
+			<xf:instance>
+				<data xmlns="" />
+			</xf:instance>
+		</xf:model>
+		<script type="javascript"><![CDATA[
+			
+			var currIndex = 0;                                           // 현재 행 ( 그리드내에서 탭키 이벤트시 다음행으로 이동 처리)
+			var divisionId= WebSquare.net.getParameter( "divisionId" );
+			var divisionNm= decodeURIComponent(WebSquare.net.getParameter( "divisionNm" ));
+			var tabIdx = WebSquare.net.getParameter( "tabIdx" );
+			var existMaxDate = "";
+
+           /**************************************************************************
+            * function    : init
+            * Description : 서브 메인 화면 초기화
+            * Parameter   : 
+            * Return      : 
+            **************************************************************************/
+	        function init() {
+				this.document.title=divisionNm;
+				resizeIframe();
+								
+				//DB상의 최근일자를 가져옴
+				getExistMaxDate();				
+				
+				if(existMaxDate == null || existMaxDate == ""){
+					existMaxDate = WebSquare.date.getCurrentServerDate( "yyyyMMdd" );
+				}
+				srchDt.setValue( existMaxDate );
+				
+				//var todayDD = WebSquare.date.getCurrentServerDate( "yyyyMMdd" );
+				//var todayHHmm = WebSquare.date.getCurrentServerDate( "HHmm" );
+				//기본 조회일 선택 조건 (현재시간 11:30이전이면 이전날짜, 이후면 오늘날짜)
+				//if(todayHHmm > "1130"){
+					//srchDt.setValue( todayDD );
+				//}else{
+					//srchDt.setValue( WebSquare.date.dateAdd( todayDD , -1 ) );
+				//}
+				
+				searchBeforeCheck();	
+				
+				searchCompList();							
+			}
+			
+        	/**************************************************************************
+             * function    : searchData
+             * Description : 최종호가 수익률 조회 (일자별)
+             * Parameter   : null
+             * Return      : null
+             **************************************************************************/
+        	function searchCompList() {
+		       	var BISComDspDatDTO = WebSquare.xml.serialize(getInstanceNode("reqSrch/BISComDspDatDTO"));
+		       	callProFrameAdvanced("BIS-KOFIABOND","BISLastAskPrcROPSrchSO","listComp",BISComDspDatDTO,"respCompList");
+        	}			
+
+			/**************************************************************************
+			* function    : checkColorFormat
+			* Description : cell 색 변화
+			* Parameter   : null
+			* Return      : null
+			**************************************************************************/
+			function checkColorFormat(){				
+				for(var i=0; i<grdMain.getRowCount(); i++){
+					var val3 = WebSquare.util.parseFloat( grdMain.getCellData( i , "val3" ) , 0 );  //1130
+					var val4 = WebSquare.util.parseFloat( grdMain.getCellData( i , "val4" ) , 0 );  //1530
+					var val5 = WebSquare.util.parseFloat( grdMain.getCellData( i , "val5" ) , 0 );  //전일대비
+					var val6 = WebSquare.util.parseFloat( grdMain.getCellData( i , "val6" ) , 0 );  //전일
+					
+					//1130, 1530은 전일대비 큰가 작은가 같은가에 따라 다름
+					if(val3 < val6){
+						grdMain.setCellColor( i , "val3" , "blue" );
+					}else if (val3 > val6) {
+						grdMain.setCellColor( i , "val3" , "red" );					
+					}else{
+						grdMain.setCellColor( i , "val3" , "black" );						
+					}
+					
+					if(val4 < val6){
+						grdMain.setCellColor( i , "val4" , "blue" );
+					}else if (val4 > val6) {
+						grdMain.setCellColor( i , "val4" , "red" );					
+					}else{
+						grdMain.setCellColor( i , "val4" , "black" );						
+					}
+					// 전일대비는 음수, 양수, 0에 따라 다름
+					if(val5 < 0){
+						grdMain.setCellColor( i , "val5" , "blue" );
+					}else if (val5 > 0) {
+						grdMain.setCellColor( i , "val5" , "red" );					
+					}else{
+						grdMain.setCellColor( i , "val5" , "black" );						
+					}
+					
+				}				
+			}			
+			
+        	/**************************************************************************
+             * function    : getExistMaxDate
+             * Description : 공통화면에서 조회기간 설정을 위하여 데이터가 존재하는 날짜를 구함
+             * Parameter   : 
+             * Return      : 데이터가 존재하는 MAX 날짜
+             **************************************************************************/			
+			function getExistMaxDate(){
+	       	    var BISComDspDatDTO = {BISComDspDatDTO:{}};
+		        callProFrame("BIS-KOFIABOND","BISLastAskPrcROPSrchSO","getExistMaxDate",BISComDspDatDTO, "BISComDspDatDTO","respMaxDate");
+			}			
+			
+            /**************************************************************************
+             * function    : formatCell
+             * Description : 0을 '-'로 치환            
+             * Parameter   : null
+             * Return      : null
+             **************************************************************************/
+            function formatCell(str) {
+            	var result;
+            	result = str;
+            	
+            	if(isNaN(str)){
+            		str = 0;
+            	}//else{
+            		//str = Number(str);
+            	//}
+
+            	if(str == 0){
+            		result = "-";
+            	}else{
+            		result = str;
+            	}
+            	
+            	return result;
+            }
+			
+        	/**************************************************************************
+             * function    : callBack
+             * Description : submission 실행 후 Callback
+             * Parameter   : retAction(submission 실행 Action), rowCount(조회 목록 총 건수)
+             * Return      : null
+             **************************************************************************/
+        	function callBack(svcId,fnId,strResp) {   
+				if (svcId == "BISLastAskPrcROPSrchSO") {
+					if (fnId == "listDay") {
+						grdMain.setXML( getInstanceNode("respBondInt/root/message/BISComDspDatListDTO") );
+						
+						//전일대비 컬럼 색 설정
+						checkColorFormat();
+						
+						for(var i=0; i<grdMain.getRowCount(); i++){							
+							var maxdt = getValue( "respBondInt/root/message/BISComDspDatListDTO/BISComDspDatDTO["+(i+1)+"]/val11" );
+							var mindt = getValue( "respBondInt/root/message/BISComDspDatListDTO/BISComDspDatDTO["+(i+1)+"]/val12" );
+							$("#grdMain_cell_"+i+"_6").attr("title", toFormatDate(maxdt));
+							$("#grdMain_cell_"+i+"_7").attr("title", toFormatDate(mindt));							
+						}						
+	 				}else if( fnId == "getExistMaxDate"){
+						existMaxDate = getValue("respMaxDate/root/message/BISComDspDatDTO/val1");
+					}else if (fnId == "listComp") {					
+						//
+						var todayYY = WebSquare.date.getCurrentServerDate( "yyyy" );
+						var todayMM = WebSquare.date.getCurrentServerDate( "MM" );
+						var strHalf = "";
+						
+						if( todayMM >= "07" ) strHalf = "하반기";
+						else strHalf = "상반기";
+						 
+						textbox17.setValue( todayYY + "년 " + strHalf + " 수익률 보고회사" );
+											
+						//textbox14.setValue( "최종호가수익률(10사) : KB투자증권, 신한금융투자, HMC투자증권, 부국증권, 하이투자증권, 대우증권, KTB투자증권,<br/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 메리츠종금증권, 아이엠투자증권, 교보증권" );
+						//textbox18.setValue( "CD 91일물 수익률(10사) : 하이투자증권, KB투자증권, 리딩투자증군, 하나대투증권,KTB투자증권, 흥국증권, <br/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 신한금융투자,서울외국환중개, 유진투자증권, NH농협증권" );
+						//textbox19.setValue( "CP 91일물 수익률(8사) : KTB투자증권, 동부증권, NH농협증권, 현대증권, 메리츠종금증권, 우리투자증권,<br/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;신한은행 ,외환은행" );
+						textbox23.setValue( "최종호가수익률("+getValue("respCompList/root/message/BISComDspDatListDTO/BISComDspDatDTO[val3='W351011']/val2")+"사) : " + getValue("respCompList/root/message/BISComDspDatListDTO/BISComDspDatDTO[val3='W351011']/val1") );
+						textbox24.setValue( "CD 수익률("+getValue("respCompList/root/message/BISComDspDatListDTO/BISComDspDatDTO[val3='W351015']/val2")+"사) : " + getValue("respCompList/root/message/BISComDspDatListDTO/BISComDspDatDTO[val3='W351015']/val1") );
+						textbox25.setValue( "CP 91일물 수익률("+getValue("respCompList/root/message/BISComDspDatListDTO/BISComDspDatDTO[val3='W351013']/val2")+"사) : " + getValue("respCompList/root/message/BISComDspDatListDTO/BISComDspDatDTO[val3='W351013']/val1") );						
+	 				}
+	 			}
+            resizeIframe();
+            }
+            
+        	/**************************************************************************
+             * function    : searchBeforeCheck
+             * Description : 입력값 유효성 검증
+             * Parameter   : null
+             * Return      : null
+             **************************************************************************/            
+			function searchBeforeCheck() {			
+				if(srchDt.getValue() == ""){
+					showMsg("C_I017", "조회일");
+				}else if(isValidDate(srchDt.getValue()) == false){
+					showMsg("C_I029");
+				}else{
+				   searchData();
+				}		   
+			}            
+			
+        	/**************************************************************************
+             * function    : searchData
+             * Description : 최종호가 수익률 조회 (일자별)
+             * Parameter   : null
+             * Return      : null
+             **************************************************************************/
+        	function searchData() {
+		       	var BISComDspDatDTO = WebSquare.xml.serialize(getInstanceNode("reqSrch/BISComDspDatDTO"));		       	
+		       	callProFrameProcess("BIS-KOFIABOND","BISLastAskPrcROPSrchSO","listDay",BISComDspDatDTO,"respBondInt");				
+        	}
+        	
+            /**************************************************************************
+             * function    : excelDownLoad
+             * Description : 그리드의 내용을 엑셀로 다운로드
+             * Parameter   : null
+             * Return      : null
+             **************************************************************************/
+            function excelDownLoad() {
+            	var removeCol = "";
+            	saveExcelDown(grdMain, "최종호가 수익률(일자별)", "1", true, false, removeCol);
+            }
+            
+			init();			
+        ]]></script>
+	</head>
+	<body>
+		<xf:group id="maincontentWrap" style="overflow:hidden;" class="" tagname="div">
+			<w2:wframe id="wfrmSearch" style="" src="" mode="sync"></w2:wframe>
+
+
+			<xf:group id="grpSearchForm" style="" class="mgt10">
+				<xf:group id="group89" style="" class="impCoheader" tagname="div">
+					<xf:group id="group90" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox48" style="" class="impCotic" label="조회일"></w2:textbox>
+					</xf:group>
+					<xf:group id="group91" style="" class="impCoco" tagname="div">
+						<xf:group id="group92" style="" class="fl mgt8 mgl10 w130">
+							<w2:textbox id="textbox49" for="srchDt" class="hid" label="조회일"></w2:textbox>
+							<w2:inputCalendar calendarImageOver="/images/calendar.png" id="srchDt" ref="reqSrch/BISComDspDatDTO/val1"
+								calendarValueType="yearMonthDate" title="" style="" rendertype="native" useCalendarTabIndex="true" class="w100 h17"
+								calendarImage="/images/calendar.png" calendarClass="" useanchormove="true">
+							</w2:inputCalendar>
+						</xf:group>
+						<xf:group id="group83" style="" class="fr mgt7 mgr10" tagname="a">
+							<w2:attributes>
+								<w2:href>javascript:searchBeforeCheck();</w2:href>
+								<w2:title>조회</w2:title>
+								<w2:target></w2:target>
+							</w2:attributes>
+							<xf:image id="image3" title="" style="" alt="조회" src="/images/sub/sub_search_btn03.gif"></xf:image>
+						</xf:group>
+					</xf:group>
+				</xf:group>
+
+			</xf:group>
+			<xf:group id="grpUnitExcel" style="" class="gridBtnDn" tagname="div">
+				<xf:group id="groupUE" style="" class="fr" tagname="">
+					<w2:textbox id="txtUnit" style="" class="fl mgt5" label="(단위:%)"></w2:textbox>
+					<xf:group id="grpExcel" style="" class="fl mgl5 mgr5" tagname="a">
+						<w2:attributes>
+							<w2:href>javascript:excelDownLoad();</w2:href>
+							<w2:title>엑셀 다운로드 바로가기</w2:title>
+						</w2:attributes>
+						<xf:image id="imgExcel" style="" alt="엑셀 다운로드 아이콘 이미지" src="/images/sub/excel_btn.gif"></xf:image>
+					</xf:group>
+				</xf:group>
+				<xf:group id="group93" style="" class="fl mgt5" tagname="">
+					<w2:textbox id="txtGrdLabel" style="" class="fl mgt5" label=""></w2:textbox>
+				</xf:group>
+			</xf:group>
+			<xf:group id="grpGrid" style="position:relative;width:100%;" class="over">
+				<w2:grid summary="종류명, 잔존기간, 오전, 오후, 전일대비, 전일, 연중최고, 연중최저 항목을 포함한 최종호가 수익율 목록" baseNode="BISComDspDatListDTO" readOnlyTabIgnore="true" autoFit="allColumn"
+					visibleRowNum="all" sortEvent="ondblclick" sortable="true" class="gridtable9" rowMouseOverColor="#EDF5EB" rowNumVisible="" id="grdMain"
+					focusMode="none" readOnly="true" style="height:200px;" evenRowBackgroundColor="#fff" sendReader="true" repeatNode="BISComDspDatDTO">
+					<w2:caption class="hid">최종호가 수익율</w2:caption>
+					<w2:header id="header1" style="">
+						<w2:row id="row1" style="">
+							<w2:column id="column1" style="height:65px" inputType="text" width="*" rowSpan="3" value="종류명" scope="col"></w2:column>
+							<w2:column id="column3" style="height:65px" inputType="text" width="140" rowSpan="3" value="잔존기간" scope="col"></w2:column>
+							<w2:column id="column5" style="height:25px" colSpan="6" inputType="text" width="420" value="최종호가수익률" scope="col"></w2:column>
+							<w2:column id="column69" style="height:65px" hidden="true" width="0" inputType="text" value="_종목코드" rowSpan="3" scope="col"></w2:column>
+						</w2:row>
+						<w2:row id="row3" style="">
+							<w2:column id="column60" style="height:20px" colSpan="2" width="140" inputType="text" value="당일" scope="col"></w2:column>
+							<w2:column id="column58" style="height:40px" width="70" inputType="text" rowSpan="2" value="전일대비" scope="col"></w2:column>
+							<w2:column id="column57" style="height:40px" width="70" inputType="text" rowSpan="2" value="전일" scope="col"></w2:column>
+							<w2:column id="column56" style="height:40px" width="70" inputType="text" rowSpan="2" value="연중최고" scope="col"></w2:column>
+							<w2:column id="column55" style="height:40px" width="70" inputType="text" rowSpan="2" value="연중최저" scope="col"></w2:column>
+						</w2:row>
+						<w2:row id="row4" style="">
+							<w2:column id="column68" style="height:20px" width="70" inputType="text" value="오전" scope="col"></w2:column>
+							<w2:column id="column67" style="height:20px" width="70" inputType="text" value="오후" scope="col"></w2:column>
+						</w2:row>
+					</w2:header>
+					<w2:gBody id="gBody1" style="">
+						<w2:row id="row2" style="">
+							<w2:column id="val1" style="height:20px" inputType="link" width="*" textAlign="left"></w2:column>
+							<w2:column id="val2" style="height:20px" inputType="text" width="140" textAlign="center"></w2:column>
+							<w2:column id="val3" dataType="text" style="height:20px" inputType="text" width="70" textAlign="center"
+								displayFormatter="formatCell">
+							</w2:column>
+							<w2:column id="val4" dataType="text" style="height:20px" inputType="text" width="70" textAlign="center"
+								displayFormatter="formatCell">
+							</w2:column>
+							<w2:column id="val5" dataType="text" style="height:20px" inputType="text" width="70" textAlign="center"
+								displayFormatter="formatCell">
+							</w2:column>
+							<w2:column id="val6" dataType="text" style="height:20px" inputType="text" width="70" textAlign="center"
+								displayFormatter="formatCell">
+							</w2:column>
+							<w2:column id="val7" dataType="text" style="height:20px" inputType="text" width="70" textAlign="center"
+								displayFormatter="formatCell">
+							</w2:column>
+							<w2:column id="val8" dataType="text" style="height:20px" inputType="text" width="70" textAlign="center"
+								displayFormatter="formatCell">
+							</w2:column>
+							<w2:column id="val20" style="height:20px" width="60" inputType="text"></w2:column>
+						</w2:row>
+					</w2:gBody>
+					<script ev:event="oncellclick(row,col)" type="javascript"><![CDATA[
+					if(col == 0){						
+						parent.changeTab( 1, grdMain.getCellData( row , "val20" ) );
+					}
+					 ]]></script>
+				</w2:grid>
+			</xf:group>
+
+
+
+			<w2:wframe id="wfrmFooter" style="position:relative;width:100%;" scrolling="no" class="mgt15"
+				src="/xml/bondint/lastrop/BISLastAskPrcDay_footer.xml" mode="sync">
+			</w2:wframe>
+
+
+		</xf:group>
+	</body>
+</html>
+
