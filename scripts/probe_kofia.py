@@ -84,6 +84,11 @@ def main() -> int:
             text = get(path)
             if text:
                 print(f"\n----- {path}\n{text[:12000]}")
+    # 메뉴와 화면 하나를 원문 그대로 — 요청 양식과 메뉴 경로를 읽으려고.
+    for path in ("/xml/main.xml", "/xml/header.xml", "/xml/bondint/lastrop/BISLastAskPrcDay.xml"):
+        text = get(path)
+        if text:
+            print(f"\n----- RAW {path}\n{text}")
     return 0
 
 
