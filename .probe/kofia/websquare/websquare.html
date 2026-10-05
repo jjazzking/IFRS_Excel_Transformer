@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns='http://www.w3.org/1999/xhtml' xmlns:ev='http://www.w3.org/2001/xml-events' xmlns:w2='http://www.inswave.com/websquare' xmlns:xf='http://www.w3.org/2002/xforms' lang="ko" xml:lang="ko">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title> WebSquare </title>
+    <script type="text/javascript" src="javascript.wq?q=/bootloader"></script>
+    <link  href='/css/jquery.alerts.css' rel='stylesheet' type='text/css' media='screen'></link>    
+    <script src='/js/jquery.js' type='text/javascript'></script>
+    <script src='/js/jquery.ui.draggable.js' type='text/jwebsquare.jspavascript'></script>
+    <script src='/js/jquery.alerts.js' type='text/javascript'></script>
+    <script type="text/javascript" src="/js/jquery.i18n.properties-1.0.9.js"></script>
+    <script src="/js/highcharts.js" type='text/javascript'></script>
+    <script src="/js/exporting.js" type='text/javascript'></script>
+    <script src="/js/chartpattern.js" type='text/javascript'></script>
+    <script src="/js/highcharts-3d.js" type='text/javascript'></script>
+    <script src="/js/highcharts-more.js" type='text/javascript'></script>
+    <script src="/js/COMAjaxLibProframe.js" type='text/javascript'></script>
+    <script src="/js/comm.js" type='text/javascript'></script>
+    <script src="/js/date.js" type='text/javascript'></script>
+    <!-- 통합 연계 수정(장영훈 2016.7.28)-->
+		<script type="text/javascript">
+ //   debugger ;
+    var parentObj ;
+    var gDivisionId ;
+    var gsUserId ;
+    //PostMessage Response 대기시간 (밀리초)
+    var postMessageWaitTime = 0 ;
+    //PostMessage Response 최대 대기시간 (밀리초) -> 5초
+    var maxPostMessageWaitTime = 5000 ;
+    //Tab사용여부
+    var useTabControl = true ;
+    
+    var hostnameArray ;
+    var urlPrefix = '' ;
+    hostnameArray = window.location.hostname.split('.') ;
+    urlPrefix = hostnameArray[0] ;
+	
+	if (urlPrefix != 'k-bond'  && urlPrefix != 'kbond'  && urlPrefix != 'k-bondd'  ) {
+    
+    try {
+      parentObj = opener || parent;
+      var gDivisionId = null;
+      if(parentObj.treeMenu){
+        gDivisionId = parentObj.treeMenu.getSelectedValue();
+      }
+    } catch(exception) {
+      useTabControl = false ;
+		  /*
+		  1) www접근하지 않고
+		  2) TabControl을 사용하지 않는
+		  경우 postMessage처리하지 않음
+		  */      
+      if (urlPrefix != 'www'  && !useTabControl ) {
+        parentObj = new Object();
+        parentObj.userId = '';
+        parentObj.companyCd = '' ;
+        parentObj.kotcCompCd = '' ;
+        parentObj.koscomCompCd = '' ;
+        parentObj.bisCompCd = '' ;
+        parentObj.reportCompCd = '' ;
+        parentObj.companyNm = '' ;
+        parentObj.divisionId = '' ;
+        parentObj.sWorkGbn = '' ;
+        parentObj.divisionNm = '' ;
+        parentObj.serviceId = '' ;
+        parentObj.programId = '' ;
+          
+        // check for browser support
+        if ( window.addEventListener ) {
+          var targetOption = '' ;
+          
+          //호출 서비스에 따른 PostMessage target 변경
+          // 업무지원관련
+          if (urlPrefix == 'biswork' || urlPrefix == 'kotcwork') {
+            targetOrigin = window.location.protocol + '//work.kofia.or.kr';
+          // 관리서비스 관련
+          } else if (urlPrefix == 'bismgmt' || urlPrefix == 'kotcmgmt') {
+            targetOrigin = window.location.protocol + '//mgmt.kofia.or.kr';
+          }
+            // message handler
+          window.addEventListener('message', function(e) {
+           		//debugger;
+              console.log('setPageInfo') ;
+                // check message origin
+            	if ( e.origin === targetOrigin ) {
+            	    
+            	  var task = e.data['task']; // task received in postMessage
+            	    // get reference to demo form
+            	  switch ( task ) { // postMessage tasks    
+            	  	case 'setPageInfo' :
+            	  		parentObj.userId = e.data['userId']  ;
+            	  		parentObj.gsUserId = e.data['userId']  ;
+            	  		gsUserId = e.data['userId']  ;
+            	  		parentObj.companyCd = e.data['companyCd']  ;
+            	  		parentObj.bisCompCd = e.data['bisCompCd']  ;
+            	  		parentObj.koscomCompCd = e.data['kotcCompCd']  ;
+            	  		parentObj.reportCompCd = parentObj.companyCd ;
+            	  		parentObj.companyNm = e.data['companyNm']  ;
+            	  		parentObj.divisionId = e.data['divisionId']  ;
+            	  		gDivisionId = e.data['divisionId'];
+            	  		parentObj.divisionNm = e.data['divisionNm']  ;
+            	  		parentObj.serviceId = e.data['serviceId']  ;
+            	  		parentObj.programId = e.data['programId']  ;
+            	  		parentObj.sWorkGbn = parentObj.programId.substring(0, 3) ;
+            	  		break ;
+            		}
+            	}
+            }, false);
+          //좌측 메뉴 창으로 PostMessage 전달
+          parent.parent.postMessage( {'task': 'getPageInfo'}, targetOrigin );            
+        }
+        parentObj.getCompanyCd = function(bKoscomCd) {
+          //BIS용 KoscomCd인 경우
+          if(bKoscomCd) {
+            return parentObj.bisCompCd ;
+          }
+          //협회 회사코드인 경우
+          else {
+            return parentObj.companyCd ;
+          }
+        }
+      }
+    } 
+	
+	}
+    
+    // parentObj 값 설정여부 확인
+    // 값설정이 없는 경우 waitMilliSec 만큼 대기
+    function checkParentObj(waitMilliSec) {
+      if (postMessageWaitTime <= maxPostMessageWaitTime) { 
+        var hasParentObj = (!gDivisionId) ? false : true ;
+        console.log('hasParentObj : ' + hasParentObj) ;
+        if (!hasParentObj) {
+          //var waitTimer = setTimeout(function() { console.log('postMessageWaitTime : ' + postMessageWaitTime) ;}, waitMilliSec) ;
+          setTimeout(function() { 
+          	postMessageWaitTime = postMessageWaitTime + waitMilliSec ;
+            console.log('postMessageWaitTime : ' + postMessageWaitTime) ;
+          	checkParentObj(waitMilliSec) ; 
+            }, waitMilliSec) ;
+          //clearTimeout(waitTimer) ;
+        }
+        else {
+        	//PostMessage처리가 완료된 경우에만 onload Event를 Dispatch함
+        	window.onload = init;
+					if(!document.createEvent){  
+					    window.fireEvent('onload');  
+					}else{  
+					    var event = document.createEvent('HTMLEvents');  
+					    event.initEvent("load", false, true);  
+					    window.dispatchEvent(event);  
+					}
+          return ;
+        }
+      }
+      else {
+        console.log('화면 정보 수집을 위해 페이지를 Refresh합니다.') ;
+        location.reload(true) ;
+      }
+    }   
+	  /*
+	  1) www접근하지 않고
+	  2) TabControl을 사용하지 않는
+	  경우 ParentObj 생성여부 확인하지 않음
+	  */
+	  if (urlPrefix != 'k-bond'  && urlPrefix != 'kbond'  && urlPrefix != 'k-bondd'  ) {	  
+		if (urlPrefix != 'www' && !useTabControl) {   
+	    	checkParentObj(1000) ;
+	  	}
+		//PostMessage를 사용하지 않는 대외서비스는
+		else {
+			window.onload = init;
+		}
+	  }
+	  else {
+    	window.onload = init;
+	  }
+	  	
+		//window.onload = init;
+		
+		if(jQuery.browser.msie && (parseInt(jQuery.browser.version)) < 8 && (document.domain=="bismgmtd.kofia.or.kr"||document.domain=="bisworkd.kofia.or.kr")){
+		    window.location="browserGuide.html";
+		}
+		
+		function init() {
+		  jQuery.i18n.properties({
+		                name: '/message/messages',
+		                mode:'vars',
+		                callback: function(){}
+		              });
+		  
+		  try{
+		    WebSquare.startApplication();
+		  } catch(e) {
+		    alert(e.message);
+		  }
+		}
+		</script>        
+  </head>
+<body>
+</body>
+</html>
