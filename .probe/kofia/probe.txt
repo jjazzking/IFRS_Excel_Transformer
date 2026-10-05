@@ -8,6 +8,7 @@
    title=::금융투자협회::
 == /xml/Main.xml (832 chars)
    title=::금융투자협회::
+  ! /xml/main.xml: IncompleteRead(48960 bytes read, 17906 more expected)
 == /xml/main.xml (65580 chars)
    svc=['BISMainSO'] fn=['BISMainSO.selectAnnItmList', 'BISMainSO.selectBoardList', 'BISMainSO.selectIdxList', 'BISMainSO.selectKrxFurList', 'BISMainSO.selectPopupZoneList', 'BISMainSO.selectPrvMnyNtceList', 'BISMainSO.selectRptCompLogoList'] dto=[]
 == /xml/bondint/lastrop/BISLastAskPrcDay.xml (16875 chars)
@@ -1920,3 +1921,6 @@
 </html>
 
 
+
+### 메뉴 응답 70812 chars
+메뉴 안 화면 경로 0개
