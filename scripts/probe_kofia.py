@@ -108,8 +108,6 @@ def main() -> int:
     return 0
 
 
-if __name__ == "__main__":
-    sys.exit(main())
 
 
 # ── 2단계: 메뉴 서비스를 불러 시가평가 화면을 찾는다 ──────────────────────────
@@ -159,4 +157,7 @@ def stage2() -> None:
         print(f"{path} | {title.group(1).strip() if title else ''} | {calls}")
 
 
-stage2()
+
+if __name__ == "__main__":
+    main()
+    stage2()
