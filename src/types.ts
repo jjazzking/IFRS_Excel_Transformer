@@ -107,12 +107,22 @@ export interface SheetColumn {
   digits?: number;
   /** 엑셀 열 너비 (문자 수) */
   width?: number;
+  /** 머리글 칸 음영 — 이자율 표에서 고른 만기 열 */
+  shade?: CellShade;
 }
+
+/**
+ * 칸 음영. 조서에서 "이 칸을 썼다"를 표시하는 노란 형광펜이다.
+ * soft = 고른 행 또는 열, strong = 둘이 겹치는 칸 (실제로 쓰는 값).
+ */
+export type CellShade = 'soft' | 'strong';
 
 export interface SheetRow {
   cells: (string | number | null)[];
   /** 합계·평균처럼 눈에 띄어야 하는 행 */
   emphasis?: 'total';
+  /** 칸별 음영. 없으면 음영 없음 */
+  shades?: (CellShade | null)[];
 }
 
 export interface SheetTable {
@@ -163,4 +173,47 @@ export interface FxIndex {
   source: string;
   updatedAt: string;
   currencies: FxCurrencyMeta[];
+}
+
+// ---------------------------------------------------------------------------
+// 이자율 — 금융투자협회 채권시가평가수익률 (평가사 평균)
+// ---------------------------------------------------------------------------
+
+/** 표의 한 줄 — 종류 · 종류명 · 신용등급 (예: 회사채 I(공모사채) · 무보증 · AA-) */
+export interface RateRowMeta {
+  /** 금투협 행 코드 (sigaBrnCd) */
+  code: string;
+  category: string;
+  type: string;
+  grade: string;
+}
+
+export interface RatesYearMeta {
+  year: number;
+  from: string;
+  to: string;
+  count: number;
+}
+
+export interface RatesIndex {
+  source: string;
+  sourceUrl: string;
+  updatedAt: string;
+  unit: string;
+  /** 열 머리글 — 잔존만기 (3월, 6월, … 50년) */
+  terms: string[];
+  rows: RateRowMeta[];
+  files: RatesYearMeta[];
+}
+
+/** 하루치 표. v[행 코드] = 만기별 수익률(%), 고시 없는 칸은 null */
+export interface RatesDay {
+  date: string;
+  v: Record<string, (number | null)[]>;
+}
+
+export interface RatesYearData extends RatesYearMeta {
+  source: string;
+  fetchedAt: string;
+  rows: RatesDay[];
 }

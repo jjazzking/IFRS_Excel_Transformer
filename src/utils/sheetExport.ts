@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { ClipboardExportResult, SheetTable, TableTheme } from '../types';
+import { CellShade, ClipboardExportResult, SheetTable, TableTheme } from '../types';
 import { getThemeStyles, numericTd, styleAttr, totalTd } from './tableTheme';
 
 /**
@@ -20,6 +20,19 @@ export function formatNumber(value: number, digits = 2): string {
 function cellText(value: string | number | null, digits?: number): string {
   if (value === null || value === undefined) return '';
   return typeof value === 'number' ? formatNumber(value, digits ?? 2) : value;
+}
+
+/**
+ * 음영 색 — 엑셀 기본 팔레트의 노랑 두 단계. 조서에서 형광펜으로 칠하는 그 색이다.
+ * 미리보기(`SHADE_PREVIEW_CLASS`)와 같은 색을 쓴다.
+ */
+export const SHADE_FILL: Record<CellShade, string> = {
+  soft: '#FFF2CC',
+  strong: '#FFD966',
+};
+
+function shadeCss(shade: CellShade | null | undefined): string {
+  return shade ? ` background-color: ${SHADE_FILL[shade]}; mso-pattern: auto;` : '';
 }
 
 function escapeHtml(str: string): string {
@@ -63,7 +76,7 @@ export function generateSheetClipboard(
   }
   body += '<tr>';
   table.columns.forEach(c => {
-    body += `<td style="${styleAttr(`${styles.sectionTd} text-align: center;`)}">${escapeHtml(c.label)}</td>`;
+    body += `<td style="${styleAttr(`${styles.sectionTd} text-align: center;${shadeCss(c.shade)}`)}">${escapeHtml(c.label)}</td>`;
   });
   body += '</tr>';
 
@@ -73,7 +86,7 @@ export function generateSheetClipboard(
       const col = table.columns[i];
       const isNum = typeof value === 'number';
       const style = row.emphasis === 'total' ? totalStyle : isNum ? numStyle : styles.colATd;
-      body += `<td style="${styleAttr(style)}">${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
+      body += `<td style="${styleAttr(style + shadeCss(row.shades?.[i]))}">${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
     });
     body += '</tr>';
   });
@@ -106,7 +119,11 @@ ${body}
   return { tsv, html, rowCount: table.rows.length, cells: [] };
 }
 
-export function exportSheetToExcelFile(table: SheetTable, fileName: string) {
+/**
+ * .xlsx 로 내려받는다. 이 라이브러리(SheetJS 무료판)는 칸 서식을 쓰지 못해 음영은 빠진다 —
+ * 음영까지 필요하면 '조서에 붙여넣기(서식 유지)'를 쓴다.
+ */
+export function exportSheetToExcelFile(table: SheetTable, fileName: string, sheetName = '환율') {
   const aoa: (string | number | null)[][] = [];
   if (table.title) aoa.push([table.title]);
   aoa.push(table.columns.map(c => c.label));
@@ -117,6 +134,6 @@ export function exportSheetToExcelFile(table: SheetTable, fileName: string) {
   ws['!cols'] = table.columns.map(c => ({ wch: c.width ?? 12 }));
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '환율');
+  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
   XLSX.writeFile(wb, fileName);
 }

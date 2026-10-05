@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useMemo } from 'react';
 import { HomeScreen } from './components/HomeScreen';
 import StandardsWorkspace from './workspaces/StandardsWorkspace';
 import FxWorkspace from './workspaces/FxWorkspace';
+import RatesWorkspace from './workspaces/RatesWorkspace';
 
 // 의사록 작업대만 따로 떼어 둔다. pdf.js 가 500kB 가까이 되는데, 기준서·환율만
 // 쓰는 사람이 그걸 받을 이유가 없다. `#/minutes` 로 들어갈 때만 받는다.
@@ -9,6 +10,7 @@ const MinutesWorkspace = lazy(() => import('./workspaces/MinutesWorkspace'));
 import { useRoute } from './hooks/useRoute';
 import { ALL_STANDARDS } from './data/standardsData';
 import { FX_INDEX } from './data/fxData';
+import { RATES_BOUNDS } from './data/ratesData';
 import { WorkspaceId } from './workspaces/registry';
 
 /**
@@ -30,6 +32,9 @@ export default function App() {
       const to = FX_INDEX.reduce((a, c) => (c.to > a ? c.to : a), FX_INDEX[0].to);
       out.fx = `통화 ${FX_INDEX.length}개 · ${from.slice(0, 7)}~${to.slice(0, 7)}`;
     }
+    if (RATES_BOUNDS) {
+      out.rates = `평가사 평균 · ${RATES_BOUNDS.from.slice(0, 7)}~${RATES_BOUNDS.to.slice(0, 7)}`;
+    }
     return out;
   }, []);
 
@@ -38,6 +43,9 @@ export default function App() {
   }
   if (route === 'fx') {
     return <FxWorkspace onBackHome={() => go('home')} />;
+  }
+  if (route === 'rates') {
+    return <RatesWorkspace onBackHome={() => go('home')} />;
   }
   if (route === 'minutes') {
     return (
