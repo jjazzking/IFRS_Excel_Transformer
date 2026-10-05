@@ -8,6 +8,7 @@ import { MinutesText } from '../lib/minutes/text';
 import { TesseractEngine } from '../lib/minutes/ocr';
 import { parseMinutes } from '../lib/minutes/parse';
 import { Evidence, MinutesDocument } from '../lib/minutes/types';
+import { UsageGuideButton } from '../components/UsageGuideButton';
 
 interface MinutesWorkspaceProps {
   onBackHome: () => void;
@@ -234,6 +235,9 @@ const MinutesNavbar: React.FC<{ onBackHome: () => void; subtitle: string }> = ({
           <h1 className="font-bold text-lg text-slate-100 tracking-tight truncate">의사록 읽기</h1>
         </div>
         <p className="text-xs text-slate-400 truncate">{subtitle}</p>
+      </div>
+      <div className="ml-auto">
+        <UsageGuideButton />
       </div>
     </div>
   </header>

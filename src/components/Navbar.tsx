@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, BookOpen, Code2, PencilLine, Upload, RotateCcw } from 'lucide-react';
+import { UsageGuideButton } from './UsageGuideButton';
 
 interface NavbarProps {
   /** 첫 화면(작업대 고르기)으로 돌아간다 */
@@ -102,6 +103,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <RotateCcw className="w-4 h-4" />
           </button>
+
+          <UsageGuideButton />
         </div>
       </div>
     </header>

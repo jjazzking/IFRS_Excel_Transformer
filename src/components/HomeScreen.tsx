@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight, FileSpreadsheet, Lock, PanelsTopLeft } from 'lucide-react';
+import { UsageGuideButton } from './UsageGuideButton';
 import { WorkspaceId, WorkspaceMeta, WORKSPACES } from '../workspaces/registry';
 
 interface HomeScreenProps {
@@ -52,7 +53,10 @@ const ACCENT: Record<
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpen, badges }) => (
   <div className="min-h-screen bg-slate-100 text-slate-900 antialiased font-sans overflow-y-auto">
     <header className="bg-slate-900 text-white border-b border-slate-800">
-      <div className="max-w-5xl mx-auto px-6 py-10 sm:py-14">
+      <div className="max-w-5xl mx-auto px-6 pt-4 flex justify-end">
+        <UsageGuideButton />
+      </div>
+      <div className="max-w-5xl mx-auto px-6 pb-10 pt-4 sm:pb-14 sm:pt-6">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-emerald-600 flex items-center justify-center shadow-inner shrink-0">
             <FileSpreadsheet className="w-5.5 h-5.5 text-white" />
