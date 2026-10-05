@@ -30,10 +30,18 @@ KEYWORDS = ("시가평가", "기준수익률", "매트릭스", "Mtrx", "Matrix",
 
 
 def get(path: str) -> str | None:
+    for _ in range(3):
+        text = _get(path)
+        if text is not None:
+            return text
+    return None
+
+
+def _get(path: str) -> str | None:
     url = path if path.startswith("http") else BASE + path
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Referer": BASE + "/"})
     try:
-        with urllib.request.urlopen(req, timeout=20) as r:
+        with urllib.request.urlopen(req, timeout=40) as r:
             raw = r.read()
             ctype = r.headers.get("Content-Type", "")
     except Exception as e:  # noqa: BLE001
