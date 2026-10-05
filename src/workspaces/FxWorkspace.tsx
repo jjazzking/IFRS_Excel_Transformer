@@ -18,6 +18,7 @@ import {
   spotPeriod,
 } from '../utils/fxQuery';
 import { isIsoDate, monthsBefore, todayIso } from '../utils/dateRange';
+import { UsageGuideButton } from '../components/UsageGuideButton';
 
 interface FxWorkspaceProps {
   onBackHome: () => void;
@@ -378,6 +379,9 @@ const FxNavbar: React.FC<{ onBackHome: () => void; subtitle: string }> = ({
           <h1 className="font-bold text-lg text-slate-100 tracking-tight truncate">환율 찾기</h1>
         </div>
         <p className="text-xs text-slate-400 truncate">{subtitle}</p>
+      </div>
+      <div className="ml-auto">
+        <UsageGuideButton />
       </div>
     </div>
   </header>
