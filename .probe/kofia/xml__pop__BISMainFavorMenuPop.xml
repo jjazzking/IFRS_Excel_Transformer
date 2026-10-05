@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/css/pop.css" type="text/css"?>
+<?xml-stylesheet href="/css/basic.css" type="text/css"?>
+<?xml-stylesheet href="/css/form.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:w2="http://www.inswave.com/websquare" xmlns:xf="http://www.w3.org/2002/xforms">
+    <head>
+        <w2:buildDate/>
+        <xf:model>
+            <xf:instance>
+                <data xmlns=""/>
+            </xf:instance>
+        </xf:model>
+		<script type="javascript"><![CDATA[
+		
+		
+	    	var objParent = opener || parent;
+	        var callBackFunc = WebSquare.net.getParameter( "fname" );
+    
+		   /**************************************************************************
+	        * function    : init
+	        * Description : 화면 로드시 실행 됨.
+	        * Parameter   : null
+	        * Return      : null
+	        **************************************************************************/
+	        function init() {
+	        	var selectedItem = getCookie("bisFavorMenuList");
+	        	if(selectedItem!=null || selectedItem!="") {
+	        		var selectedList = selectedItem.split("|");
+	        		Bookcheckbox1.setValue( selectedList.join(" "));
+	        	}
+	        	attachEventTD();
+	        }    	
+	       
+	       /**************************************************************************
+	        * function    : closeWindow()
+	        * Description : 선택 자료를 return 하고 창 당기
+	        * Parameter   : null
+	        * Return      : null
+	        **************************************************************************/ 
+	        function closeWindow() {
+				var retVal = Bookcheckbox1.getValue("|");
+				objParent.eval(callBackFunc)(retVal,"npop2");
+	        }
+	        
+	       /**************************************************************************
+	        * function    : attachEventTD
+	        * Description : TD영역에 클릭 이벤트 설정
+	        * Parameter   : null
+	        * Return      : null
+	        **************************************************************************/ 
+	        function attachEventTD() {
+	        	for(var i=0 ; i < Bookcheckbox1.getItemCount() ; i++) {
+	        		var id="#Bookcheckbox1_input_"+i;
+	        		var inputId="#Bookcheckbox1_input_"+i;
+	        		var tdObj= $(id).parent();
+	        		
+	        		tdObj.attr("id",i);
+					tdObj.bind("click", function(){
+						var isChecked = $("#Bookcheckbox1_input_"+this.id).is(":checked");
+						if(getSelectedCount() >= 9 && !isChecked) {
+							showMsgString("최대 9개까지 선택할 수 있습니다.");
+						} else {
+							Bookcheckbox1.setSelectedIndex( this.id );
+						} 
+					});
+					$(inputId).bind("click", function(e){
+						var isChecked = $(this).is(":checked");
+						if(getSelectedCount() > 9 && isChecked) {
+							showMsgString("최대 9개까지 선택할 수 있습니다.");
+							e.preventDefault();
+						} else {
+							e.stopPropagation();
+						} 
+				    });
+	        	}
+	        }
+	        
+	       /**************************************************************************
+	        * function    : getSelectedCount
+	        * Description : 선택 갯수 구하기
+	        * Parameter   : null
+	        * Return      : null
+	        **************************************************************************/ 
+	        function getSelectedCount() {
+				var selectedList = Bookcheckbox1.getSelectedIndex("|");
+				var count=selectedList.split("|").length;
+				return count;
+	        }
+
+	        init();  
+        ]]></script>
+    </head>
+    <body>
+    	<xf:group id="pogroup31" style="" class="p_container">
+    		<xf:group id="pogroup1" style="" class="p_Tcenter" tagname="div">
+    			<xf:group id="pogroup2" style="" class="p_left fl" tagname="">
+    				<xf:image id="image11" style="" alt="-" src="/images/pop/top_left.png"></xf:image>
+    			</xf:group>
+    			<w2:textbox id="potextbox1" style="" class="p_text fl" label="자주찾는 메뉴 설정"></w2:textbox>
+    			<xf:group id="pogroup4" style="" class="p_right" tagname="">
+    				<xf:image id="image8" style="" alt="-" src="/images/pop/top_right.png"></xf:image>
+    			</xf:group>
+    		</xf:group>
+    		<xf:group id="group112" style="" class="p_Ccenter" tagname="div">
+    			<xf:group id="group113" style="" class="p_Csearch" tagname="div">
+    				<xf:group id="group114" style="" class="p_CsDingbatText fl mgt5 mgr15" tagname="div">
+    					<w2:textbox id="textbox73" style="" class="fl mgt_2 mgl10"
+    						label="자주찾는 메뉴는 9개까지 선택이 가능하며 메인메뉴에서 간편하게 이용하실 수 있습니다. ">
+    					</w2:textbox>
+    				</xf:group>
+    			</xf:group>
+    		</xf:group>
+    		<xf:group id="group120" style="" class="p_Ccenter" tagname="div">
+    			<xf:select id="Bookcheckbox1" cols="6" appearance="full" style="" selectedindex="-1" rows="" validator="validCheckedCount" >
+    				<xf:choices>
+    					<xf:item>
+    						<xf:label>최종호가수익률</xf:label>
+    						<xf:value>0000</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>발행만기 정보종합</xf:label>
+    						<xf:value>0100</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>발행통계</xf:label>
+    						<xf:value>0102</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>회사채발행계획</xf:label>
+    						<xf:value>0104</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>주관사 인수실적</xf:label>
+    						<xf:value>0105</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>이용절차</xf:label>
+    						<xf:value>020702</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>채권거래현황</xf:label>
+    						<xf:value>0201</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>투자별거래현황</xf:label>
+    						<xf:value>0203</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>CP 통계정보</xf:label>
+    						<xf:value>030101</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>ABCP 거래내역 공시</xf:label>
+    						<xf:value>030102</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>전자단기사채 정보</xf:label>
+    						<xf:value>0303</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>신용등급 비교공시</xf:label>
+    						<xf:value>0400</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>Special Report</xf:label>
+    						<xf:value>0407</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>채권시장 체감지표</xf:label>
+    						<xf:value>0500</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>채권시장 지표종합</xf:label>
+    						<xf:value>050004</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>MKF 국고채 지수</xf:label>
+    						<xf:value>050100</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>채권시가수익률</xf:label>
+    						<xf:value>0600</xf:value>
+    					</xf:item>
+						<xf:item>
+    						<xf:label>QIB증권발행</xf:label>
+    						<xf:value>0701</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>실시간체결현황</xf:label>
+    						<xf:value>0206</xf:value>
+    					</xf:item>
+    					<xf:item>
+    						<xf:label>BQS</xf:label>
+    						<xf:value>0208</xf:value>
+    					</xf:item>  					
+    				</xf:choices>
+    			</xf:select>
+    		</xf:group>
+    		<xf:group id="group89" style="" class="p_closeBtn" tagname="div">
+    			<xf:group id="group90" style="" class="" tagname="a">
+    				<w2:attributes><w2:href>javascript:;</w2:href></w2:attributes>
+    				<xf:image id="image10" title="" style="" alt="닫기" src="/images/btn/board_btn09.png"></xf:image>
+    				<script ev:event="onclick" type="javascript"><![CDATA[closeWindow(); ]]></script>
+    			</xf:group>
+    		</xf:group>
+    	</xf:group>
+    </body>
+</html>

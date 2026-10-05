@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/css/sub.css" type="text/css"?>
+<?xml-stylesheet href="/css/basic.css" type="text/css"?>
+<?xml-stylesheet href="/css/form.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
+	xmlns:xf="http://www.w3.org/2002/xforms">
+	<head>
+		<w2:buildDate />
+		<xf:model>
+			<xf:instance>
+				<data xmlns="" />
+			</xf:instance>
+		</xf:model>
+		<script type="javascript"><![CDATA[
+		var PAGE_CNT = WebSquare.net.getParameter( "PAGE_CNT" );
+     	var PAGE_ROWS = 15;
+     	var list_cnt = "";
+     	var BISComBoardDTO = "";
+     	var prevSelectColNm = WebSquare.net.getParameter( "prevSelectColNm" );
+   	var prevSearchText = WebSquare.net.getParameter( "prevSearchText" );
+     	var TRANS_MODE = 0;
+     	var WRITE_TYPE = 1; //글쓰기(1), 댓글쓰기(2)
+     	var registUser = parent.gsUserId;
+     	var registCompCd = parent.gsCompanyCd;
+     	var pBoardInfo = WebSquare.net.getParameter( "boardInfo" );  // 게시판정보
+     	var pStatementId = WebSquare.net.getParameter( "statementId" );	//글번호
+		var pHiddenCol = WebSquare.net.getBASE64Parameter("hiddenCol");
+		
+		
+		var pBoardTyp = "";
+		var totalCount = "";
+		
+      /**************************************************************************
+		* function    : cbmDataInit
+		* Description : 게시판 콤보 리스트 설정
+		* Parameter   : null
+		* Return      : null
+		**************************************************************************/	
+		function cbmDataInit() {
+			this.document.title=divisionNm;
+			resizeIframe();
+			
+			if(PAGE_CNT == ""){
+				PAGE_CNT = 1;
+			}
+			
+			setTimeout(function(){
+				
+				//mobileChk();
+				
+				
+				WebSquare.ModelUtil.removeChildNodes( "BISComBoardInfoDTO" );
+	        	var BISComBoardInfoDTO =  {"BISComBoardInfoDTO":{}};
+	        	
+	        	pfm_insertValue(BISComBoardInfoDTO,"boardID", pBoardInfo);
+	        	
+	        	var BISComDspDatDTO =  {"BISComDspDatDTO":{}};
+	        	callProFrameSync("BIS-COM","BISComBoardInfoSO","selectBoardInfo",BISComBoardInfoDTO, "BISComBoardInfoDTO","respInfo");
+        	}, 100);
+		}
+		
+		
+		/**************************************************************************
+		* function    : cbmDataInit
+		* Description : 게시판 콤보 리스트 설정
+		* Parameter   : null
+		* Return      : null
+		**************************************************************************/	
+		function mobileChk() {
+				if (isMobile()) {
+            	pageList1.hide();
+               pageControl1.show();
+            } else {
+               pageList1.show();
+               pageControl1.hide();
+            }
+		}
+		
+		
+		/**************************************************************************
+		 * function    : searchData
+		 * Description : 게시판 조회
+		 * Parameter   : null
+		 * Return      : null
+		 **************************************************************************/	
+		function searchData(pageNo) {
+			
+			if(pageNo != 1) PAGE_CNT = pageNo;
+			//mobileChk();
+			
+			WebSquare.ModelUtil.removeChildNodes( "BISComBoardDTO" );
+        	
+        	BISComBoardDTO =  {"BISComBoardDTO":{}};
+        	/*
+        	pfm_insertValue(BISComBoardDTO,"boardID", pBoardInfo);
+        	pfm_insertValue(BISComBoardDTO,"boardTyp", pBoardTyp);
+        	pfm_insertValue(BISComBoardDTO,"pageCnt", PAGE_CNT);
+        	pfm_insertValue(BISComBoardDTO,"pageRows", PAGE_ROWS);
+
+        	if (searchText.getValue() != "") {
+        		if (selectColNm.getValue() == "0") pfm_insertValue(BISComBoardDTO, "title", searchText.getValue());
+        		if (selectColNm.getValue() == "1") pfm_insertValue(BISComBoardDTO, "registDt", searchText.getValue());
+        		if (selectColNm.getValue() == "2") pfm_insertValue(BISComBoardDTO, "content", searchText.getValue());
+        		//if (selectColNm.getValue() == "3") pfm_insertValue(BISComBoardDTO, "registOrg", searchText.getValue());
+        		
+        		prevSelectColNm = selectColNm.getValue();
+        		prevSearchText = searchText.getValue();
+        	}
+        	*/
+	      setValue("BISComBoardDTO/boardID", pBoardInfo);
+        	setValue("BISComBoardDTO/boardTyp", pBoardTyp);
+        	setValue("BISComBoardDTO/pageCnt", PAGE_CNT);
+        	setValue("BISComBoardDTO/pageRows", PAGE_ROWS);
+        	
+        	if (searchText.getValue() != "") {
+        		if (selectColNm.getValue() == "0") setValue("BISComBoardDTO/title", textEncoding(searchText.getValue()));
+        		if (selectColNm.getValue() == "1") setValue("BISComBoardDTO/registDt", textEncoding(searchText.getValue()));
+        		if (selectColNm.getValue() == "2") setValue("BISComBoardDTO/content", textEncoding(searchText.getValue()));
+        	}
+        	
+        	callProFrameSync("BIS-COM","BISComBoardSO","selectBoard",BISComBoardDTO, "BISComBoardDTO","resp");
+		}
+		
+		
+     	/**************************************************************************
+      * function    : callBack
+      * Description : submission 실행 후 Callback
+      * Parameter   : retAction(submission 실행 Action), rowCount(조회 목록 총 건수)
+      * Return      : null
+      **************************************************************************/
+     	function callBack(svcId,fnId,strResp) {   
+     		if (svcId == "BISComBoardInfoSO") {
+				if (fnId == "selectBoardInfo") {
+					pBoardTyp = getValue("respInfo/root/message/BISComBoardInfoListDTO/BISComBoardInfoDTO/boardTyp");
+					searchData(PAGE_CNT);
+					resizeIframe();
+      		}
+      	}else if (svcId == "BISComBoardSO") {
+     			if (fnId == "selectBoard") {
+     				grdMain.setXML( getInstanceNode("resp/root/message/BISComBoardListDTO") );
+     				
+     				if(pBoardInfo == "7"){
+	     				for(var i=0; i<grdMain.getRowCount(); i++){
+	     					grdMain.setCellData( i , 2 , "금융투자협회" );
+	     				}
+     				}
+     				
+     				totalCount = WebSquare.ModelUtil.getInstanceValue( "resp/root/message/BISComBoardListDTO[1]/BISComBoardDTO/total");
+     				
+     				for(var i=1; i<=totalCount; i++){
+     					setValue("resp/root/message/BISComBoardListDTO/BISComBoardDTO["+i+"]/title", textEncoding((getValue("resp/root/message/BISComBoardListDTO/BISComBoardDTO["+i+"]/title"))));
+     					setValue("resp/root/message/BISComBoardListDTO/BISComBoardDTO["+i+"]/content", textEncoding((getValue("resp/root/message/BISComBoardListDTO/BISComBoardDTO["+i+"]/content"))));
+     				}
+     				
+     				var pageCnt = totalCount/PAGE_ROWS;
+     				
+     				if(Math.ceil(pageCnt) > pageCnt){
+     					pageCnt = Math.ceil(pageCnt); 
+     				}
+     				
+     				if (PAGE_CNT == 1) {
+     					pageList1.setCount( pageCnt, false );     				
+     				}else{
+     					pageList1.setCount( pageCnt, true );
+     					pageList1.setSelectedIndex( PAGE_CNT );
+     					
+     				}
+     				resizeIframe();	
+     			}
+     		} 
+		}
+			
+			
+		/**************************************************************************
+		 * function    : imgColumn
+		 * Description : grid cell에 이미지 보여주기
+		 * Parameter   : null
+		 * Return      : null
+		 **************************************************************************/
+		function imgColumn(data,formattedData,row,col){
+			if (data.length == 0) return "";
+			var str = "";
+			for(var i=0;i<data.split("^").length;i++){
+				if (data.split("^")[i].split("|")[4].length > 0) {
+					str = str + '<img src="/images/btn/file_btn00.gif" style="cursor:pointer; padding-left:5px"' + ' title=' + data.split("^")[i].split("|")[4] + ' onclick="fileDownload('+i+','+row+')"/>';
+				}
+			}
+			return str;
+		}
+		
+		/**************************************************************************
+		 * function    : fileDownload
+		 * Description : 파일 다운로드
+		 * Parameter   : null
+		 * Return      : null
+		 **************************************************************************/
+		function fileDownload(index, row) {
+			var str = grdMain.getCellData(row, "attachFile");
+			var arr = getFileName(index, str);
+			comFileDownload(arr[1], arr[2], arr[3], arr[4]);
+		}	
+
+		/**************************************************************************
+       * function    : getFileName
+       * Description : 파일 정보에서 Array 리턴
+       * Parameter   : index, str
+       * Return      : null
+       **************************************************************************/
+      function getFileName(index, str) {
+      	if (str == undefined || str == "") return;
+	
+			if (str.indexOf("^") > 0) {
+			    var arr = str.split("^");
+			    if (arr[index] != undefined && arr.length > 0 && arr.length >= index) {
+					return arr[index].split("|");
+			    }
+			} else {
+				if (index > 0) return;
+				return str.split("|");
+			}
+      }		
+		
+		 
+       /**************************************************************************
+		 * function    : titleColumn
+		 * Description : 댓글형 grid title 컬럼 level 설정하여 보여주기
+		 * Parameter   : data,formattedData,row,col
+		 * Return      : null
+		 **************************************************************************/
+		 function titleColumn(data,formattedData,row,col){
+			var str = null;
+			
+			if(grdMain.getCellData( row , "depth" ) != 1 && grdMain.getCellData( row , "depth" ) != ""){
+				// 댓글은 depth에 따라 margin-left를 설정하여 공백을 준다.
+				str = "<a style='margin-left:"+(Number(grdMain.getCellData( row , "depth" ))-2)*10 +"px' class='level2'>"+data+"</a>";
+			}else{
+				str = "<a class='level1'>"+data+"</a>";
+			}
+			
+			return str;
+		 }
+       
+       /**************************************************************************
+        * function    : formatDate
+        * Description : 날짜 포맷
+        * Parameter   : str
+        * Return      : null
+        **************************************************************************/
+       function formatDate(str) {
+			if(str == null || str == undefined || str == "") return "";
+			str = str.length > 8 ? str.substr(0,8) : str;
+			if (str.indexOf("/") > 0) return str;
+			return str.toDateString(USER_DATE_FORMAT_DELIM);
+		 }
+		 
+
+		/**************************************************************************
+       * function    : showDetail
+       * Description : 상세보기 화면 전환
+       * Parameter   : null
+       * Return      : null
+       **************************************************************************/
+       function showDetail(row){
+       	 pStatementId = grdMain.getCellData(row, "statementId");
+          parent.maincontent.setSrc("/xml/board/BISItgtBoardViewPDS.xml"
+          									+ "&divisionId=" + divisionId + "&topMenuIndex=" + topMenuIndex 
+          									+ "&boardInfo=" + pBoardInfo + "&boardTyp=" + pBoardTyp
+          									+ "&statementId=" + pStatementId + "&PAGE_CNT=" + PAGE_CNT
+          									
+          								  );
+          
+          
+       }
+       
+       
+       /**************************************************************************
+       * function    : showWrite
+       * Description : 글쓰기 화면 전환
+       * Parameter   : null
+       * Return      : null
+       **************************************************************************/
+       function showWrite(gb){
+       	if(gb == "U") pStatementId = grdMain.getCellData(row, "statementId");
+          parent.maincontent.setSrc("/xml/board/BISItgtBoardWrite.xml"
+          									+ "&divisionId=" + divisionId + "&topMenuIndex=" + topMenuIndex 
+          									+ "&boardInfo=" + pBoardInfo + "&boardTyp=" + pBoardTyp
+          									+ "&statementId=" + pStatementId + "&PAGE_CNT=" + PAGE_CNT
+          									+ "&saveGb=" + gb
+          								  );
+          
+          
+       }		 
+		cbmDataInit();
+      ]]></script>
+      <style type="text/css"><![CDATA[
+			.level1{ background: no-repeat;padding-left: 10px;}
+			.level2{ background: url(../images/btn/re.gif) no-repeat;padding-left: 40px;}
+		]]></style>
+	</head>
+	<body>
+		<xf:group id="maincontentWrap" style="overflow:hidden;" class="" tagname="div">
+			<w2:wframe id="wfrmMnuStp" style="" src="/xml/Com/Common_MnuStp.xml" mode="sync"></w2:wframe>
+			<xf:group class="impCobtn mgb10" id="grpSearch" style="" tagname="div">
+				<xf:group class="fr" id="group3" style="">
+					<xf:group class="fl" id="grpSTitle" style="">
+						<w2:textbox class="hid" for="selectbox1_input_0" id="textboxColNm" label="검색분류"></w2:textbox>
+						<xf:select1 allOption="" appearance="minimal" chooseOption="" class="fl mgt6 mgr5 w100 h20" direction="auto"
+							disabled="false" disabledClass="w2selectbox_disabled" displayMode="label" id="selectColNm" renderType="native" style=""
+							submenuSize="auto" title="">
+							<xf:choices>
+								<xf:item>
+									<xf:label>제목</xf:label>
+									<xf:value>0</xf:value>
+								</xf:item>
+								<xf:item>
+									<xf:label>일자</xf:label>
+									<xf:value>1</xf:value>
+								</xf:item>
+								<xf:item>
+									<xf:label>내용</xf:label>
+									<xf:value>2</xf:value>
+								</xf:item>
+							</xf:choices>
+						</xf:select1>
+					</xf:group>
+					<xf:group class="fl" id="grpSInput" style="">
+						<w2:textbox class="hid" for="input1" id="textbox3" label="검색어" style="" tagname="label"></w2:textbox>
+						<xf:input class="fl mgt6 mgr5 h20" id="searchText" style="" title=""></xf:input>
+						<xf:group class="fl mgt5" id="group7" style="" tagname="a">
+							<w2:attributes>
+								<w2:href>javascript: searchData(PAGE_CNT);</w2:href>
+								<w2:target></w2:target>
+								<w2:title>조회</w2:title>
+							</w2:attributes>
+							<xf:image alt="검색" id="image1" src="/images/btn/search_btn01.gif" style=""></xf:image>
+						</xf:group>
+					</xf:group>
+				</xf:group>
+			</xf:group>
+			<xf:group class="" id="grpGrid" style="" tagname="div">
+				<w2:grid autoFit="allColumn" baseNode="BISComBoardListDTO" class="gridtable over" evenRowBackgroundColor="#fff"
+					fixedColumnWithHidden="true" focusMode="row" id="grdMain" readOnly="true" repeatNode="BISComBoardDTO" rowMouseOverColor="#EDF5EB"
+					selectedCellColor="#EDF5EB" selectedRowColor="#fff" selectedRowOverColor="" style='height:420px;' summary="제목, 작성자, 첨부, 등록일"
+					useShiftKey="false" visibleRowNum="">
+					<w2:caption class="hid" value="게시판목록"></w2:caption>
+					<w2:header class="" columnClass="" id="header6" style="">
+						<w2:row id="row9" style="">
+							<w2:column id="col0" inputType="text" scope="col" style="height:21px;" value="순번" width="40"></w2:column>
+							<w2:column id="col1" inputType="text" scope="col" style="height:21px;" value="제목" width="350"></w2:column>
+							<w2:column id="col2" inputType="text" scope="col" style="height:21px;" value="자료원" width="100">
+							</w2:column>
+							<w2:column id="col3" inputType="text" scope="col" style="height:21px;" value="등록일" width="100"></w2:column>
+							<w2:column id="col4" inputType="text" scope="col" style="height:21px;" value="첨부파일" width="70"></w2:column>
+							<w2:column hidden="true" id="col5" inputType="text" scope="col" style="height:21px;" value="글번호" width="30">
+							</w2:column>
+							<w2:column hidden="true" id="col6" inputType="text" scope="col" style="height:21px;" value="구분" width="70">
+							</w2:column>
+							<w2:column hidden="true" id="col7" inputType="text" scope="col" style="height:21px;" value="내용" width="100">
+							</w2:column>
+							<w2:column hidden="true" id="col8" inputType="text" scope="col" style="height:21px;" value="조회수" width="70">
+							</w2:column>
+							<w2:column hidden="true" id="col9" inputType="text" scope="col" style="height:21px;" value="레벨" width="100">
+							</w2:column>
+							<w2:column hidden="true" id="col10" inputType="text" scope="col" style="height:21px;" value="회사코드"
+								width="100">
+							</w2:column>
+						</w2:row>
+					</w2:header>
+					<w2:gBody class="" columnClass="" id="gBody6" style="">
+						<w2:row id="row10" style="">
+							<w2:column id="seq" inputType="text" readOnly="true" style="height:21px" width="70"></w2:column>
+							<w2:column customFormatter="titleColumn" id="title" inputType="text" readOnly="true" style="cursor:pointer;"
+								textAlign="left" width="250">
+							</w2:column>
+							<w2:column id="registOrg" inputType="text" readOnly="true" style="height:21px" width="100"></w2:column>
+							<w2:column displayFormatter="" id="registDt" inputType="text" readOnly="true" style="height:21px" width="100"
+								displayFormat="####-##-##" customFormatter="formatDate">
+							</w2:column>
+							<w2:column customFormatter="imgColumn" id="attachFile" inputType="text" readOnly="true" style="height:21px"
+								width="70">
+							</w2:column>
+							<w2:column id="statementId" inputType="text" style="height:21px" width="30"></w2:column>
+							<w2:column id="boardNm" inputType="text" style="height:21px" width="30"></w2:column>
+							<w2:column id="content" inputType="text" readOnly="true" style="height:21px" width="100"></w2:column>
+							<w2:column id="readCnt" inputType="text" readOnly="true" style="height:21px" width="70"></w2:column>
+							<w2:column id="depth" inputType="text" readOnly="true" style="height:21px" width="70"></w2:column>
+							<w2:column id="registCompCd" inputType="text" readOnly="true" style="height:21px" width="70"></w2:column>
+						</w2:row>
+					</w2:gBody>
+					<script ev:event="oncellclick(row,col)" type="javascript"><![CDATA[
+						if (grdMain.getColumnID(col) == "attachFile") {
+							return;
+						}else {	
+							showDetail(row);
+						}
+					]]></script>
+				</w2:grid>
+			</xf:group>
+			<xf:group class="" id="grpBottom" style="" tagname="div">
+				<xf:group class="" id="grpPage" style="width:250px;margin:0 auto;">
+					<xf:group class="" id="group10" style="">
+						<w2:pageList class="gridtable2" displayButtonType="auto" displayFormat="#" id="pageList1"
+							leftPageBackImage="/images/btn/btn_prew02.gif" leftPageBackImageClass="mgr5" leftPageImage="/images/btn/btn_prew.gif"
+							leftPageImageClass="mgr5" pageSize="10" renderType="list" rightPageBackImage="/images/btn/btn_next02.gif"
+							rightPageBackImageClass="mgl5" rightPageImage="/images/btn/btn_next.gif" rightPageImageClass="mgl5"
+							style="height:16px;font-size:13px;" useDelim="false" buttonShowType="3">
+							<script ev:event="onclick(idx)" type="javascript"><![CDATA[ PAGE_CNT=idx; searchData(idx); ]]></script>
+						</w2:pageList>
+						<w2:pageControl class="" id="pageControl1" style="width:172px;height:29px;display:none;">
+							<script ev:event="onchange(current,before)" type="javascript"><![CDATA[ searchData(current); ]]></script>
+						</w2:pageControl>
+					</xf:group>
+				</xf:group>
+			</xf:group>
+			<xf:group id="grpBtn" style="display:none;">
+				<xf:group class="fr" id="grpMainBtn" style="//display:none;" tagname="a">
+					<w2:attributes>
+						<w2:href>javascript: showWrite('C');</w2:href>
+						<w2:target></w2:target>
+						<w2:title>글쓰기</w2:title>
+					</w2:attributes>
+					<xf:image alt="글쓰기" id="image2" src="/images/btn/board_btn01.png" style=""></xf:image>
+				</xf:group>
+			</xf:group>
+		</xf:group>
+	</body>
+</html>

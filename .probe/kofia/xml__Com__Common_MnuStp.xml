@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
+	xmlns:xf="http://www.w3.org/2002/xforms">
+	<head>
+		<w2:buildDate />
+		<xf:model>
+			<xf:instance>
+				<data xmlns="" />
+			</xf:instance>
+		</xf:model>
+		<script type="javascript"><![CDATA[
+			var divisionId= WebSquare.net.getParameter( "divisionId" );
+			var divisionNm = (typeof parent.getDivisionValue == "function")? parent.getDivisionValue(divisionId, "divisionNm"):"";
+			var topMenuIndex = WebSquare.net.getParameter( "topMenuIndex" );
+			
+           /*******************initMnuStp******************************************************
+             * function    : initMnuStp
+             * Description : sub main 초기화
+             * Parameter   : null
+             * Return      : null
+            **************************************************************************/
+	        function initMnuStp() {
+	            txtServiceNm.setLabel( divisionNm );
+	            imgTop.setSrc( "/images/sub_title0"+topMenuIndex+".png" );
+	            imgTop.setAlt( divisionNm + "컨텐츠 상단 이미지" );
+	            if(typeof parent.getDivisionValue == "function") {
+	            	txtMnuPath.setLabel( "HOME>" + parent.getDivisionValue(divisionId, "uMnuStp") );
+	            	parent.closeTopMenu();
+	            }
+	        	init();
+	        }
+	        
+	        initMnuStp();
+        ]]></script>
+	</head>
+	<body>
+		<xf:group id="subtitle" style="" class="" tagname="div">
+			<xf:group id="h3" style="" class="" tagname="h3">
+				<w2:textbox id="txtServiceNm" style="" class="htextbox1" label=""></w2:textbox>
+			</xf:group>
+			<xf:group id="ngroup6" style="" class="" tagname="div">
+				<xf:group id="path" style="background:transparent;z-index:2;" class="" tagname="div">
+					<xf:group id="ngroup8" style="" class="" tagname="span">
+						<w2:textbox id="txtMnuPath" style="float:left;" label=""></w2:textbox>
+						<xf:group id="group15mnu" style="float:right;margin-left:5px;margin-top:-4px;" class="" tagname="a">
+							<w2:attributes>
+								<w2:href>javascript:showHelp();</w2:href>
+							</w2:attributes>
+							<xf:image id="imgBtnHelp" src="/images/btn/help01.png" class="" alt="도움말 보기 버튼" style="display:none;"></xf:image>
+						</xf:group>
+					</xf:group>
+				</xf:group>
+			</xf:group>
+			<xf:group id="ngroup13" style="" class="subbg01" tagname="div">
+				<xf:image id="imgTop" style="" alt="최종호가 수익률 타이틀 이미지" class="" src="/images/sub_title01.png"></xf:image>
+			</xf:group>
+			<xf:group id="ngroup12" style="" class="subline01" tagname="div">
+				<xf:image id="nimage2" style="" alt="경계선" src="/images/line01.png"></xf:image>
+			</xf:group>
+		</xf:group>
+	</body>
+</html>
