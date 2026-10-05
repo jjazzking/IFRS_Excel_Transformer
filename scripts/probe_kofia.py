@@ -12,8 +12,10 @@ import re
 import sys
 import urllib.request
 from collections import deque
+from pathlib import Path
 
 BASE = "https://www.kofiabond.or.kr"
+DUMP = Path(__file__).resolve().parent.parent / ".probe" / "kofia"
 UA = "Mozilla/5.0 AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
 SEEDS = [
     "/websquare/websquare.html",
@@ -49,7 +51,7 @@ def main() -> int:
     seen: set[str] = set()
     queue = deque(SEEDS)
     hits = []
-    while queue and len(seen) < 400:
+    while queue and len(seen) < 600:
         path = queue.popleft()
         if path in seen:
             continue
@@ -58,6 +60,11 @@ def main() -> int:
         if text is None:
             continue
         print(f"== {path} ({len(text)} chars)")
+        out = DUMP / path.lstrip("/").replace("?", "_")
+        if out.name == "" or path.endswith("/"):
+            out = out / "index.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8")
         svcs = set(re.findall(r"pfmSvcName[^A-Za-z0-9]{0,40}([A-Za-z0-9_]+)", text))
         fns = set(re.findall(r"pfmFnName[^A-Za-z0-9]{0,40}([A-Za-z0-9_]+)", text))
         dtos = set(re.findall(r"<(BIS[A-Za-z0-9]*DTO)", text))

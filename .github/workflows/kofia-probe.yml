@@ -1,4 +1,5 @@
 # 금투협 채권정보센터 정찰 — 이자율 작업대에 쓸 조회 서비스를 찾는다 (임시).
+# 받은 화면 정의를 .probe/ 에 커밋해 두고 읽는다. 정찰이 끝나면 통째로 지운다.
 name: 금투협 정찰
 
 on:
@@ -6,6 +7,9 @@ on:
     branches: [claude/festive-shannon-rjm2kj]
     paths: [scripts/probe_kofia.py, .github/workflows/kofia-probe.yml]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   probe:
@@ -15,4 +19,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python3 scripts/probe_kofia.py
+      - run: python3 scripts/probe_kofia.py > probe.log 2>&1 || true
+      - run: |
+          mkdir -p .probe/kofia && mv probe.log .probe/kofia/
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A .probe
+          git commit -m "chore(rates): 정찰 결과 (임시)" || exit 0
+          git push origin "HEAD:${{ github.ref_name }}"
