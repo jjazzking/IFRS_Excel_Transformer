@@ -60,13 +60,13 @@ def main() -> int:
         if text is None:
             continue
         print(f"== {path} ({len(text)} chars)")
-        out = DUMP / path.lstrip("/").replace("?", "_")
-        if out.name == "" or path.endswith("/"):
-            out = out / "index.html"
+        # 대소문자만 다른 경로·디렉터리와 이름이 겹치지 않게 평평하게 저장한다.
+        out = DUMP / (path.strip("/").replace("/", "__").replace("?", "_") or "root")
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(text, encoding="utf-8")
-        svcs = set(re.findall(r"pfmSvcName[^A-Za-z0-9]{0,40}([A-Za-z0-9_]+)", text))
-        fns = set(re.findall(r"pfmFnName[^A-Za-z0-9]{0,40}([A-Za-z0-9_]+)", text))
+        calls = re.findall(r'callProFrame\w*\(\s*"BIS-KOFIABOND"\s*,\s*"(\w+)"\s*,\s*"(\w+)"', text)
+        svcs = {c[0] for c in calls}
+        fns = {f"{c[0]}.{c[1]}" for c in calls}
         dtos = set(re.findall(r"<(BIS[A-Za-z0-9]*DTO)", text))
         if svcs or fns:
             print(f"   svc={sorted(svcs)} fn={sorted(fns)} dto={sorted(dtos)}")
@@ -75,7 +75,8 @@ def main() -> int:
             print(f"   title={title.group(1).strip()}")
         if any(k in text for k in KEYWORDS) and (svcs or fns):
             hits.append((path, sorted(svcs), sorted(fns)))
-        for m in re.findall(r"(/xml/[A-Za-z0-9_/\-]+\.xml)", text):
+        for m in re.findall(r"(/?xml/[A-Za-z0-9_/\-]+\.xml)", text):
+            m = "/" + m.lstrip("/")
             if m not in seen:
                 queue.append(m)
         for m in re.findall(r"w2xPath=([A-Za-z0-9_/\-]+\.xml)", text):
