@@ -1,41 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet href="/css/sub.css" type="text/css"?>
-<?xml-stylesheet href="/css/basic.css" type="text/css"?>
-<?xml-stylesheet href="/css/form.css" type="text/css"?>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
-	xmlns:xf="http://www.w3.org/2002/xforms">
-	<head>
-		<w2:buildDate /> 
-		<xf:model>
-			<xf:instance> 
-				<data xmlns="" />
-			</xf:instance>
-		</xf:model>
-		<script type="javascript"><![CDATA[									        		 
-        ]]></script> 
-	</head>
-	<body>
-		<xf:group id="maincontentWrapfooter" style="" class="" tagname="div">
-			<xf:group id="HelpBody" style="position:relative;width:740px;" class="mgr5" tagname="div">
-				<xf:group id="Footgroup17" style="background:#f6f6f6;" class="footerbox" tagname="div">
-					<xf:group id="Footgroup19" style="" class="footerCodib mgb5">
-						<w2:textbox id="Foottextbox14" style="" class="footerCodtext" label="금융채Ⅱ - 카드채, 리스채, 할부금융채 등의 금융기관채(이표채 기준)"></w2:textbox>
-					</xf:group>
-					<xf:group id="Footgroup20" style="" class="footerCodib mgb5">
-						<w2:textbox id="Foottextbox15" style="" class="footerCodtext" label="보증은 신용평가등급 BBB-회사에 대한 지급보증기관의 보증기준"></w2:textbox>
-					</xf:group>
-					<xf:group id="Footgroup21" style="" class="footerCodib mgb5">
-						<w2:textbox id="Foottextbox16" style="" class="footerCodtext"
-							label="KIS채권평가, 한국자산평가, 나이스피앤아이 수익률은 2000년 10월 30일 이후부터, 에프앤자산평가 수익률은 2012년 4월2일부터, 이지자산평가 수익률은 2023년 1월 9일부터 공시되고 있습니다.">
-						</w2:textbox>
-					</xf:group>
-					<xf:group class="footerCodib mgb5" id="Footgroup22" style="">
-						<w2:textbox class="footerCodtext" id="Foottextbox17"
-							label="민평평균은 2013년 10월 28일부터 소숫점 넷째자리에서 버림&lt;br/&gt;(2009.10.30이전 : 소수점 셋째자리에서 4사5입, 2009.11.02이후 : 소수점 셋째자리에서 버림)" style="">
-						</w2:textbox>
-					</xf:group>					<xf:group class="footerCodib mgb5" id="Footgroup23" style="">						<w2:textbox class="footerCodtext" id="Foottextbox18"							label="2023년 1월 9일이후 평균수익률은 사용자가 직접 선택한 평가사들의 수익률을 평균할 수 있도록 변경되었습니다." style="">						</w2:textbox>					</xf:group>
-				</xf:group>
-			</xf:group>
-		</xf:group>
-	</body>
-</html>
