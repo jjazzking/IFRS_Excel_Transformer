@@ -191,7 +191,24 @@ def stage3() -> None:
                     print("  자료", obj, len(r), r[:300].replace("\n", " "))
 
 
+def stage4() -> None:
+    """채권시가평가수익률 일자별 — 실제 자료를 받아 본다."""
+    print("\n### 시가평가수익률 자료")
+    day = "20260930"
+    head = call("BIS-KOFIABOND", "BISBndSrtPrcSrchSO", "getHeadList",
+                f"<BISBndSrtPrcDayDTO><standardDt>{day}</standardDt><applyGbCd>C00</applyGbCd></BISBndSrtPrcDayDTO>")
+    if head:
+        (DUMP / "srt_head.xml").write_text(head, encoding="utf-8")
+        print("head", re.findall(r"<remainTrmCtgy>([^<]*)<", head))
+    comps = "".join(f"<val{i}>A1000{i + 1}</val{i}>" for i in range(1, 6))
+    for name, comp, vals in (("avg", "A20000", comps), ("all", "", "")):
+        r = call("BIS-KOFIABOND", "BISBndSrtPrcSrchSO", "selectDay",
+                 f"<BISBndSrtPrcDayDTO><standardDt>{day}</standardDt><reportCompCd>{comp}</reportCompCd>"
+                 f"<applyGbCd>C00</applyGbCd>{vals}</BISBndSrtPrcDayDTO>")
+        if r:
+            (DUMP / f"srt_day_{name}.xml").write_text(r, encoding="utf-8")
+            print(name, len(r), r[:1500].replace("\n", " "))
+
+
 if __name__ == "__main__":
-    main()
-    stage2()
-    stage3()
+    stage4()
