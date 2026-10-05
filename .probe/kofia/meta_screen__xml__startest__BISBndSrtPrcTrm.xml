@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/css/sub.css" type="text/css"?>
+<?xml-stylesheet href="/css/basic.css" type="text/css"?>
+<?xml-stylesheet href="/css/form.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
+	xmlns:xf="http://www.w3.org/2002/xforms">
+	<head>
+		<w2:buildDate />
+		<xf:model>
+			<xf:instance>
+				<data xmlns="" /> 
+			</xf:instance>
+		</xf:model>
+		<script type="javascript"><![CDATA[ 
+			var currIndex = 0;                                           // 현재 행 ( 그리드내에서 탭키 이벤트시 다음행으로 이동 처리)
+			var divisionId= WebSquare.net.getParameter( "divisionId" ); 
+			var divisionNm= decodeURIComponent(WebSquare.net.getParameter( "divisionNm" ));
+			var tabIdx = WebSquare.net.getParameter( "tabIdx" );
+			
+       		var searchCnt;
+       		var colSpanCnt;		  //var grdColumnInfo = new Array("금투협", "평가사평균", "나이스", "한국", "KIS", "FNP");
+			var grdColumnInfo = new Array("나이스", "한국", "KIS", "FNP", "EG", "평가사평균", "금투협");		  //var grdColumnIdx = new Array("0", "2", "3", "5", "4", "1");			var grdColumnIdx = new Array("0", "1", "2", "3", "4", "5", "6");
+		  //var grdColumnValIdx = new Array("0", "1", "3", "4", "6", "5", "2", "7", "9", "10", "12", "11", "8", "13", "15", "16", "18", "17", "14", "19", "21", "22", "24", "23", "20");
+			var grdColumnValIdx = new Array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28");						// 평가사평균 시작 기준년월			var stdDate = "20230109";						/**************************************************************************            * function    : init            * Description : 서브 메인 화면 초기화            * Parameter   :             * Return      :             **************************************************************************/	        function init() {				this.document.title=divisionNm;				resizeIframe();								var today = WebSquare.date.getCurrentServerDate( "yyyyMMdd" );								schSstandardDt.setValue( addMonth(today, -1) );				schEstandardDt.setValue( today );								var BISBndSrtPrcTrmDTO =  {"BISBndSrtPrcTrmDTO":{}};				callProFrame("BIS-KOFIABOND","BISBndSrtPrcSrchSO","selectBndTyp",BISBndSrtPrcTrmDTO, "BISBndSrtPrcTrmDTO","respBndList");								selectCommonCode("C8002", "selectTrm1", false);
+				copyCommonCode("C8002^C8002^C8002", "selectTrm2^selectTrm3^selectTrm4");											// 기준일자에 따라 초기값 변경				if( Number(stdDate) <= Number(today) ){					selectbox.setValue("A20000");		// 평가사 평균(`23.1.9~)				}else{					selectbox.setValue("");				// 평가사 평균(~`23.1.8)					group400.hide();				}
+			}
+
+			/**************************************************************************
+			* function    : callBack
+			* Description : submission 실행 후 Callback
+			* Parameter   : retAction(submission 실행 Action), rowCount(조회 목록 총 건수)
+			* Return      : null
+			**************************************************************************/
+        	function callBack(svcId,fnId,strResp) {   
+				if (svcId == "BISBndSrtPrcSrchSO") {
+					if (fnId == "selectBndTyp") {
+						selectBndTyp1.setNodeSet( "respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO" , "val2" , "val1" );
+						selectBndTyp2.setNodeSet( "respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO" , "val2" , "val1" );
+						selectBndTyp3.setNodeSet( "respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO" , "val2" , "val1" );
+						selectBndTyp4.setNodeSet( "respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO" , "val2" , "val1" );
+					}
+					if (fnId == "selectTrm") {
+						grdMain2.setXML( getInstanceNode("respList/root/message/BISBndSrtPrcTrmListDTO") );
+						resizeIframe();
+					}
+				}
+            }
+			
+			/**************************************************************************
+			* function    : searchData
+			* Description : 자료 조회
+			* Parameter   : 
+			* Return      : null
+			**************************************************************************/
+        	function searchData() {
+				// 조회일
+				var vSchSstandardDt = schSstandardDt.getValue();
+				var vSchEstandardDt = schEstandardDt.getValue();
+				
+        		if( isValidDate(vSchSstandardDt) == false || isValidDate(vSchEstandardDt) == false ){
+	             	showMsg("C_I029");
+	             	//return;
+					vSchSstandardDt = "29990101";
+					vSchEstandardDt = "29990101";
+	          	}
+        		
+        		if( Number(vSchSstandardDt) > Number(vSchEstandardDt) ){
+   					showMsg("C_I055");
+	             	//return;
+					vSchSstandardDt = "29990101";
+					vSchEstandardDt = "29990101";
+   				}          		if( selectbox.getValue() == "A20000" && ( checkbox1.getValue() == "" && checkbox2.getValue() == "" && checkbox3.getValue() == "" && checkbox4.getValue() == "" && checkbox5.getValue() == "") ){   					showMsgString("하나 이상의 기관을 선택해 주세요.");
+	             	//return;
+					vSchSstandardDt = "29990101";
+					vSchEstandardDt = "29990101";   				}
+        		
+        		searchCnt = 0;
+        		var posVal = 31;
+        		var selectItm1 = 0;
+        		var selectItm2 = 0;
+        		var selectItm1Arr = new Array();
+        		var selectItm2Arr = new Array();
+        		
+        		if ( selectBndTyp1.getSelectedIndex() != 0 ) { selectItm1 += 1; }
+       			if ( selectTrm1.getSelectedIndex() != 0 ) { selectItm2 += 1; }
+        		if ( selectBndTyp2.getSelectedIndex() != 0 ) { selectItm1 += 1; }
+       			if ( selectTrm2.getSelectedIndex() != 0 ) { selectItm2 += 1; }
+        		if ( selectBndTyp3.getSelectedIndex() != 0 ) { selectItm1 += 1; }
+       			if ( selectTrm3.getSelectedIndex() != 0 ) { selectItm2 += 1; }
+        		if ( selectBndTyp4.getSelectedIndex() != 0 ) { selectItm1 += 1; }
+       			if ( selectTrm4.getSelectedIndex() != 0 ) { selectItm2 += 1; }
+        		
+        		if ( selectBndTyp1.getSelectedIndex() != 0 && selectTrm1.getSelectedIndex() != 0 ) {
+        			searchCnt += 1;
+        			selectItm1Arr[selectItm1Arr.length] = getValue("respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO[" + selectBndTyp1.getSelectedIndex() + "]/val2");
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectBndTyp1.getValue());
+        			posVal += 1;
+        			selectItm2Arr[selectItm2Arr.length] = selectTrm1.getText();
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectTrm1.getValue());
+        			posVal += 1;
+        		}
+        		if ( selectBndTyp2.getSelectedIndex() != 0 && selectTrm2.getSelectedIndex() != 0 ) {
+        			searchCnt += 1;
+        			selectItm1Arr[selectItm1Arr.length] = getValue("respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO[" + selectBndTyp2.getSelectedIndex() + "]/val2");
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectBndTyp2.getValue());
+        			posVal += 1;
+        			selectItm2Arr[selectItm2Arr.length] = selectTrm2.getText();
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectTrm2.getValue());
+        			posVal += 1;
+        		}
+        		if ( selectBndTyp3.getSelectedIndex() != 0 && selectTrm3.getSelectedIndex() != 0 ) {
+        			searchCnt += 1;
+        			selectItm1Arr[selectItm1Arr.length] = getValue("respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO[" + selectBndTyp3.getSelectedIndex() + "]/val2");
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectBndTyp3.getValue());
+        			posVal += 1;
+        			selectItm2Arr[selectItm2Arr.length] = selectTrm3.getText();
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectTrm3.getValue());
+        			posVal += 1;
+        		}
+        		if ( selectBndTyp4.getSelectedIndex() != 0 && selectTrm4.getSelectedIndex() != 0 ) {
+        			searchCnt += 1;
+        			selectItm1Arr[selectItm1Arr.length] = getValue("respBndList/root/message/BISBndSrtPrcTrmListDTO/BISBndSrtPrcTrmDTO[" + selectBndTyp4.getSelectedIndex() + "]/val2");
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectBndTyp4.getValue());
+        			posVal += 1;
+        			selectItm2Arr[selectItm2Arr.length] = selectTrm4.getText();
+        			setValue("BISBndSrtPrcTrmDTO/val" + posVal, selectTrm4.getValue());
+        			posVal += 1;
+        		}
+        		
+        		if ( selectItm1 > selectItm2 ) {
+        			showMsgString("잔존기간이 선택되지 않았습니다.");
+	             	//return;
+					vSchSstandardDt = "29990101";
+					vSchEstandardDt = "29990101";
+        		} else if ( selectItm1 < selectItm2 ) {
+        			showMsgString("채권종류가 선택되지 않았습니다.");
+	             	//return;
+					vSchSstandardDt = "29990101";
+					vSchEstandardDt = "29990101";
+        		}
+        		
+        		if ( searchCnt == 0 ) {
+        			//showMsgString("채권종류가 선택되지 않았습니다.");
+        			showMsg("C_I033", "채권종류");
+	             	//return;
+					vSchSstandardDt = "29990101";
+					vSchEstandardDt = "29990101";
+        		}				// 평가사기준(`23.1.9~) && 이지자산평가 && 23년1월9일 이전				if( selectbox.getValue() == "A20000" && checkbox5.getValue() == "A10006"				&& (Number(vSchSstandardDt) < Number(stdDate) || Number(vSchEstandardDt) < Number(stdDate)) ){					showMsgString("이지자산평가는 2023년 1월 9일부터 조회가 가능합니다.");
+	             	//return;
+					vSchSstandardDt = "29990101";
+					vSchEstandardDt = "29990101";				}
+        		       			setValue("BISBndSrtPrcTrmDTO/creditEstOrgCd", selectbox.getValue());
+        		if ( selectbox.getSelectedIndex() != 0 ) {
+       				colSpanCnt = 1;
+       			} else {
+       				colSpanCnt = 7;
+        		}
+        		
+        		setValue("BISBndSrtPrcTrmDTO/standardDt1", vSchSstandardDt);
+        		setValue("BISBndSrtPrcTrmDTO/standardDt2", vSchEstandardDt);
+        		
+        		//WebSquare.ModelUtil.removeChildNodes( "BISBndSrtPrcTrmDTO" );												// 기관명 체크박스				setValue("BISBndSrtPrcTrmDTO/val1",  checkbox1.getValue());			// 나이스 피앤아이				setValue("BISBndSrtPrcTrmDTO/val2",  checkbox2.getValue());			// 한국 자산평가				setValue("BISBndSrtPrcTrmDTO/val3",  checkbox3.getValue());			// KIS 자산평가				setValue("BISBndSrtPrcTrmDTO/val4",  checkbox4.getValue());			// 에프앤 자산평가				setValue("BISBndSrtPrcTrmDTO/val5",  checkbox5.getValue());			// EG 자산평가
+        		
+        		var BISBndSrtPrcTrmDTO =  {"BISBndSrtPrcTrmDTO":{}};
+        		
+				// 평가사평균(`23.1.9~)일 경우 헤더값 변경
+				var sltCnt = 0;
+				if( selectbox.getValue()=="A20000" ){
+					if( checkbox1.getValue() != "" ) sltCnt++;		 // 나이스 피앤아이
+					if( checkbox2.getValue() != "" ) sltCnt++;       // 한국 자산평가
+					if( checkbox3.getValue() != "" ) sltCnt++;       // KIS 자산평가
+					if( checkbox4.getValue() != "" ) sltCnt++;       // 에프앤 자산평가
+					if( checkbox5.getValue() != "" ) sltCnt++;       // EG 자산평가
+					
+					if( sltCnt > 0){
+						grdColumnInfo[5] = sltCnt + "사 평균";
+					}
+				}else{
+					grdColumnInfo[5] = "평가사평균";
+				}
+				
+        		reMakeGrid(searchCnt, selectbox.getSelectedIndex(), "");
+        		
+        		for( k=0; k<selectItm2Arr.length; k++ ){
+	        		grdMain2.setHeaderValue( "h_1_" + (k + 1) , selectItm2Arr[k] );
+	        		grdMain2.setHeaderValue( "h_2_" + (k + 1) , selectItm1Arr[k] );
+        		}
+        		
+        		image2.setStyle( "display" , "block" );
+        		callProFrameSync("BIS-KOFIABOND","BISBndSrtPrcSrchSO","selectTrm", BISBndSrtPrcTrmDTO, "BISBndSrtPrcTrmDTO","respList");
+        	}
+        	
+
+            function changeHyphen(value) {
+            	//var fmt = "#,##0.000";
+            	if( WebSquare.util.parseFloat(value) == 0 || value == "" ){
+            		return "-";
+            	} else {
+            		return value;
+            	}
+            }
+                    	
+			/**************************************************************************
+			* function    : excelDownLoad
+			* Description : 그리드의 내용을 엑셀로 다운로드
+			* Parameter   : null
+			* Return      : null
+			**************************************************************************/
+            function excelDownLoad(removeCol) {
+            	saveExcelDown(grdMain2, divisionNm, "1", true, false, removeCol);
+            }
+            
+			/**************************************************************************
+			* function    : reMakeGrid
+			* Description : 입력데이터 저장
+			* Parameter   : null
+			* Return      : null
+			**************************************************************************/
+            function reMakeGrid(Idx, CompIdx, sProgNm, sGridHeight) {
+            	if( Idx == 0 ) { return; }
+            	
+            	grdMain2.hide();
+                
+		        if (sGridHeight == "" || sGridHeight == null) sGridHeight = "445";
+		        
+		        var i, j;
+		        var k=0;
+		        
+		        var grid = '';
+		        var event = '';
+		        var wordWrap = "";
+		        var alignCd = "center";       
+				//var wordWrap = "word-wrap:normal;";
+	            var wordWrap = "word-wrap:break-word;";
+				
+				var headInfoArrValue = new Array();
+				var headInfoArrName = new Array();
+				var TmpPos;
+				
+				var Tmp1 = "";
+				var Tmp2 = "";
+				
+				for ( i=1 ; i<=Idx ; i++ ) {						// 선택한 채권종류 개수만큼
+					for ( j=1 ; j<=grdColumnInfo.length ; j++ ) {	// var grdColumnInfo = new Array("금투협", "민평평균", "나이스", "한국", "KIS", "FNP");
+						if ( CompIdx == 0 ) {						// 기관명을 고르지 않았을 때
+							headInfoArrName[k]  = grdColumnInfo[j - 1];
+							headInfoArrValue[k] = "val" + ( grdColumnValIdx[k + 1] );
+								Tmp1 += " " + headInfoArrValue[k];
+//								Tmp2 += " " + headInfoArrName[k];
+							k += 1;						//신규민평 과 구민평의 idx를 공유함
+						} else if(CompIdx == 7) {							var CompIdx2 = 6;							if ( j == CompIdx2 ) {								headInfoArrName[k] = grdColumnInfo[grdColumnIdx[CompIdx2 - 1]];  // var grdColumnIdx = new Array("0", "2", "3", "5", "4", "1");								switch ( i ) {									case 1:										TmpPos = CompIdx2;										break;									case 2:										TmpPos = CompIdx2 + 7;										break;									case 3:										TmpPos = CompIdx2 + 14;										break;									case 4:										TmpPos = CompIdx2 + 21;										break;								}								headInfoArrValue[k] = "val" + ( ( grdColumnValIdx[TmpPos] ) );								Tmp1 += " " + headInfoArrName[k];
+																k += 1;							}
+						//신규민평 과 구민평의 idx를 공유하며 금투협의 위치가 하나 땡겨짐						} else if(CompIdx == 8) {
+							var CompIdx2 = 7;
+							if ( j == CompIdx2 ) {
+								headInfoArrName[k] = grdColumnInfo[grdColumnIdx[CompIdx2 - 1]];  // var grdColumnIdx = new Array("0", "2", "3", "5", "4", "1");
+								switch ( i ) {
+									case 1:
+										TmpPos = CompIdx2;
+										break;
+									case 2:
+										TmpPos = CompIdx2 + 7;
+										break;
+									case 3:
+										TmpPos = CompIdx2 + 14;
+										break;
+									case 4:
+										TmpPos = CompIdx2 + 21;
+										break;
+								}
+								headInfoArrValue[k] = "val" + ( ( grdColumnValIdx[TmpPos] ) );
+								Tmp1 += " " + headInfoArrName[k];
+								
+								k += 1;
+							}
+						} else {
+							if ( j == CompIdx ) {
+								headInfoArrName[k] = grdColumnInfo[grdColumnIdx[CompIdx - 1]];  // var grdColumnIdx = new Array("0", "2", "3", "5", "4", "1");
+								switch ( i ) {
+									case 1:
+										TmpPos = CompIdx;
+										break;
+									case 2:
+										TmpPos = CompIdx + 7;
+										break;
+									case 3:
+										TmpPos = CompIdx + 14;
+										break;
+									case 4:
+										TmpPos = CompIdx + 21;
+										break;
+								}
+								headInfoArrValue[k] = "val" + ( ( grdColumnValIdx[TmpPos] ) );
+								Tmp1 += " " + headInfoArrName[k];
+//								Tmp2 += " " + headInfoArrValue[k];
+//var grdColumnValIdx = new Array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24");
+								k += 1;
+							}
+						}
+					}
+				}
+				
+                //headInfoArr = WebSquare.ModelUtil.findInstanceNodes( "respCommonCode/root/message/BISComCommonCodeListDTO/BISComCommonCodeDTO[groupCd='" + selGridHeader + "']" );
+                
+		        grid += "<w2:grid xmlns='http://www.w3.org/1999/xhtml' xmlns:w2='http://www.inswave.com/websquare' xmlns:ev='http://www.w3.org/2001/xml-events'\n";
+		        grid += "    style='height:250px;'\n";
+		        grid += "    rowNumStyle='' summary = '" + sProgNm + "' readOnlyTabIgnore='true' \n";  
+		        grid += "    tooltipStyle='vertical-align:middle;" + wordWrap + "' overflowY='auto' \n";
+		        
+		        grid += "    id='grdMain2'";  
+		        grid += " class='gridtable' focusMode='both' selectedRowColor='#FFEBE5'";
+		        grid += " sortable='false'  sortEvent='' autoFit='allColumn' visibleRowNum='20' ";
+		        //grid += " sortable='true'  sortEvent='onclick'";
+		        grid += " readOnly='true' \n";
+		        
+		        grid += " baseNode='BISBndSrtPrcTrmListDTO' \n";
+		        grid += " repeatNode='BISBndSrtPrcTrmDTO' \n";
+		        
+		        if( CompIdx == 0 && Idx == 4 ) grid += " autoFitMinWidth='1000' ";
+		        else grid += " autoFitMinWidth='700' ";
+		        		        
+	            grid += " oddEvenColorDisplay='true' oddRowBackgroundColor='#FFFFFF' evenRowBackgroundColor='#F5F5F5' rowMouseOver='false' rowMouseOverColor='#EDF5EB'>\n";
+	            grid += " <caption>채권 시가평가 기준 수익률(기간별)</caption>";
+	            grid += "    <w2:header height='20px' style='padding-top:2px;' columnStyle='' id='header2' class='' columnClass=''>\n";
+	            
+	            //Header+
+	            grid += "        <w2:row id='row" + i + "' style=''>\n";
+				grid += "           <w2:column inputType='text' valueType='binary' width = '60px' rowSpan='3' height='20px' style='padding-top:2px;" + wordWrap + "' id='h_0'></w2:column> \n";
+				for( i=1; i<=searchCnt; i++ ) {
+					grid += "           <w2:column inputType='text' valueType='binary' width = '100px' colSpan='" + colSpanCnt + "' height='20px' style='padding-top:2px;" + wordWrap + "' id='h_2_" + i + "'></w2:column> \n";
+				}
+				grid += "        </w2:row>\n";
+	            grid += "        <w2:row id='row" + i + "' style=''>\n";
+				for( i=1; i<=searchCnt; i++ ) {
+					grid += "           <w2:column inputType='text' valueType='binary' width = '100px' colSpan='" + colSpanCnt + "' height='20px' style='padding-top:2px;" + wordWrap + "' id='h_1_" + i + "'></w2:column> \n";
+				}
+				grid += "        </w2:row>\n";
+				//-----
+	            
+	            grid += "        <w2:row id='row" + i + "' style=''>\n";
+				for( i=1; i<=headInfoArrValue.length; i++ ) {
+					grid += "           <w2:column inputType='text' valueType='binary' width = '30px' height='20px' style='padding-top:2px;" + wordWrap + "' id='h_" + i + "'></w2:column> \n";
+				}
+				
+	            /////	            	            if (headInfoArrValue.length > 0) grid += "        </w2:row>\n";	            
+	            grid += "    </w2:header>\n";
+	            
+	            // grid body 시작
+	            grid += "    <w2:gBody style='height:20px;padding-top:2px;' columnStyle='' id='gBody2'>\n";            
+	            grid += "        <w2:row id='gRow1' style=''>\n";
+				
+//				var tmpArr = ["serviceGb", "registUser", "imageDesc", "attachFileSeq", "orderSeq", "useYN", "modifyUser", "modifyDate"]; 
+	            grid += "     <w2:column valueType='binary' inputType = 'text' style='height:20px;padding-top:2px;" + wordWrap + "' textAlign='center' displayformat='####/##/##' width='80' id='standardDt' ></w2:column>\n";
+//               grid += "     </w2:column>\n";    
+				
+	            for( i=1 ; i<=headInfoArrValue.length ; i++ ){
+	               grid += "     <w2:column valueType='binary' inputType = 'text' style='height:20px;padding-top:2px;" + wordWrap + "' textAlign='center' width='80' id='" + headInfoArrValue[i-1] + "' displayformatter='changeHyphen'>	\n";
+	               grid += "     </w2:column>\n";
+	            }
+	            
+	            grid += "        </w2:row>\n";
+	            grid += "    </w2:gBody>\n";  
+	            grid += "</w2:grid>\n";
+				
+	            grdMain2.setGridStyle(WebSquare.xml.parse(grid, true));
+				
+				grdMain2.setHeaderValue( "h_0", "일자" );
+	            for( var i=1 ; i<=headInfoArrValue.length ; i++ ){
+	                grdMain2.setHeaderValue( "h_" + i , headInfoArrName[i-1] );
+	            }
+	            
+	            grdMain2.show();
+            	
+            }         
+			init();			
+        ]]></script>
+	</head>
+	<body>
+		<xf:group id="maincontentWrap" style="overflow:hidden;" class="" tagname="div">
+			<xf:group id="grpSearchForm" style="" class="mgt10">
+				<xf:group id="group207" style="" class="impCoheader" tagname="div">
+					<xf:group id="group208" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox88" style="" class="impCotic" label="조회일"></w2:textbox>
+					</xf:group>
+					<xf:group id="group4605" style="" class="impCoco1" tagname="div">
+						<xf:group id="group4606" style="" class="fl mgt8 mgl10 w120">
+							<w2:inputCalendar calendarClass="" calendarImage="/images/calendar.png" calendarImageOver="/images/calendar.png"
+								calendarValueType="yearMonthDate" class="fl w95 h17" id="schSstandardDt" ref="" rendertype="native" style="" title="w조회기간 시작 일"
+								useanchor="true">
+							</w2:inputCalendar>
+						</xf:group>
+						<w2:textbox id="textbox3184" style="" class="fl mgt13 mgl2 w10" label="~"></w2:textbox>
+						<xf:group id="group4607" style="" class="fl mgt8 mgl5 w120">
+							<w2:inputCalendar id="schEstandardDt" calendarImageOver="/images/calendar.png" ref="" title="w조회기간 시작 일"
+								calendarValueType="yearMonthDate" style="" rendertype="native" class="fl w95 h17" calendarImage="/images/calendar.png"
+								calendarClass="" useanchor="true">
+							</w2:inputCalendar>
+						</xf:group>
+					</xf:group>
+				</xf:group>
+				
+				<xf:group id="group4615" style="" class="impCocontent09" tagname="div">
+					<xf:group id="group4616" style="border-left:0px;" class="impCorow7" tagname="div">
+						<w2:textbox id="textbox3189" style="" class="impCotic" label="채권종류"></w2:textbox>
+					</xf:group>
+					<xf:group id="group4639" style="height:144px;">
+						<xf:group id="group4617" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4618" style="" class="mgt8 mgl10 w240">
+								<w2:textbox id="textbox3190" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectBndTyp1" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+						<xf:group id="group4619" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4620" style="" class="mgt8 mgl10 w120">
+								<w2:textbox id="textbox3191" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectTrm1" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+						<xf:group id="group4623" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4624" style="" class="mgt8 mgl10 w240">
+								<w2:textbox id="textbox3193" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectBndTyp2" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+						<xf:group id="group4625" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4626" style="" class="mgt8 mgl10 w120">
+								<w2:textbox id="textbox3194" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectTrm2" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+						<xf:group id="group4629" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4630" style="" class="mgt8 mgl10 w240">
+								<w2:textbox id="textbox3196" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectBndTyp3" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+						<xf:group id="group4631" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4632" style="" class="mgt8 mgl10 w120">
+								<w2:textbox id="textbox3197" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectTrm3" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+						<xf:group id="group4635" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4636" style="" class="mgt8 mgl10 w240">
+								<w2:textbox id="textbox3199" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectBndTyp4" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+						<xf:group id="group4637" style="" class="impCoco2" tagname="div">
+							<xf:group id="group4638" style="" class="mgt8 mgl10 w120">
+								<w2:textbox id="textbox3200" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+								<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+									chooseOption="true" class="" displayMode="label" id="selectTrm4" title="" style="" allOption="" disabled="false" submenuSize="auto"
+									chooseOptionLabel="--선택--">
+									<xf:choices></xf:choices>
+								</xf:select1>
+							</xf:group>
+						</xf:group>
+					</xf:group>
+				</xf:group><xf:group id="group4608" style="" class="impCocontent" tagname="div">
+					<xf:group id="group4612" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox3187" style="" class="impCotic" label="기관명"></w2:textbox>
+					</xf:group>
+					<xf:group id="group4613" style="" class="impCoco" tagname="div">
+						<xf:group id="group4614" style="" class="fl mgt8 mgl10 w150">
+							<w2:textbox id="textbox3188" for="selectbox1_input_0" class="hid" label="AB 구분"></w2:textbox>
+							<xf:select1 allOption="" appearance="minimal" chooseOption="true" chooseOptionLabel="--전체--" class=""
+								direction="auto" disabled="false" disabledClass="w2selectbox_disabled" displayMode="label" id="selectbox" renderType="native"
+								style="" submenuSize="auto" title="">
+								<xf:choices>
+									<xf:item>
+										<xf:label>나이스피앤아이</xf:label>
+										<xf:value>A10002</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>한국자산평가</xf:label>
+										<xf:value>A10003</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>KIS자산평가</xf:label>
+										<xf:value>A10004</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>에프엔자산평가</xf:label>
+										<xf:value>A10005</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>이지자산평가</xf:label>
+										<xf:value>A10005</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>평가사 평균(`23.1.9~)</xf:label>
+										<xf:value>A20000</xf:value>
+									</xf:item>									<xf:item>										<xf:label>평가사 평균(~`23.1.8)</xf:label>										<xf:value>0</xf:value>									</xf:item>
+									<xf:item>
+										<xf:label>금융투자협회</xf:label>
+										<xf:value>A99001</xf:value>
+									</xf:item>
+								</xf:choices>								<script ev:event="onchange" type="javascript"><![CDATA[									if( this.getValue() == "A20000"){										group400.show();									}else{										group400.hide();									}								]]></script>
+							</xf:select1>
+						</xf:group>
+					<xf:group id="group216" style="" class="fr mgt7 mgr10" tagname="a">
+						<w2:attributes>
+							<w2:href>javascript:searchData();</w2:href>
+						</w2:attributes>
+						<xf:image id="image1" title="" style="" alt="조회" src="/images/sub/sub_search_btn03.gif"></xf:image>
+					</xf:group></xf:group>
+				</xf:group>								<xf:group id="group400" style="height:46px;" class="impCocontent" tagname="div" colSpan="4">					<xf:group id="group401" style="height: 100%;" class="impCorow" tagname="div">						<w2:textbox id="textbox400" style="" class="impCotic" label="기관명"></w2:textbox>					</xf:group>					<xf:group id="group402" style="" class="" tagname="div">						<xf:group class="fl mgl30 " id="group2" style="" tagname="div">						<w2:textbox id="textbox403" style="" class="" label="&lt;font color='blue' &gt;* 2023년 1월 9일부터 2개이상 평가회사를 선택하여 조회하시면 평균값을 확인할 수 있습니다.&lt;/font&gt;"></w2:textbox>							<xf:select appearance="full" class="fl" id="checkbox1" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">								<xf:choices>									<xf:item>										<xf:label>나이스&lt;br/&gt;피앤아이</xf:label>										<xf:value>A10002</xf:value>									</xf:item>								</xf:choices>							</xf:select>							<xf:select appearance="full" class="fl" id="checkbox2" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">								<xf:choices>									<xf:item>										<xf:label>한국&lt;br/&gt;자산평가</xf:label>										<xf:value>A10003</xf:value>									</xf:item>								</xf:choices>							</xf:select>							<xf:select appearance="full" class="fl" id="checkbox3" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">								<xf:choices>									<xf:item>										<xf:label>KIS&lt;br/&gt;자산평가</xf:label>										<xf:value>A10004</xf:value>									</xf:item>								</xf:choices>							</xf:select>							<xf:select appearance="full" class="fl" id="checkbox4" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">								<xf:choices>									<xf:item>										<xf:label>에프앤&lt;br/&gt;자산평가</xf:label>										<xf:value>A10005</xf:value>									</xf:item>								</xf:choices>							</xf:select>							<xf:select appearance="full" class="fl" id="checkbox5" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">								<xf:choices>									<xf:item>										<xf:label>이지&lt;br/&gt;자산평가</xf:label>										<xf:value>A10006</xf:value>									</xf:item>								</xf:choices>							</xf:select>						</xf:group>					</xf:group>				</xf:group>
+			</xf:group>
+
+
+			<xf:group class="gridBtnDn mgt5 mgb10" id="group4640" style="" tagname="div">
+				<xf:group class="w300 fl mgt" id="group4641" style=""></xf:group>
+				<xf:group class="fr mgt5" id="group4642" style="" tagname="">
+					<w2:textbox class="fl mgt5" id="textbox3201" label="" style=""></w2:textbox>
+					<xf:group class="fl mgl5 mgr5" id="group4643" style="" tagname="a">
+						<w2:attributes>
+							<w2:href>javascript:excelDownLoad();</w2:href>
+							<w2:title>엑셀 다운로드 바로가기</w2:title>
+						</w2:attributes>
+						<xf:image alt="엑셀 다운로드 아이콘 이미지" id="image2" src="/images/sub/excel_btn.gif" style="display:none;"></xf:image>
+					</xf:group>
+				</xf:group>				<xf:group class="fr mgt10" id="group228" style="" tagname="">					<w2:textbox class="fl" id="textbox98" label="(단위 : %)" style=""></w2:textbox>				</xf:group>			</xf:group>			<xf:group id="grpGrid2" style="position:relative;width:100%;" class="over">				<w2:grid baseNode="BISBndSrtPrcTrmListDTO" summary="채권 시가평가 기준 수익률(기간별)" readOnlyTabIgnore="true" autoFit=""					sortEvent="onclick" class="gridtable" rowMouseOverColor="#EDF5EB" id="grdMain2" focusMode="" readOnly="true" style="height:445px;"					evenRowBackgroundColor="#fff" overflowY="auto" repeatNode="BISBndSrtPrcTrmDTO">					<caption>채권 시가평가 기준 수익률(기간별)</caption>					<w2:header id="header1" style="">						<w2:row id="row1" style=""></w2:row>					</w2:header>					<w2:gBody id="gBody1" style="">						<w2:row id="row2" style=""></w2:row>					</w2:gBody>				</w2:grid>			</xf:group>			<w2:wframe class="mgt15" id="wfrmFooter" mode="sync" scrolling="no" src="/xml/footer/BISBndSrtPrcTrm_footer.xml"				style="position: relative ;width:100%;">			</w2:wframe>		</xf:group>	</body></html>

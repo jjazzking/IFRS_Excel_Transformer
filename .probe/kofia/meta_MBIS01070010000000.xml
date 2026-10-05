@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><root><message><proframeHeader>
+<pfmAppName>BIS-COM</pfmAppName>
+<pfmSvcName>BISComStatisticsLinkSO</pfmSvcName>
+<pfmFnName>selectMetaInfoAdvanced</pfmFnName>
+<pfmGlobalNo>0cc2e1470afe009d6832e9d7eb0acb87</pfmGlobalNo>
+<pfmTrDate>20261006</pfmTrDate>
+<pfmTrTime>20261006005100679</pfmTrTime>
+<pfmClntIp>20.64.206.185</pfmClntIp>
+<pfmResponseDtal></pfmResponseDtal>
+</proframeHeader>
+<systemHeader>
+</systemHeader>
+<BISComMetaDataDTO>
+<divisionId>MBIS01070010000000</divisionId>
+<BISComStatisticsLinkListDTO>
+<dbio_affected_count_>0</dbio_affected_count_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_total_count_>2</dbio_total_count_>
+<BISComStatisticsLinkDTO>
+<divisionId>MBIS01070010000000</divisionId>
+<serviceId>BIS0100100280</serviceId>
+<serviceNm>일자별</serviceNm>
+<serviceDesc>일자별</serviceDesc>
+<outputFormNo>BIS0039</outputFormNo>
+<formSrtDt>19000101</formSrtDt>
+<relateSrvcId>BIS0100100280</relateSrvcId>
+<labelNm>일자별</labelNm>
+<orderSeq>1</orderSeq>
+</BISComStatisticsLinkDTO>
+<BISComStatisticsLinkDTO>
+<divisionId>MBIS01070010000000</divisionId>
+<serviceId>BIS0100100280</serviceId>
+<serviceNm>기간별</serviceNm>
+<serviceDesc>기간별</serviceDesc>
+<outputFormNo>BIS0040</outputFormNo>
+<formSrtDt>19000101</formSrtDt>
+<relateSrvcId>BIS0100100281</relateSrvcId>
+<labelNm>기간별</labelNm>
+<orderSeq>2</orderSeq>
+</BISComStatisticsLinkDTO>
+</BISComStatisticsLinkListDTO>
+<BISComOutFormListDTO>
+<dbio_affected_count_>0</dbio_affected_count_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_total_count_>2</dbio_total_count_>
+<BISComOutFormDTO>
+<outputFormNo>BIS0039</outputFormNo>
+<formSrtDt>19000101</formSrtDt>
+<formNm>일자별</formNm>
+<displayUnitCd>0005</displayUnitCd>
+<displayUnitNm>%</displayUnitNm>
+<chartTyp />
+<chartTtlNm />
+<chartSubttlNm />
+<chartDesc />
+<chartWid />
+<chartHgt />
+<chartDspYn />
+<xaxsLblNm />
+<y1AxsLblNm />
+<y2AxsLblNm />
+<processSrtDt />
+<outputPrcGb />
+<objNm />
+<inquiryCondDspPathNm />
+<descreptionDspPathNm>/xml/footer/BISBndSrtPrcDay_footer.xml</descreptionDspPathNm>
+<userDspPathNm>/xml/startest/BISBndSrtPrcDay.xml</userDspPathNm>
+<summaryRowCnt>0</summaryRowCnt>
+</BISComOutFormDTO>
+<BISComOutFormDTO>
+<outputFormNo>BIS0040</outputFormNo>
+<formSrtDt>19000101</formSrtDt>
+<formNm>기간별</formNm>
+<displayUnitCd>0005</displayUnitCd>
+<displayUnitNm>%</displayUnitNm>
+<chartTyp />
+<chartTtlNm />
+<chartSubttlNm />
+<chartDesc />
+<chartWid />
+<chartHgt />
+<chartDspYn />
+<xaxsLblNm />
+<y1AxsLblNm />
+<y2AxsLblNm />
+<processSrtDt />
+<outputPrcGb />
+<objNm />
+<inquiryCondDspPathNm />
+<descreptionDspPathNm>/xml/footer/BISBndSrtPrcTrm_footer.xml</descreptionDspPathNm>
+<userDspPathNm>/xml/startest/BISBndSrtPrcTrm.xml</userDspPathNm>
+<summaryRowCnt>0</summaryRowCnt>
+</BISComOutFormDTO>
+</BISComOutFormListDTO>
+<BISComOutColHdrListDTO>
+<dbio_affected_count_>0</dbio_affected_count_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_total_count_>0</dbio_total_count_>
+</BISComOutColHdrListDTO>
+<BISComOutDataColListDTO>
+<dbio_affected_count_>0</dbio_affected_count_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_total_count_>0</dbio_total_count_>
+</BISComOutDataColListDTO>
+<BISComOutUrlParamListDTO>
+<dbio_affected_count_>0</dbio_affected_count_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_total_count_>0</dbio_total_count_>
+</BISComOutUrlParamListDTO>
+<BISComOutColHdrBodyListDTO>
+<dbio_affected_count_>0</dbio_affected_count_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_total_count_>0</dbio_total_count_>
+</BISComOutColHdrBodyListDTO>
+</BISComMetaDataDTO></message></root>

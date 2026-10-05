@@ -8,8 +8,6 @@
    title=::금융투자협회::
 == /xml/Main.xml (832 chars)
    title=::금융투자협회::
-  ! /xml/main.xml: IncompleteRead(33120 bytes read, 33746 more expected)
-  ! /xml/main.xml: IncompleteRead(43200 bytes read, 23666 more expected)
 == /xml/main.xml (65580 chars)
    svc=['BISMainSO'] fn=['BISMainSO.selectAnnItmList', 'BISMainSO.selectBoardList', 'BISMainSO.selectIdxList', 'BISMainSO.selectKrxFurList', 'BISMainSO.selectPopupZoneList', 'BISMainSO.selectPrvMnyNtceList', 'BISMainSO.selectRptCompLogoList'] dto=[]
 == /xml/bondint/lastrop/BISLastAskPrcDay.xml (16875 chars)
@@ -1928,5 +1926,13 @@
 /xml/Com/Common_TabMnuDsp.xml |  | [('BIS-COM', 'BISComStatisticsLinkSO', 'selectMetaInfoAdvanced')]
 /xml/Com/Common_GnrDsp.xml |  | [('BIS-COM', 'BISComStatisticsLinkSO', 'selectMetaInfoAdvanced')]
 /xml/bondint/avgrop/BISSrtPrcEstMtrxWhtAvg.xml | 최종호가 수익율 목록 | [('BIS-KOFIABOND', 'BISBndSrtPrcSrchSO', 'getHeadList'), ('BIS-KOFIABOND', 'BISSrtPrcEstMtrxWhtAvgSrchSO', 'selectList'), ('BIS-KOFIABOND', 'BISSrtPrcEstMtrxWhtSrchSO', 'searchData')]
-  ! /xml/bondint/avgrop/BISTypRemTrmWhtAvg.xml: IncompleteRead(33120 bytes read, 6675 more expected)
 /xml/bondint/avgrop/BISTypRemTrmWhtAvg.xml |  | [('BIS-KOFIABOND', 'BISTypRemTrmWhtAvgSrchSO', 'selectList'), ('BIS-KOFIABOND', 'BISTypRemTrmWhtAvgSrchSO', 'selectMaxTradeYmd')]
+
+### 시가평가 메타정보
+MBIS01070010000000: 3749 chars
+objNm: []
+  화면 /xml/footer/BISBndSrtPrcDay_footer.xml 2522
+  화면 /xml/footer/BISBndSrtPrcTrm_footer.xml 2266
+  화면 /xml/startest/BISBndSrtPrcDay.xml 31458
+  ! /xml/startest/BISBndSrtPrcTrm.xml: IncompleteRead(34560 bytes read, 537 more expected)
+  화면 /xml/startest/BISBndSrtPrcTrm.xml 33837

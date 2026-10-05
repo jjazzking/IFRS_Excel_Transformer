@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/css/sub.css" type="text/css"?>
+<?xml-stylesheet href="/css/basic.css" type="text/css"?>
+<?xml-stylesheet href="/css/form.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
+	xmlns:xf="http://www.w3.org/2002/xforms">
+	<head>
+		<w2:buildDate />
+		<xf:model>
+			<xf:instance>
+				<data xmlns="" /> 
+			</xf:instance>
+		</xf:model>
+		<script type="javascript"><![CDATA[
+		var currIndex = 0;                                           // 현재 행 ( 그리드내에서 탭키 이벤트시 다음행으로 이동 처리)
+		var divisionId= WebSquare.net.getParameter( "divisionId" ); 
+		var divisionNm= decodeURIComponent(WebSquare.net.getParameter( "divisionNm" ));
+		var tabIdx = WebSquare.net.getParameter( "tabIdx" );
+		var bHidden = "";
+		var existMaxDate = "";
+		
+		// 평가사평균 시작 기준년월
+		var stdDate = "20230109";
+		var todayDate = WebSquare.date.getCurrentServerDate( "yyyyMMdd" );
+		
+		gHeight=1400;
+		
+	   /**************************************************************************
+        * function    : init
+        * Description : 서브 메인 화면 초기화
+        * Parameter   : 
+        * Return      : 
+        **************************************************************************/
+        function init() {
+
+			getExistMaxDate();
+			
+	        if( existMaxDate == "" ){        		
+        		existMaxDate = todayDate;
+        	}
+
+			srchDt.setValue( existMaxDate );
+			
+			// 초기값 통합표
+			selectComp.setValue("A20000");		// 평가사 평균(`23.1.9~)
+			showMsgString("평가사를 선택하시기 바랍니다.");
+			
+			resizeIframe();
+			
+			$("#maincontent", parent.document).css("height",gHeight);
+		}
+		
+       	/**************************************************************************
+         * function    : callBack
+         * Description : submission 실행 후 Callback
+         * Parameter   : retAction(submission 실행 Action), rowCount(조회 목록 총 건수)
+         * Return      : null
+         **************************************************************************/
+       	function callBack(svcId,fnId,strResp){   
+			if(svcId == "BISBndSrtPrcSrchSO"){
+				if(fnId == "selectDay"){
+					grdMain.setXML( getInstanceNode("respList/root/message/BISBndSrtPrcDayListDTO") );
+					resizeIframe();
+				}else if( strResp == "respList2" ){
+					grdMain2.setXML( getInstanceNode("respList2/root/message/BISBndSrtPrcDayListDTO") );
+					resizeIframe();
+				}else if( fnId == "getExistMaxDate" ){
+					existMaxDate = getValue("respMaxDate/root/message/BISComDspDatDTO/val1");
+				}
+			}
+        }
+        
+       	/**************************************************************************
+         * function    : getExistMaxDate
+         * Description : 조회기간 설정을 위하여 데이터가 존재하는 날짜를 구함
+         * Parameter   : 
+         * Return      : 데이터가 존재하는 MAX 날짜
+         **************************************************************************/			
+			function getExistMaxDate(){
+	       	    var BISComDspDatDTO = {BISComDspDatDTO:{}};
+		        callProFrame("BIS-KOFIABOND","BISBndSrtPrcSrchSO","getExistMaxDate",BISComDspDatDTO, "BISComDspDatDTO","respMaxDate");
+			}
+			        
+		
+           /**************************************************************************
+            * function    : searchData
+            * Description : 자료 조회
+            * Parameter   : 
+            * Return      : null
+            **************************************************************************/
+       	function searchData() {
+			// 조회일
+			var vSrchDt = srchDt.getValue();
+		
+       		if( isValidDate(vSrchDt) == false ){
+             	showMsg("C_I029");
+             	return;
+          	}
+
+			if( selectComp.getValue() == "A20000" && ( checkbox1.getValue() == "" && checkbox2.getValue() == "" && checkbox3.getValue() == "" && checkbox4.getValue() == "" && checkbox5.getValue() == "") ){
+				showMsgString("평가사를 선택하시기 바랍니다.");
+				vSrchDt = "29990101";
+			}
+			
+			// 평가사기준(`23.1.9~) && 이지자산평가 && 23년도01월09일 이전
+			if( selectComp.getValue() == "A20000" && checkbox5.getValue() == "A10006" && Number(vSrchDt) < Number(stdDate) ){
+				showMsgString("이지자산평가는 2023년 1월 9일부터 조회가 가능합니다.");
+				vSrchDt = "29990101";
+			}
+			
+			// 평가사기준(`23.1.9~) && 23년도01월09일 이전
+			if( selectComp.getValue() == "A20000" && Number(vSrchDt) < Number(stdDate) ){
+				showMsgString("기관명 : 평가사평균(~2023.1.8)을 선택 후 조회하시기 바랍니다.");
+				vSrchDt = "29990101";
+			}
+			
+			// 평가사기준(~`23.1.8) && 23년도01월09일 이후
+			if( selectComp.getValue() == "A10000" && Number(vSrchDt) >= Number(stdDate) ){
+				showMsgString("평가사기준(~`23.1.8)은 2023년1월8일까지 조회가 가능합니다.");
+				vSrchDt = "29990101";
+			}
+       		
+       		setGrdHeader();
+       		reMakeGrid("", "");
+       		
+       		if(selectComp.getValue() != "A99001"){
+       			 reMakeGrid2("", "");
+       			 
+       			 //footerGrdHead.setStyle( "display" ,"block" );
+  				 //grdMain2.setStyle( "display" ,"block" );
+  			}else{
+  				 footerGrdHead.setStyle( "display" ,"none" );
+  				 grdMain2.setStyle( "display" ,"none" );
+  			} 
+       		
+       		
+       		WebSquare.ModelUtil.removeChildNodes( "BISBndSrtPrcDayDTO" );
+       		setValue("BISBndSrtPrcDayDTO/standardDt"  , vSrchDt);
+       		setValue("BISBndSrtPrcDayDTO/reportCompCd", selectComp.getValue());
+       		setValue("BISBndSrtPrcDayDTO/applyGbCd",  "C00");
+			// 기관명 체크박스
+       		setValue("BISBndSrtPrcDayDTO/val1",  checkbox1.getValue());			// 나이스 피앤아이
+       		setValue("BISBndSrtPrcDayDTO/val2",  checkbox2.getValue());			// 한국 자산평가
+       		setValue("BISBndSrtPrcDayDTO/val3",  checkbox3.getValue());			// KIS 자산평가
+       		setValue("BISBndSrtPrcDayDTO/val4",  checkbox4.getValue());			// 에프앤 자산평가
+       		setValue("BISBndSrtPrcDayDTO/val5",  checkbox5.getValue());			// EG 자산평가
+
+	        var BISBndSrtPrcDayDTO = WebSquare.xml.serialize(getInstanceNode("BISBndSrtPrcDayDTO"));
+			callProFrameProcess("BIS-KOFIABOND","BISBndSrtPrcSrchSO","selectDay",BISBndSrtPrcDayDTO, "respList",true);
+			
+			if(selectComp.getValue() != "A99001"){
+				WebSquare.ModelUtil.removeChildNodes( "BISBndSrtPrcDayDTO" );
+	       		setValue("BISBndSrtPrcDayDTO/standardDt"  , vSrchDt);
+	       		setValue("BISBndSrtPrcDayDTO/reportCompCd", selectComp.getValue());
+	       		setValue("BISBndSrtPrcDayDTO/applyGbCd",  "C02");
+				// 기관명 체크박스
+				setValue("BISBndSrtPrcDayDTO/val1",  checkbox1.getValue());			// 나이스 피앤아이
+				setValue("BISBndSrtPrcDayDTO/val2",  checkbox2.getValue());			// 한국 자산평가
+				setValue("BISBndSrtPrcDayDTO/val3",  checkbox3.getValue());			// KIS 자산평가
+				setValue("BISBndSrtPrcDayDTO/val4",  checkbox4.getValue());			// 에프앤 자산평가
+				setValue("BISBndSrtPrcDayDTO/val5",  checkbox5.getValue());			// EG 자산평가
+	
+		        var BISBndSrtPrcDayDTO = WebSquare.xml.serialize(getInstanceNode("BISBndSrtPrcDayDTO"));
+				callProFrameProcess("BIS-KOFIABOND","BISBndSrtPrcSrchSO","selectDay2",BISBndSrtPrcDayDTO, "respList2",true);
+			}
+			
+       	}
+
+           /**************************************************************************
+            * function    : setGrdHeader
+            * Description : 그리드 헤더 동적 생성을 위한 헤더데이터 조회
+            * Parameter   : 
+            * Return      : null
+            **************************************************************************/        	
+       	function setGrdHeader(){
+       		setValue("BISBndSrtPrcDayDTO/standardDt", srchDt.getValue());
+       		setValue("BISBndSrtPrcDayDTO/applyGbCd",  "C00");
+       		
+       		var BISBndSrtPrcDayDTO = {"BISBndSrtPrcDayDTO":{}};
+	        callProFrame("BIS-KOFIABOND","BISBndSrtPrcSrchSO","getHeadList",BISBndSrtPrcDayDTO, "BISBndSrtPrcDayDTO","respHead");
+	        
+	        if(selectComp.getValue() != "A99001"){
+	        	// 하단 그리드
+		        WebSquare.ModelUtil.removeChildNodes( "BISBndSrtPrcDayDTO" );
+		        setValue("BISBndSrtPrcDayDTO/standardDt", srchDt.getValue());
+	       		setValue("BISBndSrtPrcDayDTO/applyGbCd",  "C02");
+	       		
+		        var BISBndSrtPrcDayDTO = {"BISBndSrtPrcDayDTO":{}};
+		        callProFrame("BIS-KOFIABOND","BISBndSrtPrcSrchSO","getHeadList",BISBndSrtPrcDayDTO, "BISBndSrtPrcDayDTO","respHead2");
+	        }
+       	}
+       	
+            
+       /**************************************************************************
+        * function    : remakeGrid
+        * Description : 그리드 헤더정보 재정의(최종호가 종목정보 세팅)
+        * Parameter   : sProgNm(프로그램명), sGridHeight(그리드 height)
+        * Return      : 그리드 헤더정보
+        **************************************************************************/
+        function reMakeGrid(sProgNm, sGridHeight) {
+        	bHidden = "";
+	    	grdMain.hide();
+	        
+	        var formatterNm = "";
+	              
+	        if(sGridHeight == "" || sGridHeight == null) sGridHeight = "300";
+	        
+	        if(selectComp.getValue() == "" || selectComp.getValue() == "A10000" ) bHidden = "false";
+	        else bHidden = "true"; 
+	        
+	        if(srchDt.getValue() < "20131028") formatterNm = "digitFmtU2";
+	        else formatterNm = "digitFmtU3";
+	        
+	        var i, j;
+	        var grid = '';
+	        var event = '';
+	        var wordWrap = "";
+	        var alignCd = "center";       
+			var wordWrap = "word-wrap:break-word;"; 
+			// word_wrap  : normal, break-word
+			// word-break : break-all(단어상관없이자르기), keep-all(단어에 맞게자르기) 
+              
+	        var headInfoArr = WebSquare.ModelUtil.findInstanceNodes( "respHead/root/message/BISBndSrtPrcDayListDTO/BISBndSrtPrcDayDTO" );
+	        var autoFitWidth = 280 + (headInfoArr.legnht * 40); 
+			
+	        grid += "<w2:grid xmlns='http://www.w3.org/1999/xhtml' xmlns:w2='http://www.inswave.com/websquare' xmlns:ev='http://www.w3.org/2001/xml-events'\n";
+	        grid += "    style='height:" + sGridHeight + "px;'\n";
+	        grid += "    rowNumStyle='' summary = '" + sProgNm + "' readOnlyTabIgnore='true' \n";  
+	        grid += "    tooltipStyle='vertical-align:middle;" + wordWrap + "' overflowY='auto' \n";
+	        grid += "    id='grdMain' baseNode='BISBndSrtPrcDayListDTO'";  
+	        grid += "    class='gridtable9 mt3 fl' focusMode='both' selectedRowColor='transparent' selectedCellColor='transparent' repeatNode='BISBndSrtPrcDayDTO'";
+	        grid += "    sortable='' autoFit='allColumn' autoFitMinWidth='"+ autoFitWidth +"'";
+            grid += "    oddEvenColorDisplay='false' oddRowBackgroundColor='#FFFFFF' evenRowBackgroundColor='#F5F5F5' rowMouseOver='true' rowMouseOverColor='#cce2ff' visibleRowNum='all'>\n";
+            
+            grid += " <caption>" + sProgNm + "</caption>";
+            
+            grid += "    <w2:header height='20px' style='padding-top:2px;' columnStyle='' id='header2' class='' columnClass=''>\n";
+            
+           	grid += "        <w2:row id='row" + i + "' style=''>\n";
+        	grid += "			<w2:column id='head_1' height='20px' width='60'  inputType='text' value='종류' style='"+wordWrap+"'></w2:column>			\n";
+			grid += "			<w2:column id='head_2' height='20px' width='90' inputType='text' value='종류명' style='"+wordWrap+"'></w2:column>		\n";
+			grid += "			<w2:column id='head_3' height='20px' width='90' inputType='text' value='신용등급' style='"+wordWrap+"'></w2:column>		\n";
+			grid += "			<w2:column id='head_4' height='20px' width='90' inputType='text' value='고시기관' hidden='"+bHidden+"' style='"+wordWrap+"'></w2:column>			\n";
+ 			       
+            for( i=0 ; i<headInfoArr.length ; i++ ){
+            	grid += "  		<w2:column inputType='text' valueType='binary' width='40' height='20px' style='padding-top:2px;" + wordWrap + "' id='h_" + i + "'></w2:column> \n";
+	        }
+            
+            if (headInfoArr.length > 0) grid += "        </w2:row>\n";            
+            	grid += "    </w2:header>\n";
+                        
+	        /* grid body 시작 */
+            grid += "    <w2:gBody style='height:20px;padding-top:2px;' columnStyle='' id='gBody2'>\n";
+            grid += "        <w2:row id='gRow1' style=''>\n";
+			grid += "        <w2:column id='largeCategoryMrk' style='height:20px' width='60' inputType='text' readOnly='true' colMerge='true'></w2:column>		\n";
+			grid += "        <w2:column id='typeNmMrk'        style='height:20px' width='90' inputType='text' readOnly='true' colMerge='true' upperColumn='largeCategoryMrk'></w2:column>		\n";
+			grid += "        <w2:column id='creditRnkMrk'     style='height:20px' width='90' inputType='text' readOnly='true' colMerge='true'></w2:column>		\n";
+			grid += "        <w2:column id='koreanShotNm'     style='height:20px' width='90' inputType='text' readOnly='true'></w2:column>		\n";
+			
+            for( i=0 ; i<headInfoArr.length ; i++ ){
+               var bodyId = "val"+(i+1);
+               grid += "     <w2:column valueType='binary' inputType = 'text' style='height:20px;padding-top:2px;" + wordWrap + "' textAlign='center' width='80' id='" + bodyId + "' readOnly='true' displayformatter='"+formatterNm+"' >	\n";
+               grid += "     </w2:column>\n";       
+            }
+             
+            grid += "        </w2:row>\n"; 
+            grid += "    </w2:gBody>\n";  
+            grid += "</w2:grid>\n";
+
+            grdMain.setGridStyle(WebSquare.xml.parse(grid, true));
+
+            for( var i=0 ; i<headInfoArr.length ; i++ ){
+                grdMain.setHeaderValue( "h_" + i, WebSquare.xml.getValue( headInfoArr[i] , "remainTrmCtgy" ) );
+            }  		        
+            
+            //grdMain.setFixedColumn(4);
+            grdMain.show();
+                            
+          }
+
+       /**************************************************************************
+        * function    : remakeGrid
+        * Description : 그리드 헤더정보 재정의(최종호가 종목정보 세팅)
+        * Parameter   : sProgNm(프로그램명), sGridHeight(그리드 height)
+        * Return      : 그리드 헤더정보
+        **************************************************************************/
+        function reMakeGrid2(sProgNm, sGridHeight) {
+	    	grdMain2.hide();
+	        
+	        var headInfoArr = WebSquare.ModelUtil.findInstanceNodes( "respHead2/root/message/BISBndSrtPrcDayListDTO/BISBndSrtPrcDayDTO" );
+	        
+	        if( headInfoArr.length == 0){
+	        	footerGrdHead.setStyle( "display" ,"none" );
+	        	return;
+	        }else{
+	        	footerGrdHead.setStyle( "display" ,"block" );
+	        }
+	              
+	        if(sGridHeight == "" || sGridHeight == null) sGridHeight = "300";
+	        
+	        var i, j;
+	        var grid = '';
+	        var event = '';
+	        var wordWrap = "";
+	        var alignCd = "center";       
+			var wordWrap = "word-wrap:break-word;"; 
+			// word_wrap  : normal, break-word
+			// word-break : break-all(단어상관없이자르기), keep-all(단어에 맞게자르기) 
+              
+	        
+	        var autoFitWidth = 280 + (headInfoArr.legnht * 40); 
+			
+	        grid += "<w2:grid xmlns='http://www.w3.org/1999/xhtml' xmlns:w2='http://www.inswave.com/websquare' xmlns:ev='http://www.w3.org/2001/xml-events'\n";
+	        grid += "    style='height:" + sGridHeight + "px;'\n";
+	        grid += "    rowNumStyle='' summary = '" + sProgNm + "' readOnlyTabIgnore='true' \n";  
+	        grid += "    tooltipStyle='vertical-align:middle;" + wordWrap + "' overflowY='auto' \n";
+	        grid += "    id='grdMain2' baseNode='BISBndSrtPrcDayListDTO'";  
+	        grid += "    class='gridtable9 mt3 fl' focusMode='both' selectedRowColor='transparent' selectedCellColor='transparent' repeatNode='BISBndSrtPrcDayDTO'";
+	        grid += "    sortable='' autoFit='allColumn' autoFitMinWidth='"+ autoFitWidth +"'";
+            grid += "    oddEvenColorDisplay='false' oddRowBackgroundColor='#FFFFFF' evenRowBackgroundColor='#F5F5F5' rowMouseOver='true' rowMouseOverColor='#cce2ff' visibleRowNum='all'>\n";
+            
+            grid += " <caption>" + sProgNm + "</caption>";
+            
+            grid += "    <w2:header height='20px' style='padding-top:2px;' columnStyle='' id='header2' class='' columnClass=''>\n";
+            
+           	grid += "        <w2:row id='row" + i + "' style=''>\n";
+        	grid += "			<w2:column id='head_1' height='20px' width='60'  inputType='text' value='구분' style='"+wordWrap+"'></w2:column>			\n";
+			grid += "			<w2:column id='head_2' height='20px' width='90' inputType='text' value='신용평가등급' style='"+wordWrap+"'></w2:column>		\n";
+			grid += "			<w2:column id='head_3' height='20px' width='90' inputType='text' value='발행자' style='"+wordWrap+"'></w2:column>		\n";
+			grid += "			<w2:column id='head_4' height='20px' width='90' inputType='text' value='고시기관' hidden='"+bHidden+"' style='"+wordWrap+"'></w2:column>			\n";
+ 			       
+            for( i=0 ; i<headInfoArr.length ; i++ ){
+            	grid += "  		<w2:column inputType='text' valueType='binary' width='40' height='20px' style='padding-top:2px;" + wordWrap + "' id='h_" + i + "'></w2:column> \n";
+	        }
+            
+            if (headInfoArr.length > 0) grid += "        </w2:row>\n";            
+            	grid += "    </w2:header>\n";
+                        
+	        /* grid body 시작 */
+            grid += "    <w2:gBody style='height:20px;padding-top:2px;' columnStyle='' id='gBody2'>\n";
+            grid += "        <w2:row id='gRow1' style=''>\n";
+			grid += "        <w2:column id='largeCategoryMrk' style='height:20px' width='60' inputType='text' readOnly='true' colMerge='true'></w2:column>		\n";
+			grid += "        <w2:column id='creditRnkMrk'     style='height:20px' width='90' inputType='text' readOnly='true' colMerge='true'></w2:column>		\n";
+			grid += "        <w2:column id='typeNmMrk'        style='height:20px' width='90' inputType='text' readOnly='true' colMerge='true'></w2:column>		\n";
+			grid += "        <w2:column id='koreanShotNm'     style='height:20px' width='90' inputType='text' readOnly='true'></w2:column>		\n";
+			
+            for( i=0 ; i<headInfoArr.length ; i++ ){
+               var bodyId = "val"+(i+1);
+               grid += "     <w2:column valueType='binary' inputType = 'text' style='height:20px;padding-top:2px;" + wordWrap + "' textAlign='center' width='80' id='" + bodyId + "' readOnly='true' displayformatter='digitFmtU3'>	\n";
+               grid += "     </w2:column>\n";       
+            }
+            
+            grid += "        </w2:row>\n";
+            grid += "    </w2:gBody>\n";  
+            grid += "</w2:grid>\n";
+
+            grdMain2.setGridStyle(WebSquare.xml.parse(grid, true));
+
+            for( var i=0 ; i<headInfoArr.length ; i++ ){
+                grdMain2.setHeaderValue( "h_" + i, WebSquare.xml.getValue( headInfoArr[i] , "remainTrmCtgy" ) );
+            }  		        
+            
+            //grdMain.setFixedColumn(4);
+            grdMain2.show();
+                            
+          }
+          	
+           /**************************************************************************
+            * function    : excelDownLoad
+            * Description : 그리드의 내용을 엑셀로 다운로드
+            * Parameter   : null
+            * Return      : null
+            **************************************************************************/
+           function excelDownLoad(removeCol) {
+           		saveExcelDown(grdMain, "채권시가평가기준수익률", "1", true, false, removeCol);
+           }
+           
+           function excelDownLoad2(removeCol) {
+           		saveExcelDown(grdMain2, "채권시가평가기준수익률[개별공사_공단채]", "1", true, false, removeCol);
+           }
+           
+			init();
+        ]]></script>
+	</head>
+	<body>
+		<xf:group id="maincontentWrap" style="overflow:hidden;" class="" tagname="div">
+			<xf:group id="grpSearchForm" style="" class="mgt10">
+				<xf:group id="group207" style="" class="impCoheader" tagname="div">
+					<xf:group id="group208" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox88" style="" class="impCotic" label="조회일"></w2:textbox>
+					</xf:group>
+					<xf:group id="group241" style="" class="impCoco2" tagname="div">
+						<xf:group id="group242" style="" class="fl mgt8 mgl10 w130">
+							<w2:textbox id="textbox105" for="srchDt" class="hid" label="조회일"></w2:textbox>
+							<w2:inputCalendar id="srchDt" calendarImageOver="/images/calendar.png" ref="" title="조회 시작일"
+								calendarValueType="yearMonthDate" style="" rendertype="native" useCalendarTabIndex="true" class="w95 h17"
+								calendarImage="/images/calendar.png" useanchormove="true" calendarClass="">
+								<script ev:event="onchange" type="javascript"><![CDATA[
+									if( Number(stdDate) > Number(this.getValue()) ){
+										//selectComp.setValue("A10000");			// 평가사 평균(~`23.1.8)
+									}
+								]]></script>
+							</w2:inputCalendar>
+						</xf:group>
+					</xf:group>
+					<xf:group id="group243" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox106" style="" class="impCotic" label="기관명"></w2:textbox>
+					</xf:group>
+					<xf:group id="group244" style="" class="impCoco2" tagname="div">
+						<xf:group id="group247" style="" class="fl mgt10 mgl10">
+							<w2:textbox id="textbox90" for="selectComp_input_0" class="hid" label="구분"></w2:textbox>
+							<xf:select1 disabledClass="w2selectbox_disabled" renderType="native" appearance="minimal" direction="auto"
+								chooseOption="" class="fl mgr10 w150" displayMode="label" id="selectComp" title="" style="" allOption="" disabled="false"
+								submenuSize="auto">
+								<xf:choices>
+									<xf:item>
+										<xf:label>통합표</xf:label>
+										<xf:value></xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>KIS자산평가</xf:label>
+										<xf:value>A10004</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>한국자산평가</xf:label>
+										<xf:value>A10003</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>나이스피앤아이</xf:label>
+										<xf:value>A10002</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>에프앤자산평가</xf:label>
+										<xf:value>A10005</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>이지자산평가</xf:label>
+										<xf:value>A10006</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>평가사 평균(`23.1.9~)</xf:label>
+										<xf:value>A20000</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>평가사 평균(~`23.1.8)</xf:label>
+										<xf:value>A10000</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>금투협(~`09.10)</xf:label>
+										<xf:value>A99001</xf:value>
+									</xf:item>
+								</xf:choices>
+
+								<script ev:event="onchange" type="javascript"><![CDATA[
+									//alert(this.getValue());
+									if( this.getValue() == "A20000"){
+										group400.show();
+									}else{
+										group400.hide();
+									}
+								]]></script>
+								
+							</xf:select1>
+						</xf:group>
+					<xf:group id="group216" style="" class="fr mgt7 mgr10" tagname="a">
+						<w2:attributes>
+							<w2:href>javascript:searchData();</w2:href>
+						</w2:attributes>
+						<xf:image id="image1" title="" style="" alt="조회" src="/images/sub/sub_search_btn03.gif"></xf:image>
+					</xf:group></xf:group>
+				</xf:group>
+				
+				<xf:group id="group400" style="height:46px; display:none;" class="impCocontent" tagname="div" colSpan="4">
+					<xf:group id="group401" style="height: 100%;" class="impCorow" tagname="div">
+						<w2:textbox id="textbox400" style="" class="impCotic" label="기관명"></w2:textbox>
+					</xf:group>
+					<xf:group id="group402" style="" class="" tagname="div">
+						<xf:group class="fl mgl30 " id="group2" style="" tagname="div">
+						<w2:textbox id="textbox403" style="" class="" label="&lt;font color='blue' &gt;* 2023년 1월 9일부터 2개이상 평가회사를 선택하여 조회하시면 평균값을 확인할 수 있습니다.&lt;/font&gt;"></w2:textbox>
+							<xf:select appearance="full" class="fl" id="checkbox1" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">
+								<xf:choices>
+									<xf:item>
+										<xf:label>나이스&lt;br/&gt;피앤아이</xf:label>
+										<xf:value>A10002</xf:value>
+									</xf:item>
+								</xf:choices>
+							</xf:select>
+							<xf:select appearance="full" class="fl" id="checkbox2" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">
+								<xf:choices>
+									<xf:item>
+										<xf:label>한국&lt;br/&gt;자산평가</xf:label>
+										<xf:value>A10003</xf:value>
+									</xf:item>
+								</xf:choices>
+							</xf:select>
+							<xf:select appearance="full" class="fl" id="checkbox3" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">
+								<xf:choices>
+									<xf:item>
+										<xf:label>KIS&lt;br/&gt;자산평가</xf:label>
+										<xf:value>A10004</xf:value>
+									</xf:item>
+								</xf:choices>
+							</xf:select>
+							<xf:select appearance="full" class="fl" id="checkbox4" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">
+								<xf:choices>
+									<xf:item>
+										<xf:label>에프앤&lt;br/&gt;자산평가</xf:label>
+										<xf:value>A10005</xf:value>
+									</xf:item>
+								</xf:choices>
+							</xf:select>
+							<xf:select appearance="full" class="fl" id="checkbox5" selectedindex="" rows="1" cols="" name="fruit2" style="width:90px;">
+								<xf:choices>
+									<xf:item>
+										<xf:label>이지&lt;br/&gt;자산평가</xf:label>
+										<xf:value>A10006</xf:value>
+									</xf:item>
+								</xf:choices>
+							</xf:select>
+						</xf:group>
+					</xf:group>
+				</xf:group>
+
+			</xf:group>
+			<xf:group id="grpUnitExcel" style="" class="gridBtnDn" tagname="div">
+				
+				<xf:group id="groupUE1" style="" class="fl" tagname="">
+					<w2:textbox id="textbox133" class="fl mgt5" label="시가평가수익률은 채권평가사가 당일 18시 이후에 제공합니다."></w2:textbox>
+				</xf:group>
+				
+				<xf:group id="groupUE" style="" class="fr" tagname="">
+					<w2:textbox id="textbox111" class="fl mgt5" label="(단위 : %)"></w2:textbox>
+					<xf:group id="grpExcel" style="" class="fl mgl5 mgr5" tagname="a">
+						<w2:attributes>
+							<w2:href>javascript:excelDownLoad();</w2:href>
+							<w2:title>엑셀 다운로드 바로가기</w2:title>
+						</w2:attributes>
+						<xf:image id="imgExcel" style="" alt="엑셀 다운로드 아이콘 이미지" src="/images/sub/excel_btn.gif"></xf:image>
+					</xf:group>
+				</xf:group>
+				
+			</xf:group>
+			<xf:group id="grpGrid11" style="position:relative;width:100%;" class="">
+				<w2:grid baseNode="BISBndSrtPrcDayListDTO" summary="채권 시가평가 기준 수익률(일자별)" readOnlyTabIgnore="true" autoFit="lastColumn"
+					sortEvent="onclick" class="gridtable9" rowMouseOverColor="#EDF5EB" id="grdMain" focusMode="" readOnly="true" style="height:300px;"
+					evenRowBackgroundColor="#fff" overflowY="auto" repeatNode="BISBndSrtPrcDayDTO">
+					<caption>채권 시가평가 기준 수익률(일자별)</caption>
+					<w2:header id="header1" style="">
+						<w2:row id="row1" style="">
+							<w2:column id="column1" style="height:25px" width="150" inputType="text" value="종류"></w2:column>
+							<w2:column id="column2" style="height:25px" width="200" inputType="text" value="종류명"></w2:column>
+							<w2:column id="column3" style="height:25px" width="150" inputType="text" value="신용등급"></w2:column>
+							<w2:column id="column4" style="height:25px" hidden="true" width="150" inputType="text" value="고시기관"></w2:column>
+						</w2:row>
+					</w2:header>
+					<w2:gBody id="gBody1" style="">
+						<w2:row id="row2" style="">
+							<w2:column id="largeCategoryMrk" dataType="text" style="height:20px;" width="150" inputType="text"
+								textAlign="center" colMerge="">
+							</w2:column>
+							<w2:column id="typeNmMrk" dataType="text" upperColumn="largeCategoryMrk" style="height:20px;" width="200"
+								inputType="text" textAlign="left" colMerge="">
+							</w2:column>
+							<w2:column id="creditRnkMrk" dataType="text" style="height:20px;" width="150" inputType="text"
+								textAlign="center">
+							</w2:column>
+							<w2:column id="koreanShotNm" dataType="text" style="height:20px;" width="150" inputType="text"
+								textAlign="left">
+							</w2:column>
+							<w2:column id="val3" dataType="number" style="height:20px;" width="100" inputType="text"
+								customFormatter="gFmtrPlusMinus" textAlign="center">
+							</w2:column>
+						</w2:row>
+					</w2:gBody>
+				</w2:grid>
+			</xf:group>
+			<xf:group id="footerGrdHead" style="" class=" fl gridBtnDn mgt10" tagname="div">
+				<xf:group id="group258" style="" class="fl" tagname="">
+					<w2:textbox id="textbox113" class="fl mgt5" label="[개별공사ㆍ공단채 시가평가기준 수익률]"></w2:textbox>
+				</xf:group>
+				<xf:group id="group256" style="" class="fr" tagname="">
+					<w2:textbox id="textbox112" class="fl mgt5" label=""></w2:textbox>
+					<xf:group id="group257" style="" class="fl mgl5 mgr5" tagname="a">
+						<w2:attributes>
+							<w2:href>javascript:excelDownLoad2();</w2:href>
+							<w2:title>엑셀 다운로드 바로가기</w2:title>
+						</w2:attributes>
+						<xf:image id="image9" style="" alt="엑셀 다운로드 아이콘 이미지" src="/images/sub/excel_btn.gif"></xf:image>
+					</xf:group>
+				</xf:group>
+
+			</xf:group>
+			<xf:group id="group229 " style="position:relative;width:100%;" class="over">
+				<w2:grid summary="채권 시가평가 기준 수익률(일자별)" baseNode="BISBndSrtPrcDayListDTO" readOnlyTabIgnore="true" autoFit="lastColumn"
+					sortEvent="onclick" class="gridtable9" rowMouseOverColor="#EDF5EB" id="grdMain2" focusMode="" readOnly="true" style="height:300px;"
+					evenRowBackgroundColor="#fff" overflowY="auto" repeatNode="BISBndSrtPrcDayDTO">
+					<caption>개별공사ㆍ공단채 시가평가기준수익률</caption>
+					<w2:header id="header1" style="">
+						<w2:row id="row1" style="">
+							<w2:column id="column1" style="height:25px" inputType="text" width="150" value="종류"></w2:column>
+							<w2:column id="column2" style="height:25px" inputType="text" width="200" value="종류명"></w2:column>
+							<w2:column id="column3" style="height:25px" inputType="text" width="150" value="신용등급"></w2:column>
+							<w2:column id="column4" style="height:25px" hidden="true" inputType="text" width="150" value="고시기관"></w2:column>
+						</w2:row>
+					</w2:header>
+					<w2:gBody id="gBody1" style="">
+						<w2:row id="row2" style="">
+							<w2:column id="largeCategoryMrk" dataType="text" style="height:20px;" inputType="text" width="150"
+								textAlign="center" colMerge="">
+							</w2:column>
+							<w2:column id="typeNmMrk" dataType="text" upperColumn="largeCategoryMrk" style="height:20px;" inputType="text"
+								width="200" textAlign="left" colMerge="">
+							</w2:column>
+							<w2:column id="creditRnkMrk" dataType="text" style="height:20px;" inputType="text" width="150"
+								textAlign="center">
+							</w2:column>
+							<w2:column id="koreanShotNm" dataType="text" style="height:20px;" inputType="text" width="150"
+								textAlign="left">
+							</w2:column>
+							<w2:column id="val3" dataType="number" style="height:20px;" inputType="text" width="100"
+								customFormatter="gFmtrPlusMinus" textAlign="center">
+							</w2:column>
+						</w2:row>
+					</w2:gBody>
+				</w2:grid>
+
+			</xf:group>
+
+			<w2:wframe class="mgt15" id="wfrmFooter" mode="sync" scrolling="no" src="/xml/footer/BISBndSrtPrcDay_footer.xml"
+				style="position: relative ;width:100%;height:180px;">
+			</w2:wframe>
+		</xf:group>
+	</body>
+</html>
