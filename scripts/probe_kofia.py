@@ -144,7 +144,12 @@ def stage2() -> None:
         return
     (DUMP / "menu.xml").write_text(menu, encoding="utf-8")
     print(f"\n### 메뉴 응답 {len(menu)} chars")
-    paths = sorted(set(re.findall(r"(/xml/[A-Za-z0-9_/\-]+\.xml)", menu)))
+    paths = [
+        "/xml/Com/Common_TabMnuDsp.xml",
+        "/xml/Com/Common_GnrDsp.xml",
+        "/xml/bondint/avgrop/BISSrtPrcEstMtrxWhtAvg.xml",
+        "/xml/bondint/avgrop/BISTypRemTrmWhtAvg.xml",
+    ]
     print(f"메뉴 안 화면 경로 {len(paths)}개")
     for path in paths:
         text = get(path)
