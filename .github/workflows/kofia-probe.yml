@@ -1,0 +1,18 @@
+# 금투협 채권정보센터 정찰 — 이자율 작업대에 쓸 조회 서비스를 찾는다 (임시).
+name: 금투협 정찰
+
+on:
+  push:
+    branches: [claude/festive-shannon-rjm2kj]
+    paths: [scripts/probe_kofia.py, .github/workflows/kofia-probe.yml]
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/probe_kofia.py
