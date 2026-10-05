@@ -160,6 +160,38 @@ def stage2() -> None:
 
 
 
+def stage3() -> None:
+    """채권시가평가수익률(시가평가 메뉴) — 메타정보로 탭별 조회 서비스와 조건 화면을 알아낸다."""
+    print("\n### 시가평가 메타정보")
+    for div in ("MBIS01070010000000",):
+        meta = call("BIS-COM", "BISComStatisticsLinkSO", "selectMetaInfoAdvanced",
+                    f"<BISComMetaDataDTO><divisionId>{div}</divisionId></BISComMetaDataDTO>")
+        if not meta:
+            continue
+        (DUMP / f"meta_{div}.xml").write_text(meta, encoding="utf-8")
+        print(f"{div}: {len(meta)} chars")
+        objs = sorted(set(re.findall(r"<objNm>([^<]+)</objNm>", meta)))
+        print("objNm:", objs)
+        for path in sorted(set(re.findall(r"(/xml/[A-Za-z0-9_/\-]+\.xml)", meta))):
+            text = get(path)
+            if text:
+                (DUMP / ("meta_screen__" + path.strip("/").replace("/", "__"))).write_text(text, encoding="utf-8")
+                print("  화면", path, len(text))
+        # 조회 서비스를 기준일 하나로 그대로 불러 본다.
+        for obj in objs:
+            parts = obj.split("^")
+            if len(parts) < 3:
+                continue
+            for dto in ("<BISComDspDatDTO><val1>20260930</val1></BISComDspDatDTO>",
+                        "<BISComDspDatDTO><val1>DD</val1><val2>20260930</val2><val3>20260930</val3></BISComDspDatDTO>"):
+                r = call(parts[0], parts[1], parts[2], dto)
+                name = f"data_{parts[1]}_{parts[2]}_{len(dto)}.xml"
+                if r:
+                    (DUMP / name).write_text(r, encoding="utf-8")
+                    print("  자료", obj, len(r), r[:300].replace("\n", " "))
+
+
 if __name__ == "__main__":
     main()
     stage2()
+    stage3()
