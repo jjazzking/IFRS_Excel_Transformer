@@ -46,14 +46,13 @@ export const WORKSPACES: WorkspaceMeta[] = [
   {
     id: 'rates',
     name: '이자율 찾기',
-    tagline: '국고채·회사채 수익률을 날짜로 찾는다',
+    tagline: '금투협 시가평가수익률을 기준일로 찾는다',
     description:
-      '리스 할인율, 현재가치 할인, 충당부채 할인에 쓰는 시장이자율을 기준일로 찾아 조서에 붙여넣는다.',
-    leftPane: '만기·등급·기준일로 이자율 조회',
-    rightPane: '고른 이자율 표 + 엑셀 미리보기',
+      '리스·충당부채·퇴직급여 할인율을 금융투자협회 채권시가평가수익률(평가사 평균) 표에서 찾고, 쓴 행·열에 음영을 칠해 근거 문단과 함께 붙여넣는다.',
+    leftPane: '용도·기준일·등급·만기로 조회',
+    rightPane: '음영 칠한 수익률 표 + 엑셀 미리보기',
     icon: Percent,
-    status: 'preparing',
-    blockedBy: '금리 데이터 출처 확정 (한국은행 ECOS · 금융투자협회)',
+    status: 'ready',
     accent: 'sky',
   },
   {

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Check, ClipboardCheck, Copy, Download, Table, Trash2 } from 'lucide-react';
-import { SheetTable, TableTheme } from '../types';
+import { CellShade, SheetTable, TableTheme } from '../types';
 import { exportSheetToExcelFile, formatNumber, generateSheetClipboard } from '../utils/sheetExport';
 import { getThemePreviewClasses } from '../utils/tableTheme';
 
@@ -13,7 +13,15 @@ interface SheetPreviewProps {
   onClearAll?: () => void;
   /** 표가 비었을 때 대신 보여 줄 말 */
   emptyHint: string;
+  /** 내려받는 파일 이름 꼬리와 시트 이름 (기본 '환율') */
+  fileSuffix?: string;
 }
+
+/** 음영 미리보기 색 — `SHADE_FILL` 과 같은 노랑 두 단계. 서식(테마)의 칸 배경보다 앞서야 해서 ! 를 붙인다 */
+const SHADE_PREVIEW_CLASS: Record<CellShade, string> = {
+  soft: 'bg-[#FFF2CC]!',
+  strong: 'bg-[#FFD966]!',
+};
 
 const THEMES: { value: TableTheme; label: string }[] = [
   { value: 'audit_gray', label: '감사조서(회색)' },
@@ -36,6 +44,7 @@ export const SheetPreview: React.FC<SheetPreviewProps> = ({
   onChangeTheme,
   onClearAll,
   emptyHint,
+  fileSuffix = '환율',
 }) => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'formatted' | 'plain'>('idle');
   const classes = getThemePreviewClasses(theme);
@@ -73,7 +82,7 @@ export const SheetPreview: React.FC<SheetPreviewProps> = ({
 
   const handleDownload = () => {
     const safe = name.replace(/[^a-zA-Z0-9가-힣]/g, '_');
-    exportSheetToExcelFile(table, `${safe}_환율.xlsx`);
+    exportSheetToExcelFile(table, `${safe}_${fileSuffix}.xlsx`, fileSuffix);
   };
 
   return (
@@ -178,7 +187,9 @@ export const SheetPreview: React.FC<SheetPreviewProps> = ({
                 {table.columns.map(c => (
                   <td
                     key={c.key}
-                    className={`${classes.sectionRow} ${classes.headerCell} px-2 py-1 text-center whitespace-nowrap`}
+                    className={`${classes.sectionRow} ${classes.headerCell} px-2 py-1 text-center whitespace-nowrap ${
+                      c.shade ? SHADE_PREVIEW_CLASS[c.shade] : ''
+                    }`}
                   >
                     {c.label}
                   </td>
@@ -189,12 +200,13 @@ export const SheetPreview: React.FC<SheetPreviewProps> = ({
                   {row.cells.map((value, j) => {
                     const col = table.columns[j];
                     const isNum = typeof value === 'number';
+                    const shade = row.shades?.[j];
                     return (
                       <td
                         key={col?.key ?? j}
                         className={`px-2 py-1 whitespace-nowrap ${
                           isNum ? `${classes.numCell} text-right tabular-nums` : classes.contentCell
-                        } ${row.emphasis === 'total' ? 'font-bold' : ''}`}
+                        } ${row.emphasis === 'total' ? 'font-bold' : ''} ${shade ? SHADE_PREVIEW_CLASS[shade] : ''}`}
                       >
                         {isNum ? formatNumber(value, col?.digits) : (value ?? '')}
                       </td>
