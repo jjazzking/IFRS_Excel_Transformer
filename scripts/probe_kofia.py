@@ -130,20 +130,17 @@ def call(app: str, svc: str, fn: str, dto_xml: str) -> str | None:
             "Origin": BASE,
         },
     )
-    try:
-        with urllib.request.urlopen(req, timeout=40) as r:
-            return r.read().decode("utf-8", "replace")
-    except Exception as e:  # noqa: BLE001
-        print(f"  ! {svc}.{fn}: {e}")
-        return None
+    for _ in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=40) as r:
+                return r.read().decode("utf-8", "replace")
+        except Exception as e:  # noqa: BLE001
+            print(f"  ! {svc}.{fn}: {e}")
+    return None
 
 
 def stage2() -> None:
-    menu = call("BIS-COM", "BISComMenuSO", "selectMenuBIS", "<BISComMenuDTO><workGb>KOR</workGb></BISComMenuDTO>")
-    if not menu:
-        return
-    (DUMP / "menu.xml").write_text(menu, encoding="utf-8")
-    print(f"\n### 메뉴 응답 {len(menu)} chars")
+    print("\n### 시가평가 화면")
     paths = [
         "/xml/Com/Common_TabMnuDsp.xml",
         "/xml/Com/Common_GnrDsp.xml",
