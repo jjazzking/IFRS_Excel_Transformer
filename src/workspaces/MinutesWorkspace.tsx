@@ -229,7 +229,7 @@ const MinutesNavbar: React.FC<{ onBackHome: () => void; subtitle: string }> = ({
             onClick={onBackHome}
             className="text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
           >
-            기준서 데스크
+            찾붙머신
           </button>
           <span className="text-slate-600 text-xs">/</span>
           <h1 className="font-bold text-lg text-slate-100 tracking-tight truncate">의사록 읽기</h1>

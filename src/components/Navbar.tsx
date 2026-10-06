@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={onBackHome}
                 className="text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer"
               >
-                기준서 데스크
+                찾붙머신
               </button>
               <span className="text-slate-600 text-xs">/</span>
               <h1 className="font-bold text-lg text-slate-100 tracking-tight truncate">기준서 찾기</h1>

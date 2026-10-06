@@ -24,7 +24,7 @@ def main() -> int:
         return 1
 
     OUT.mkdir(exist_ok=True)
-    target = OUT / "기준서데스크-파이썬.zip"
+    target = OUT / "찾붙머신-파이썬.zip"
     files = 0
     # 압축은 deflate 로 한다. 화면 파일은 잘 줄고, 이미 압축된 모델은 그대로 지나간다.
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:

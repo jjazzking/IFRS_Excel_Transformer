@@ -13,7 +13,7 @@
 ## 파이썬 꾸러미 — 받는 사람은 두 번 누르면 된다
 
 ```
-기준서데스크-파이썬.zip
+찾붙머신-파이썬.zip
  ├ 실행.bat        ← 두 번 누른다
  ├ 실행.py         ← 하는 일은 같다. `python 실행.py`
  ├ 읽어보세요.txt
@@ -113,7 +113,7 @@ bun run desk:zip            # = vite build && python3 desktop/pack.py
 
 ```
 bun run build       →  dist/          (브라우저 판 · GitHub Pages 가 쓰는 것)
-bun run desk:build  →  dist/ + 껍데기 → release/기준서데스크-0.0.0-portable.exe
+bun run desk:build  →  dist/ + 껍데기 → release/찾붙머신-0.0.0-portable.exe
 ```
 
 ## `file://` 로 띄우면 OCR 이 죽는다
