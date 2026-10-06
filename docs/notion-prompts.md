@@ -59,11 +59,6 @@
 
 쓰는 방법 (배포)
 - 웹: GitHub Pages 주소로 접속 [주소 기입]
-- 설치 없는 꾸러미(기본 배포): 파이썬 3.7+만 있으면 됨, pip 설치 없음, 11.6MB.
-  압축 풀고 '실행.bat' 더블클릭 → 127.0.0.1(내 컴퓨터 안에서만 열리는 주소)로 브라우저가 열림.
-  인터넷이 끊겨도 동작. 받는 곳: https://github.com/jjazzking/IFRS_Excel_Transformer/releases/latest
-  (main에 머지될 때마다 자동 갱신, 주소 고정)
-- Windows exe(약 100MB): exe 실행이 허용된 환경용. 하는 일과 화면은 동일.
 
 로드맵 (기준서 데이터 재사용 + 감사 일정에 꽂히는 것 순)
 1. 인용 점검: 기존 조서 인용문을 붙여넣으면 현행 기준서와 대조 (개정 전 문장·오타·삭제 문단)
@@ -93,15 +88,13 @@
 - 프론트: React 19, TypeScript 5.8, Vite 6, Tailwind CSS 4, lucide-react 아이콘
 - PDF: pdfjs-dist / OCR: tesseract.js (한국어+영어 모델을 사이트에서 직접 서빙, 외부 전송 없음)
 - 엑셀: xlsx(SheetJS), 클립보드에 HTML 표 + TSV를 함께 넣어 서식 유지
-- 데스크톱: Electron(Windows portable exe), 파이썬 표준 라이브러리 로컬 서버(desktop/실행.py)
 - 데이터 수집·가공: Python 스크립트 (scripts/)
 - 패키지 매니저: CI는 bun (bun install --frozen-lockfile), 로컬은 npm도 가능
 - 라우팅: 주소창 해시 (#/standards, #/fx, #/rates, #/minutes, #/litigation, #/landprice, #/stocks)
-- vite base: './' (Pages·로컬 꾸러미 모두에서 상대경로로 동작)
+- vite base: './' (Pages 하위 경로에서도 상대경로로 동작)
 
 명령어
 - npm install / npm run dev (포트 3000) / npm run build / npm run lint (= tsc --noEmit)
-- npm run desk (Electron 실행), desk:build (Windows exe), desk:zip (파이썬 꾸러미)
 
 폴더 구조
 - src/workspaces/registry.ts : 작업대 목록의 유일한 출처. 첫 화면 카드·라우팅이 이 표를 따름.
@@ -119,8 +112,7 @@
   fetch_fx_rates.py + smbs.py(환율), fetch_kofia_rates.py + kofia.py(이자율),
   parse_minutes.py / minutes_rules.py / minutes_text.py / eval_minutes.py /
   make_sample_minutes.py / bench_minutes.py (의사록 파이썬판·채점)
-- desktop/ : 파이썬 꾸러미 (실행.py, 실행.bat, pack.py) / electron/main.cjs
-- docs/ : footing-plan, minutes-plan, minutes-ocr, rates-plan, desktop, naming, roadmap
+- docs/ : footing-plan, minutes-plan, minutes-ocr, rates-plan, naming, roadmap
 
 데이터 파이프라인 — "서버가 없다"를 우회하는 방식
 - GitHub Pages 정적 호스팅이라 브라우저가 외부 사이트를 직접 못 부른다 (CORS, http 차단).
@@ -135,8 +127,6 @@ GitHub Actions
 - deploy.yml : 타입체크 → 빌드 → GitHub Pages 배포
 - fx-rates.yml : 평일 18:30 KST + 수동, 최근 30일 받아 바뀐 것만 커밋
 - kofia-rates.yml : 평일 19:10 KST
-- desk-bundle.yml : main 머지 → 파이썬 꾸러미를 Releases 'latest'에 갱신.
-  v* 태그 → 버전별 릴리스. Windows exe 잡은 태그·수동 실행 때만.
 
 기준서 추가·수정 절차
 1) python3 scripts/parse_kifrs_hwp.py <HWP 또는 폴더> --include-ig -o parsed_json/
@@ -249,13 +239,7 @@ GitHub Actions
 
 보안 Q&A
 - 파일이 어디로 가나요? 아무 데도 안 갑니다. 브라우저 안에서만 읽습니다. 인터넷을 끊어도 동작합니다.
-- 꾸러미판 주소 127.0.0.1은 내 컴퓨터 안에서만 열리는 주소이고, 같은 사무실 다른 PC는 접속 불가.
 
-꾸러미판 문제 해결
-- "화면 파일(dist)을 못 찾았다" → 압축이 일부만 풀림. 실행.py 옆에 dist 폴더가 있어야 함.
-- 브라우저가 하얗다 → 검은 창은 그대로 두고 F5.
-- 회사 백신이 막는다 → 검은 창에 적힌 주소를 직접 브라우저에 붙여넣기.
-- 실행.bat이 막히면 → 명령 프롬프트에서 cd /d "폴더 경로" 후 python 실행.py
 ```
 
 ### 프롬프트
@@ -269,7 +253,7 @@ GitHub Actions
 
 구성:
 1. 이 도구로 할 수 있는 것 — 3줄 이내 + 작업대 카드 표 (작업대 | 이럴 때 쓴다 | 상태)
-2. 시작하기 — 웹으로 열기 / 설치 없이 꾸러미로 열기 (번호 매긴 단계, 각 단계 1문장)
+2. 시작하기 — 웹으로 열기 (번호 매긴 단계, 각 단계 1문장)
 3. 5분 따라하기 — "리스 조서에 K-IFRS 1116호 문단 인용하기" 시나리오를 처음부터 엑셀 붙여넣기까지
 4. 작업대별 사용법 — 기준서 / 환율 / 이자율 / 의사록. 각각 "이럴 때 → 순서 → 결과물 → 주의할 점"
 5. 데이터가 이상할 때 — 수정 모드와 수정 로그 보내는 법

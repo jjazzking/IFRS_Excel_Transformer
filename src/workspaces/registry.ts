@@ -44,6 +44,11 @@ export interface WorkspaceMeta {
   blockedBy?: string;
   /** 카드 색 (tailwind 클래스 조각) */
   accent: 'emerald' | 'sky' | 'amber' | 'violet' | 'rose' | 'teal' | 'indigo';
+  /**
+   * 사용자에게 보이지 않게 숨긴다. 코드는 그대로 두되, 첫 화면 카드에서 빠지고
+   * 주소창으로 직접 들어와도(`#/minutes`) 첫 화면으로 돌려보낸다.
+   */
+  hidden?: boolean;
 }
 
 export const WORKSPACES: WorkspaceMeta[] = [
@@ -94,6 +99,8 @@ export const WORKSPACES: WorkspaceMeta[] = [
     icon: ScrollText,
     status: 'ready',
     accent: 'rose',
+    // 숨김 — 저장소 주인이 따로 말하기 전까지 다시 켜거나 기능을 더 발전시키지 않는다.
+    hidden: true,
   },
   {
     id: 'litigation',
@@ -138,8 +145,12 @@ export const WORKSPACES: WorkspaceMeta[] = [
 
 export const WORKSPACE_BY_ID = new Map(WORKSPACES.map(w => [w.id, w]));
 
-/** 주소창의 `#/rates` 같은 조각을 작업대 id 로 읽는다. 모르는 값이면 첫 화면. */
+/** 사용자에게 보이는 작업대만 — 첫 화면 카드는 이 목록을 따른다. */
+export const VISIBLE_WORKSPACES = WORKSPACES.filter(w => !w.hidden);
+
+/** 주소창의 `#/rates` 같은 조각을 작업대 id 로 읽는다. 모르거나 숨긴 값이면 첫 화면. */
 export function parseRoute(hash: string): WorkspaceId | 'home' {
   const id = hash.replace(/^#\/?/, '').split('?')[0] as WorkspaceId;
-  return WORKSPACE_BY_ID.has(id) ? id : 'home';
+  const ws = WORKSPACE_BY_ID.get(id);
+  return ws && !ws.hidden ? id : 'home';
 }
