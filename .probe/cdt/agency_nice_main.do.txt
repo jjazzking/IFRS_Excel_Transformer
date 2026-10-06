@@ -1,0 +1,2317 @@
+
+
+
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+
+
+<meta charset="utf-8">
+<title>NICE신용평가</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+<link href="/css/slick-theme.css" rel="stylesheet" type="text/css" />
+<link href="/css/slick.css" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=20260928" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+<script type="text/javascript" src="/js/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="/js/selectbox-min.js"></script>
+<script type="text/javascript" src="/js/front_js.js"></script>
+<script type="text/javascript" src="/js/jquery.bxslider.js"></script>
+<script type="text/javascript" src="/js/common.js?v=20180212"></script>
+<script type="text/javascript" src="/js/jquery.placeholder.js"></script>
+
+<script type="text/javascript" src="/js/slick.min.js"></script>
+<script type="text/javascript" src="/js/research.js"></script>
+
+<link rel="shortcut icon" href = "/images/common/favicon_nice_20240701.ico" />
+<!--[if lte IE 8]>
+<script src="/js/html5.js"></script>
+<link    href="/css/ie8.css" rel="stylesheet" type="text/css" />
+<![endif]-->
+
+
+
+
+<script type="text/javascript" src="/js/html5shiv-printshiv.js"></script>
+<!--[if lt IE 9]>
+ <script src="/js/html5shiv-printshiv.js"></script>
+<![endif]-->
+
+
+<script src="https://code.jquery.com/ui/1.13.0/jquery-ui.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+    if("N" != "M") {
+           initPopup();
+        }
+    });
+
+  function initPopup() {
+    
+	}
+</script>
+</head>
+<body>
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        
+        $("#mainSType").val("CMP").attr("selected", true);
+        
+        $(".search_sel").selectify();
+    });
+
+    function fncSearch() {
+        $("#mainSText").val($("#mainSText").val().replace(/^\s+|\s+$/g, ''));
+
+        if ($("#mainSText").val() == "") {
+            alert("검색어를 입력하여 주시기 바랍니다.");
+            return;
+        }
+
+        $("#searchform").attr("method", "get");
+        $("#searchform").attr("target", "_self");
+        $("#searchform").attr("action", "/search/search.do");
+        $("#searchform").submit();
+    }
+</script>
+
+<div class="skip">
+    <a href="#dBody">본문 바로가기</a> <a href="#dHead">네비게이션 바로가기</a>
+</div>
+
+<!-- 화면 상단 공통 영역 시작-->
+<header id="dHead">
+    <div class="area_head">
+        <h1 class="invisible">NICE 신용평가</h1>
+        <!-- 최상단 영역 시작 -->
+        <div class="headCol_A">
+            <!--최상단 좌측 영역 시작 -->
+            <div class="col_a">
+                <a href="https://www.youtube.com/channel/UC1RObGm1rRzwQeqjz_LEbIw" target="_blank" class="btn_App">NICE신용평가
+                    유튜브 </a>
+                <a href="/common/fileDown.do?docId=24de21e9-0643-48a2-bced-49bf8a75b0b8" target="_blank"
+                   class="btn_blog">NICE신용평가 카카오톡</a>
+            </div>
+            <!-- 최상단 좌측 영역 끝 -->
+            <!-- 최상단 우측 영역 시작 -->
+            <div class="col_b">
+                <a href="#" class="btn_publ gTxtb">신용평가의뢰</a>
+                <div class="publ_menu">
+                    <ul>
+                        <li><a href="/publish/creditEvalMean.do">신용평가란?</a></li>
+                        <li><a href="/publish/cmpCreditEvalMean.do">기업신용평가</a></li>
+                        <li><a href="/publish/bondCreditEvalMean.do">채권신용평가</a></li>
+                        <li><a href="/publish/cmpBillEvalMean.do">기업어음증권평가</a></li>
+                        <li><a href="/publish/absBondEvalMean.do">전자단기사채평가</a></li>
+                        <li><a href="/publish/ifsrEvalMean.do">보험금지급능력평가</a></li>
+                        <li><a href="/publish/thirdRequestEvalMean.do" class="publ_menu_pointO">제3자 요청 신용평가</a></li>
+                        <li><a href="/publish/assetBackedSecuritieEvalMean.do">자산유동화증권평가</a></li>
+                        <li><a href="/publish/assetBackedFundEvalMean.do">펀드신용평가</a></li>
+                        <li><a href="/publish/guranteeEvalMean.do">보증기관평가</a></li>
+                    </ul>
+                    <ul>
+                        <li><a href="/publish/evalInquiry.do" class="publ_menu_pointO">평가문의</a></li>
+                        <li><a href="/publish/evalProcess.do">평가절차</a></li>
+                        <li><a href="/publish/evalCmpCommision.do">평가수수료</a></li>
+                        <li><a href="/publish/agreement.do">제출서류/약정서</a></li>
+                        <li><a href="/publish/faqCreditEval.do">FAQ</a></li>
+                    </ul>
+                </div>
+                <a href="#" class="btn_publ1 gTxtb">사업성평가</a>
+                <div class="publ_menu1">
+                    <ul>
+                        <li><a href="/pf/investmentEvalMean.do">의의</a></li>
+                        <li><a href="/pf/investmentEvalKind.do">평가종류</a></li>
+                        <li><a href="/pf/investmentEvalProcess.do">평가절차</a></li>
+                        <li><a href="/pf/investmentInquiry.do" class="publ_menu_pointO">평가문의</a></li>
+                    </ul>
+                </div>
+                <a href="#" class="btn_publ2 gTxtb">ESG평가</a>
+                <div class="publ_menu2">
+                    <ul>
+                        <li><a href="/esg/esgEvalMean.do">의의</a></li>
+                        <li><a href="/esg/esgEvalKind.do">평가종류</a></li>
+                        <li><a href="/esg/esgEvalProcess.do">평가절차</a></li>
+                        <li><a href="/esg/esgInquiry.do" class="publ_menu_pointO">평가문의</a></li>
+                    </ul>
+                </div>
+
+                <a href="/comm/niceMembership.do" target="_self" class="btn_member">유료회원</a>
+                
+                    <a href="javascript:newLogIn();" class="btn_log">로그인</a>
+                
+                
+
+                <a href="http://eng.nicerating.com" target="_blank" class="btn_english">ENG</a>
+                <a href="#" class="btn_sitemap btn_menuTriger">사이트맵</a>
+            </div>
+            <!-- 최상단 좌측 영역 끝 -->
+        </div>
+    </div>
+
+    <div class="logo">
+        <div class="logo__content">
+            <a href="/main.do">
+                <img src="/images/common/nicerating_white_symbol_kor_20240701.png" alt="NICE 신용평가"
+                     style="height: 30px; object-fit:contain; margin-right:10px;"/>
+            </a>
+        </div>
+    </div>
+
+    <div class="area_head">
+        <div class="headCol_B" style="display: flex; justify-content: center; align-items: center;">
+            <div class="div__search">
+                <form id="searchform" method="get">
+                    <select title="검색" id="mainSType" name="mainSType">
+                        <option value="CMP">기업검색</option>
+                        <option value="ALL">통합검색</option>
+                        <option value="RESEARCH">리서치검색</option>
+                    </select>
+                    <input type="text" id="mainSText" name="mainSText" title="검색" value=""
+                           onkeydown="javascript:if(event.keyCode == 13) fncSearch();" placeholder="검색어를 입력해 주세요."/>
+                    <button value="검색" class="btn_search" onclick="javascript:fncSearch();">
+						<span class="material-symbols-outlined">
+							search
+						</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <nav id="gnbMenu">
+            <ul class="gnb">
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 tit_1">등급공시</a>
+                    </p>
+                    <ul class="dept2 type01">
+                        <li><span><a href="/disclosure/dayRatingNews.do">등급속보</a></span>
+                            <ul class="type01_sub">
+                                <li><a href="/disclosure/dayRatingNews.do">최근등급속보</a></li>
+                                <li><a href="/disclosure/ratingExtinctionNews.do">등급소멸속보</a></li>
+                                <li><a href="/disclosure/ratingChangeList.do">등급변동리스트</a></li>
+                                <li><a href="/disclosure/totalWatchList.do">Watch 리스트</a></li>
+                                <li><a href="/disclosure/outlookList.do">등급전망 Non-Stable</a></li>
+                                <li style="letter-spacing:-0.7px;"><a href="/disclosure/ratingTrigger.do">Rating Trigger
+                                    변경리스트</a></li>
+                            </ul>
+                        </li>
+                        <li><span><a href="/disclosure/companySearch.do">등급검색</a></span>
+                            <ul class="type01_sub">
+                                <li><a href="/disclosure/companySearch.do">기업별 검색</a></li>
+                                <li><a href="/disclosure/groupSearch.do">그룹별 검색</a></li>
+                                <li><a href="/disclosure/businessSearch.do">업종별 검색</a></li>
+                                <li><a href="/disclosure/gradeSearch.do">등급별 검색</a></li>
+                                <li><a href="/disclosure/specialBondSearch.do">스페셜 채권</a></li>
+                                <li><a href="/disclosure/validRatingSearch.do">유효등급 리스트</a></li>
+                            </ul>
+                        </li>
+                        <li><span><a href="/disclosure/currentAssessment.do">평가방법론</a></span>
+                            <ul class="type01_sub">
+                                <li><a href="/disclosure/currentAssessment.do">현행 평가방법론</a></li>
+                                <li><a href="/disclosure/previousAssessment.do">기존 평가방법론</a></li>
+                                <li><a href="/disclosure/unOpenAssessment.do">평가방법론 제·개정안</a></li>
+                                <li><a href="/disclosure/creditEvaluationPolicy.do">신용평가방침</a></li>
+                            </ul>
+                        </li>
+                        <li><span><a href="/disclosure/shortTermGrade.do">등급정의</a></span>
+                            <ul class="type01_sub">
+                                <li><a href="/disclosure/shortTermGrade.do">단기등급</a></li>
+                                <li><a href="/disclosure/longTermGrade.do">장기등급</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <p><span><a href="/disclosure/ratingPerformance.do">Rating Performance</a></span></p>
+                            <p style="margin-top: 20px;"><a href="/disclosure/niceRatingRequest.do">공시 문의</a></p>
+                        </li>
+                        <li><span><a href="/disclosure/securitizationCompany.do">자산유동화증권</a></span>
+                            <ul class="type01_sub">
+                                <li><a href="/disclosure/securitizationCompany.do">유동화회사</a></li>
+                                <li><a href="/disclosure/securitizationExposures.do">유동화익스포져</a></li>
+                                <li><a href="/disclosure/assetDetailSearch.do">상세검색</a></li>
+                            </ul>
+                        </li>
+                        <li class="row"><span><a href="/disclosure/yearDefaultRates.do">등급통계</a></span>
+                            <ul class="type01_sub">
+                                <li><a href="/disclosure/yearDefaultRates.do">연간부도율</a></li>
+                                <li><a href="/disclosure/averageDefaultRates.do">평균누적부도율</a></li>
+                                <li><a href="/disclosure/creditGradeChange.do">신용등급변동표</a></li>
+                                <li><a href="/disclosure/gradedRates.do">금리 및 스프레드</a></li>
+                                <li><a href="/disclosure/bondCreditGrade.do">등급현황 및 분포</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 tit_3">리서치</a>
+                    </p>
+                    <ul class="dept2 type03">
+                        <li>
+                            <span><a href="/research/researchAll.do" title="전체">전체</a></span>
+                            <ul class="type03_sub">
+                                <li class="type03_mt_15"><span><a href="/research/specialReport.do"
+                                                                  style="color:#363636">스페셜리포트</a></span></li>
+                                <li><a href="/research/issueReport.do">이슈리포트</a></li>
+                                <li><a href="/research/industryReport.do">산업리포트</a></li>
+                                <li><a href="/research/marketReport.do">마켓코멘트</a></li>
+                                <li><a href="/research/ratingOutlookComment.do">등급·전망코멘트</a></li>
+                                <li><a href="/research/niceColumnReport.do">칼럼</a></li>
+                                <li class="type03_mt_15 type03_mb_5"><span><a href="/research/industryRoundup.do"
+                                                                              style="color:#363636">산업점검</a></span></li>
+                                <li class="type03_mt_15 type03_mb_5"><span><a href="/research/industryRiskVal.do"
+                                                                              style="color:#363636">산업전망</a></span></li>
+                                <li class="type03_mt_15 type03_mb_5"><span><a href="/research/groupAnalysisReport.do"
+                                                                              style="color:#363636">그룹분석보고서</a></span>
+                                </li>
+                                <li class="type03_mt_15 type03_mb_5"><span><a href="/research/ndbReport.do"
+                                                                              style="color:#363636">NICE Data Book</a></span>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <span>&nbsp;</span>
+                            <ul class="type03_sub">
+                                <li class="type03_mt_15"><span><a href="/research/currentAssessment.do"
+                                                                  style="color:#363636">평가방법론</a></span></li>
+                                <li><a href="/research/currentAssessment.do">현행 평가방법론</a></li>
+                                <li><a href="/research/previousAssessment.do">기존 평가방법론</a></li>
+                                <li><a href="/research/unOpenAssessment.do">평가방법론 제·개정안</a></li>
+                                <li><a href="/research/creditEvaluationPolicy.do">신용평가방침</a></li>
+                                <li class="type03_mt_15 type03_mb_5"><span><a href="/research/nicePressRelease.do"
+                                                                              style="color:#363636">보도자료</a></span></li>
+                                <li class="type03_mt_15 type03_mb_5"><span><a href="/research/ratingPerformance.do"
+                                                                              style="color:#363636">Rating Performance</a></span>
+                                </li>
+                                <li class="type03_mt_15 type03_mb_5"><span><a href="/research/ratingTrigger.do"
+                                                                              style="color:#363636">NICE Rating Trigger</a></span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 tit_4">세미나ㆍ교육</a>
+                    </p>
+                    <ul class="dept2 type04">
+                        <li><span><a href="/comm/niceCreditSeminarList.do">세미나 리스트ㆍ동영상</a></span></li>
+                        <li><span><a href="/comm/niceCreditEduList.do">교육 리스트ㆍ동영상</a></span></li>
+                        <li><span><a href="/comm/niceCreditSeminar.do">세미나ㆍ교육 신청</a></span></li>
+                        <li><span><a href="/comm/niceCreditTv.do">Clips</a></span></li>
+                        <li><a href="/comm/niceCreditRequest.do">문의</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 datacenter tit_5">Data Center</a>
+                    </p>
+                    <ul class="dept2 type05">
+                        <li><span><a href="/datacenter/chgCreditRatingBond.do">등급데이터(종합)</a></span>
+                            <ul class="type05_sub">
+                                <li><a href="/datacenter/chgCreditRatingBond.do">등급변동(기간조회)</a></li>
+                                <li><a href="/datacenter/ratingSpreadBond.do">등급분포(기준일조회)</a></li>
+                                <li><a href="/datacenter/ratingMonitoringprediction.do">등급전망/감시(기준일조회)</a></li>
+                                <li><a href="/datacenter/sfArrivalDueDate.do">SF만기도래(기간조회)</a></li>
+                                <li><a href="/datacenter/validRating.do">유효등급(기준일조회)</a></li>
+                            </ul>
+                            <ul>
+                                <li style="margin-top:20px;"><span><a href="/disclosure/ratingTrigger.do"
+                                                                      style="color:#363636;">NICE Rating Trigger</a></span>
+                                </li>
+                                <li style="margin-top:20px;"><span><a href="/research/ndbReport.do"
+                                                                      style="color:#363636;">NICE Data Book(NDB,금융)</a></span>
+                                </li>
+                            </ul>
+                        </li>
+                        <li><span><a href="/datacenter/groupPeerFinance.do">계열별/산업별<br>재무Data</a></span></li>
+                        <li><span><a href="/datacenter/groupFinance.do">Peer Group 재무비교</a></span></li>
+                        <li><a href="/datacenter/financialStatement.do">재무데이터(BIZLINE)</a></li>
+                        <li><a href="/datacenter/birAnaylysis.do">BIR Matrix</a></li>
+                        <li><a href="/datacenter/communicationCenterList.do">My 문의(Q&amp;A)</a></li>
+                        <li><a href="/publish/faqCreditEval.do" style="color: black;">FAQ</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 tit_2">신용평가의뢰</a>
+                    </p>
+                    <ul class="dept2 type02">
+                        <li><span><a href="/publish/evalInquiry.do">신용평가문의</a></span>
+                            <ul class="type02_sub">
+                                <li><a href="/publish/evalInquiry.do">평가문의</a></li>
+                                <li><a href="/publish/evalProcess.do">평가절차</a></li>
+                                <li><a href="/publish/evalCmpCommision.do">평가수수료</a></li>
+                                <li><a href="/publish/agreement.do">제출서류/약정서</a></li>
+                                <li><a href="/publish/faqCreditEval.do">FAQ</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 tit_7">사업성평가</a>
+                    </p>
+                    <ul class="dept2 type07">
+                        <li>
+							<span>
+								<a href="/pf/investmentInquiry.do">사업성평가</a>
+							</span>
+                            <ul class="type07_sub">
+                                <li><a href="/pf/investmentEvalMean.do">의의</a></li>
+                                <li><a href="/pf/investmentEvalKind.do">평가종류</a></li>
+                                <li><a href="/pf/investmentEvalProcess.do">평가절차</a></li>
+                                <li><a href="/pf/investmentInquiry.do">평가문의</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 tit_8">ESG평가</a>
+                    </p>
+                    <ul class="dept2 type08">
+                        <li><span><a href="/esg/esgReport.do">ESG평가 등급리스트</a></span></li>
+                        <li><a href="/esg/esgResearch.do">평가방법론 및 리서치</a></li>
+                        <li><a href="/esg/esgInquiry.do">평가문의</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <p class="triger">
+                        <a href="#" class="depth_1 tit_6">평가전문가</a>
+                    </p>
+                    <ul class="dept2 type06">
+                        <li><span><a href="/analyst/index.do?deptCode=251600">기업평가본부</a></span>
+                        <li><span><a href="/analyst/index.do?deptCode=251700">금융SF평가본부</a></span>
+                        <li><span><a href="/analyst/index.do?deptCode=251500">평가정책본부</a></span>
+                    </ul>
+                </li>
+
+            </ul>
+        </nav>
+        <!-- 상단 상위 메뉴 영역 끝 -->
+    </div>
+</header>
+<!-- 화면 상단 공통 영역 끝-->
+
+<!-- 화면 최상단 우측 전체보기 영역 시작 -->
+<div class="allMenu_ui">
+    <ul class="all_menu">
+        <li>
+			<span class="tit"><a
+                    href="/disclosure/dayRatingNews.do">등급공시</a></span>
+            <ul class="dept_2">
+                <li><span><a href="/disclosure/dayRatingNews.do">등급속보</a></span>
+                    <ul>
+                        <li><a href="/disclosure/dayRatingNews.do">최근등급속보</a></li>
+                        <li><a href="/disclosure/ratingExtinctionNews.do">등급소멸속보</a></li>
+                        <li><a href="/disclosure/ratingChangeList.do?">등급변동리스트</a></li>
+                        <li><a href="/disclosure/totalWatchList.do">Watch 리스트</a></li>
+                        <li><a href="/disclosure/outlookList.do">등급전망 Non-Stable</a></li>
+                        <li style="word-spacing:0.8px;"><a href="/disclosure/ratingTrigger.do">Rating Trigger 변경리스트</a>
+                        </li>
+                    </ul>
+                </li>
+                <li><span><a href="/disclosure/companySearch.do">등급검색</a></span>
+                    <ul>
+                        <li><a href="/disclosure/companySearch.do">기업별 검색</a></li>
+                        <li><a href="/disclosure/groupSearch.do">그룹별 검색</a></li>
+                        <li><a href="/disclosure/businessSearch.do">업종별 검색</a></li>
+                        <li><a href="/disclosure/gradeSearch.do">등급별 검색</a></li>
+                        <li><a href="/disclosure/specialBondSearch.do">스페셜 채권</a></li>
+                        <li><a href="/disclosure/validRatingSearch.do">유효등급 리스트</a></li>
+                    </ul>
+                </li>
+                <li><span><a href="/disclosure/currentAssessment.do">평가방법론</a></span>
+                    <ul>
+                        <li><a href="/disclosure/currentAssessment.do">현행 평가방법론</a></li>
+                        <li><a href="/disclosure/previousAssessment.do">기존 평가방법론</a></li>
+                        <li><a href="/disclosure/unOpenAssessment.do">평가방법론 제·개정안</a></li>
+                        <li><a href="/disclosure/creditEvaluationPolicy.do">신용평가방침</a></li>
+                    </ul>
+                </li>
+                <li><span><a href="/disclosure/shortTermGrade.do">등급정의</a></span>
+                    <ul>
+                        <li><a href="/disclosure/shortTermGrade.do">단기등급</a></li>
+                        <li><a href="/disclosure/longTermGrade.do">장기등급</a></li>
+                    </ul>
+                </li>
+                <li><span><a href="/disclosure/ratingPerformance.do">Rating Performance</a></span></li>
+                <li><span><a href="/disclosure/securitizationCompany.do">자산유동화증권</a></span>
+                    <ul>
+                        <li><a href="/disclosure/securitizationCompany.do">유동화회사</a></li>
+                        <li><a href="/disclosure/securitizationExposures.do">유동화익스포져</a></li>
+                        <li><a href="/disclosure/assetDetailSearch.do">상세검색</a></li>
+                    </ul>
+                </li>
+                <li class="row"><span><a href="/disclosure/yearDefaultRates.do">등급통계</a></span>
+                    <ul>
+                        <li><a href="/disclosure/yearDefaultRates.do">연간부도율</a></li>
+                        <li><a href="/disclosure/averageDefaultRates.do">평균누적부도율</a></li>
+                        <li><a href="/disclosure/creditGradeChange.do">신용등급변동표</a></li>
+                        <li><a href="/disclosure/gradedRates.do">금리 및 스프레드</a></li>
+                        <li><a href="/disclosure/bondCreditGrade.do">등급현황 및 분포</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <div style="margin-top: 10px;"><a href="/disclosure/niceRatingRequest.do">공시 문의</a></div>
+                </li>
+            </ul>
+        </li>
+
+        <li>
+            <div>
+                <span class="tit"><a href="/research/researchAll.do">리서치</a></span>
+                <ul class="dept_2">
+                    <li><span><a href="/research/researchAll.do">전체</a></span></li>
+                    <li><span><a href="/research/specialReport.do">스페셜리포트</a></span>
+                        <ul>
+                            <li><a href="/research/issueReport.do">이슈리포트</a></li>
+                            <li><a href="/research/industryReport.do">산업리포트</a></li>
+                            <li><a href="/research/marketReport.do">마켓코멘트</a></li>
+                            <li><a href="/research/ratingOutlookComment.do">등급·전망코멘트</a></li>
+                            <li><a href="/research/niceColumnReport.do">칼럼</a></li>
+                            <li><a href="/research/newIndustryReport.do">NEW INDUSTRY ANALYSIS</a></li>
+                        </ul>
+                    </li>
+                    <li><span><a href="/research/industryRoundup.do">산업점검</a></span></li>
+                    <li><span><a href="/research/industryRiskVal.do">산업전망</a></span></li>
+                    <li><span><a href="/research/groupAnalysisReport.do">그룹분석보고서</a></span></li>
+                    <li><span><a href="/research/ndbReport.do">NICE Data Book</a></span></li>
+                    <li><span><a href="/disclosure/currentAssessment.do">평가방법론</a></span>
+                        <ul>
+                            <li><a href="/research/currentAssessment.do">현행 평가방법론</a></li>
+                            <li><a href="/research/previousAssessment.do">기존 평가방법론</a></li>
+                            <li><a href="/research/unOpenAssessment.do">평가방법론 제·개정안</a></li>
+                            <li><a href="/research/creditEvaluationPolicy.do">신용평가방침</a></li>
+                        </ul>
+                    </li>
+                    <li><span><a href="/research/nicePressRelease.do">보도자료</a></span></li>
+                    <li><span><a href="/research/ratingPerformance.do">Rating Performance</a></span></li>
+                    <li><span><a href="/research/ratingTrigger.do">NICE Rating Trigger</a></span></li>
+                    <li><span><a href="/research/etcResearch.do">기타</a></span></li>
+                </ul>
+
+                <span class="tit"><a href="/comm/niceCreditSeminarList.do">세미나ㆍ교육</a></span>
+                <ul class="dept_2">
+                    <li><span><a href="/comm/niceCreditSeminarList.do">세미나 리스트ㆍ동영상</a></span></li>
+                    <li><span><a href="/comm/niceCreditEduList.do">교육 리스트ㆍ동영상</a></span></li>
+                    <li><span><a href="/comm/niceCreditSeminar.do">세미나ㆍ교육 신청</a></span></li>
+                    <li><span><a href="/comm/niceCreditTv.do">Clips</a></span></li>
+                    <li>
+                        <div style="margin-top: 10px;"><a href="/comm/niceCreditRequest.do">문의</a></div>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <li>
+            <div>
+                <span class="tit"><a href="/datacenter/chgCreditRatingBond.do">Data Center</a></span>
+                <ul class="dept_2">
+                    <li><span><a href="/datacenter/chgCreditRatingBond.do">등급데이터(종합)</a></span>
+                        <ul class="type05_sub">
+                            <li><a href="/datacenter/chgCreditRatingBond.do">등급변동(기간조회)</a></li>
+                            <li><a href="/datacenter/ratingSpreadBond.do">등급분포(기준일조회)</a></li>
+                            <li><a href="/datacenter/ratingMonitoringprediction.do">등급전망/감시(기준일조회)</a></li>
+                            <li><a href="/datacenter/sfArrivalDueDate.do">SF만기도래(기간조회)</a></li>
+                            <li><a href="/datacenter/validRating.do">유효등급(기준일조회)</a></li>
+                        </ul>
+                        <ul>
+                            <li style="margin-top:10px;"><span><a href="/disclosure/ratingTrigger.do"
+                                                                  style="color:#363636;">NICE Rating Trigger</a></span>
+                            </li>
+                            <li style="margin-top:10px;"><span><a href="/research/ndbReport.do" style="color:#363636;">NICE Data Book(NDB)</a></span>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><span><a href="/datacenter/groupPeerFinance.do">계열별/산업별<br>재무Data</a></span></li>
+                    <li><span><a href="/datacenter/groupFinance.do">Peer Group 재무비교</a></span></li>
+                    <li>
+                        <div style="margin-top: 10px;"><a href="/datacenter/financialStatement.do">재무데이터(BIZLINE)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <div style="margin-top: 10px;"><a href="/datacenter/birAnaylysis.do" style="color: black;">BIR
+                            Matrix</a></div>
+                    </li>
+
+                    <li>
+                        <div style="margin-top: 10px;"><a href="/datacenter/communicationCenterList.do">My
+                            문의(Q&amp;A)</a></div>
+                    </li>
+                    <li>
+                        <div style="margin-top: 10px;"><a href="/publish/faqCreditEval.do" style="color: black;">FAQ</a>
+                        </div>
+                    </li>
+                </ul>
+
+                <span class="tit"><a href="/pf/investmentInquiry.do">사업성평가</a></span>
+                <ul class="dept_2">
+                    <li><span><a href="/pf/investmentInquiry.do">사업성평가</a></span>
+                        <ul>
+                            <li><a href="/pf/investmentEvalMean.do">의의</a></li>
+                            <li><a href="/pf/investmentEvalKind.do">평가종류</a></li>
+                            <li><a href="/pf/investmentEvalProcess.do">평가절차</a></li>
+                            <li><a href="/pf/investmentInquiry.do">평가문의</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <span class="tit"><a href="/esg/esgInquiry.do">ESG평가</a></span>
+                <ul class="dept_2">
+                    <li><span><a href="/esg/esgReport.do">ESG평가 등급리스트</a></span></li>
+                    <li><span style="font-weight: normal;"><a href="/esg/esgResearch.do">평가방법론 및 리서치</a><span></li>
+                    <li><span style="font-weight: normal;"><a href="/esg/esgInquiry.do">평가문의</a><span></li>
+                </ul>
+            </div>
+        </li>
+
+        <li>
+            <span class="tit"><a href="/publish/evalInquiry.do">신용평가의뢰</a></span>
+            <ul class="dept_2">
+                <li><span><a href="/publish/evalInquiry.do">신용평가문의</a></span>
+                    <ul>
+                        <li><a href="/publish/evalInquiry.do">평가문의</a></li>
+                        <li><a href="/publish/evalProcess.do">평가절차</a></li>
+                        <li><a href="/publish/evalCmpCommision.do">평가수수료</a></li>
+                        <li><a href="/publish/agreement.do">제출서류/약정서</a></li>
+                        <li><a href="/publish/faqCreditEval.do">FAQ</a></li>
+                    </ul>
+                </li>
+                <li><span><a href="/publish/creditEvalMean.do">신용평가안내</a></span>
+                    <ul>
+                        <li><a href="/publish/creditEvalMean.do">신용평가란?</a></li>
+                        <li><a href="/publish/cmpCreditEvalMean.do">기업신용평가</a></li>
+                        <li><a href="/publish/bondCreditEvalMean.do">채권신용평가</a></li>
+                        <li><a href="/publish/cmpBillEvalMean.do">기업어음증권평가</a></li>
+                        <li><a href="/publish/absBondEvalMean.do">전자단기사채평가</a></li>
+                        <li><a href="/publish/ifsrEvalMean.do">보험금지급능력평가</a></li>
+                        <li><a href="/publish/assetBackedSecuritieEvalMean.do">자산유동화증권평가</a></li>
+                        <li><a href="/publish/assetBackedFundEvalMean.do">펀드신용평가</a></li>
+                        <li><a href="/publish/guranteeEvalMean.do">보증기간평가</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <span class="tit"><a href="/analyst/index.do">평가전문가</a></span>
+            <ul class="dept_2">
+                <li><span><a href="/analyst/index.do?deptCode=251600">기업평가본부</a></span>
+                <li><span><a href="/analyst/index.do?deptCode=251700">금융SF평가본부</a></span>
+                <li><span><a href="/analyst/index.do?deptCode=251500">평가정책본부</a></span>
+            </ul>
+
+        </li>
+
+        <li>
+            <div>
+                <span class="tit"><a href="/aboutUs/ceoGreeting.do">회사소개</a></span>
+                <ul class="dept_2">
+                    <li><span><a href="/aboutUs/ceoGreeting.do">CEO 인사말</a></span></li>
+                    <li><span><a href="/aboutUs/companyIntroduction.do">회사개요</a></span></li>
+                    <li><span><a href="/aboutUs/legalBasis.do">법적근거</a></span></li>
+                    <li><span><a href="/aboutUs/managementBusibness.do">영위사업</a></span></li>
+                    <li><span><a href="/aboutUs/versionNCompetency.do">비전 및 역량</a></span></li>
+                    <li><span><a href="/aboutUs/history.do">연혁</a></span></li>
+                    <li><span><a href="/aboutUs/niceGroupIntroduction.do">NICE 그룹 소개</a></span></li>
+                    <li><span><a href="/aboutUs/directions.do">찾아오시는 길</a></span></li>
+                    <li><span><a href="/news/niceNewsUp.do">공지사항</a></span></li>
+                    <li><span><a href="https://nice.career.greetinghr.com" target="_blank">채용정보</a></span></li>
+                </ul>
+
+                <span class="tit"><a href="/customer/sitemap.do">고객센터</a></span>
+                <ul class="dept_2">
+                    <li><span><a href="/customer/regAgree.do">회원가입</a></span></li>
+                    <li><span><a href="/customer/findIdnPw.do">아이디/비밀번호찾기</a></span></li>
+                    <li><span><a href="/customer/imagesInfoPolicy.do">영상정보처리기기<br/>운영관리방침</a></span></li>
+                    <li><span><a href="/customer/arrangeTermsKr.do">용어정리</a></span></li>
+                    <li><span><a href="/customer/cyberCivilCenter.do">준법감시센터</a></span></li>
+                    <li><span><a href="/customer/contactus.do">연락처</a></span></li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+    <p class="btn_close">
+        <a href="#" class="btn_menuTriger"><img src="/images/common/btn_close.gif" alt="닫기"/></a>
+    </p>
+</div>
+<div id="dBody" class="d_main">
+	<!-- 등급속보 START -->
+	<div class="news">
+		<div class="news_ui">
+			<h2>
+				<a href="/disclosure/dayRatingNews.do"><img src="images/main/tit_news.png" onmouseout="this.src='images/main/tit_news.png'" onmouseover="this.src='images/main/tit_news_1.png'" alt="등급속보" /></a>
+			</h2>
+			<h3 class="first tit_1">
+				<a href="#news1" class="tabclick" id="tit_1_click">기업</a>
+			</h3>
+			<div class="list" id="news1">
+				<table>
+					<caption>기업 등급속`보</caption>
+					<colgroup>
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+					</colgroup>
+					<thead>
+						<tr>
+							<th scope="col" class="cell_type01">기업명</th>
+							<th scope="col">직전등급</th>
+							<th scope="col">현재등급</th>
+							<th scope="col">구분</th>
+							<th scope="col">종류</th>
+							<th scope="col">등급결정일<br/>(평가일)</th>
+							<th scope="col">등급확정일</th>
+							<th scope="col">의견서</th>
+							<th scope="col" class="last">재무</th>
+						</tr>
+					</thead>
+					<tbody>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '1404976')">한전케이피에스</a></span></td>
+								<td></td>
+								<td class="cell_txt">AA/S</td>
+								<td><strong>본</strong></td>
+								<td>ICR</td>
+								<td class="cPointOrange">2026.09.30</td>
+								<td>2026.10.01</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('a8dcfc36-757b-4ef6-95bd-3ba6fcd3948c');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('4a6fae50-4df4-4450-b589-fdec9e1130d9');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '1262116')">한국도로공사</a></span></td>
+								<td>A1</td>
+								<td class="cell_txt">A1</td>
+								<td><strong>정기</strong></td>
+								<td>CP</td>
+								<td >2026.10.01</td>
+								<td>2026.10.01</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('ee1ed1f5-f085-41dd-bdd4-8475d91a913d');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('65543c63-b865-4b94-9502-7f9ca71cf232');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '1262116')">한국도로공사</a></span></td>
+								<td>A1</td>
+								<td class="cell_txt">A1</td>
+								<td><strong>정기</strong></td>
+								<td>STB</td>
+								<td >2026.10.01</td>
+								<td>2026.10.01</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('9bf61fc3-f1c7-41a5-9044-ba951121cf1e');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('0542c996-913f-49f4-a94f-0dfe0a8ba494');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '1262116')">한국도로공사</a></span></td>
+								<td></td>
+								<td class="cell_txt">AAA/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td >2026.10.01</td>
+								<td>2026.10.01</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('6ae0e49b-12bd-4e72-a48b-45b2b64cbdf3');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('443b3562-b8f6-40cb-814d-e70a455b0677');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '5103497')">에스알</a></span></td>
+								<td>A1</td>
+								<td class="cell_txt">취소</td>
+								<td><strong>수시</strong></td>
+								<td>CP</td>
+								<td >2026.09.30</td>
+								<td>2026.09.30</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('a6a75bcb-b875-450d-bdf6-afe85a77f433');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('aa54ac32-a429-4874-9d47-d058432451ab');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '5000463')">충북개발공사</a></span></td>
+								<td></td>
+								<td class="cell_txt">AA+/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td >2026.09.29</td>
+								<td>2026.09.29</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('37e10f13-2485-402a-a64b-4012da0c12a7');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('8a38e6fe-3551-43a3-9a96-9adf28a9cc5d');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '5002453')">코오롱인더스트리</a></span></td>
+								<td>A2</td>
+								<td class="cell_txt">A2</td>
+								<td><strong>정기</strong></td>
+								<td>CP</td>
+								<td >2026.09.29</td>
+								<td>2026.09.29</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('3afb6439-c108-46c8-a565-65985b0bd0b0');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('5e24be1a-e3c3-46d4-9148-9cd5960eb795');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('BOND', '5207193')">새만금개발공사</a></span></td>
+								<td></td>
+								<td class="cell_txt">AAA/S</td>
+								<td><strong>본</strong></td>
+								<td>ICR</td>
+								<td class="cPointOrange">2026.09.22</td>
+								<td>2026.09.23</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('aa47241d-bf97-4ac4-88e0-abbbe677303a');">
+											<img src="images/contents/ico_file01_1.png" alt="pdf" />
+										</a>
+									
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('36938a17-5d40-4126-b951-358be89d6ff7');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+					</tbody>
+				</table>
+			</div>
+
+			<h3 class="tit_2">
+				<a href="#news2" class="tabclick" id="tit_2_click">금융</a>
+			</h3>
+			<div class="list" id="news2">
+				<table>
+					<caption>금융 등급속보</caption>
+					<colgroup>
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="13%" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+					</colgroup>
+					<thead>
+						<tr>
+							<th scope="col" class="cell_type01">기업명</th>
+							<th scope="col">직전등급</th>
+							<th scope="col">현재등급</th>
+							<th scope="col">구분</th>
+							<th scope="col">종류</th>
+							<th scope="col">등급결정일<br/>(평가일)</th>
+							<th scope="col">등급확정일</th>
+							<th scope="col">의견서</th>
+							<th scope="col" class="last">재무</th>
+						</tr>
+					</thead>
+					<tbody>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '5001252')">케이비금융지주</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">AAA/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td >2026.10.06</td>
+								<td>2026.10.06</td>
+								<td>
+									<a href="javascript:fncFileDown('41a0c1b4-1da2-4dd1-b0ed-4239684348d1');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('9d37aa02-f304-4600-a023-fd8b86af94e9');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '5100622')">한국투자캐피탈</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">A/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td >2026.10.06</td>
+								<td>2026.10.06</td>
+								<td>
+									<a href="javascript:fncFileDown('82d5f9da-c84a-43a3-b94f-214cd38f2c06');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('141f6608-3b3b-4ccb-9ba8-bc36b98b5a1c');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '5100622')">한국투자캐피탈[(한국투자금융지주(주) 보증)]</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">AA-/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td >2026.10.06</td>
+								<td>2026.10.06</td>
+								<td>
+									<a href="javascript:fncFileDown('b54e4895-bcc5-4335-afa3-7e6562c9183f');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('c8986ccf-6b21-4934-a59a-1ec5e90c1ed3');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '1144918')">메리츠증권</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">AA/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td class="cPointOrange">2026.10.01</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('8dc31ae5-b5ac-4850-90f3-a4c916dbb21b');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('744fb8e4-f53d-48f2-aaee-b55a36c00a18');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '1144918')">메리츠증권</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">AA/S</td>
+								<td><strong>본</strong></td>
+								<td>ELB</td>
+								<td class="cPointOrange">2026.10.01</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('87ade606-6bc3-41c6-a396-88e45b927c28');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('79df55f2-cad2-430b-a14e-6476ac12e42c');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '5205025')">키움에프앤아이</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">A/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td class="cPointOrange">2026.10.01</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('678ac061-6adf-4680-ae74-4b55e23f5c73');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('45574f8d-1520-43f6-9954-8bb1bd8c7171');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '1271637')">한국산업은행</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">AAA/S</td>
+								<td><strong>본</strong></td>
+								<td>SB</td>
+								<td class="cPointOrange">2026.10.01</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('880d9591-4714-4e42-a504-2e9ceed23592');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('6cbbc4e5-0c9f-4cf3-a32c-44538ca2d754');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01">
+									<span class="tit"><a href="javascript:goView('BOND', '5103200')">한국에스지증권</a></span>
+								</td>
+								<td></td>
+								<td class="cell_txt">A+/S</td>
+								<td><strong>본</strong></td>
+								<td>ICR</td>
+								<td class="cPointOrange">2026.10.01</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('17bc6046-1b6b-4659-8a07-b2c2855465a0');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+								<td>
+									
+										<a href="javascript:fncFileDown('ec5be4e0-9e77-4332-b88d-fabf7d667150');">
+											<img src="images/contents/ico_file04.png" alt="excel" />
+										</a>
+									
+								</td>
+							</tr>
+						
+					</tbody>
+				</table>
+			</div>
+
+			<h3 class="tit_3">
+				<a href="#news3" class="tabclick" id="tit_3_click">ABS</a>
+			</h3>
+			<div class="list" id="news3">
+				<table>
+					<caption>구조화증권(SF) 등급속보</caption>
+					<colgroup>
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+						<col width="" />
+					</colgroup>
+					<thead>
+						<tr>
+							<th scope="col" class="cell_type01">기업명</th>
+							<th scope="col">직전등급</th>
+							<th scope="col">현재등급</th>
+							<th scope="col">구분</th>
+							<th scope="col">종류</th>
+							<th scope="col">등급결정일<br/>(평가일)</th>
+							<th scope="col">등급확정일</th>
+							<th scope="col">의견서</th>
+						</tr>
+					</thead>
+					<tbody>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5212096')">디알제이십삼차</a></span></td>
+								<td></td>
+								<td class="cell_txt">A1 (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABSTB</td>
+								<td >2026.10.06</td>
+								<td>2026.10.06</td>
+								<td>
+									<a href="javascript:fncFileDown('93620049-d856-4e95-bd38-754ac4a7b66e');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5212245')">에이치엠에스벤코어제일차</a></span></td>
+								<td></td>
+								<td class="cell_txt">A1 (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABSTB</td>
+								<td >2026.10.06</td>
+								<td>2026.10.06</td>
+								<td>
+									<a href="javascript:fncFileDown('389e090f-4937-4613-9691-e1b35138511b');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5212079')">케이더블유투금제사십차</a></span></td>
+								<td></td>
+								<td class="cell_txt">A2- (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABSTB</td>
+								<td >2026.10.06</td>
+								<td>2026.10.06</td>
+								<td>
+									<a href="javascript:fncFileDown('622111a5-d09a-488a-bab1-bff83e708e0e');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5211192')">농협베스트제2차</a></span></td>
+								<td></td>
+								<td class="cell_txt">A1 (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABCP</td>
+								<td >2026.10.02</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('4da03091-511a-4667-80e8-4c27dca65885');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5211192')">농협베스트제2차</a></span></td>
+								<td></td>
+								<td class="cell_txt">A1 (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABSTB</td>
+								<td >2026.10.02</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('4da03091-511a-4667-80e8-4c27dca65885');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5211192')">농협베스트제2차</a></span></td>
+								<td></td>
+								<td class="cell_txt">AAA (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABS</td>
+								<td >2026.10.02</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('03dd2194-2a13-4af9-8ba3-86099ec9a1f4');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5207781')">농협챔피온제사차</a></span></td>
+								<td></td>
+								<td class="cell_txt">A1 (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABCP</td>
+								<td >2026.10.02</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('ad532e00-7bd8-49f5-a153-1cd47b139aec');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+							<tr>
+								<td class="cell_type01"><span class="tit"><a href="javascript:goView('ABS', '5207781')">농협챔피온제사차</a></span></td>
+								<td></td>
+								<td class="cell_txt">AAA (sf)</td>
+								<td><strong>본</strong></td>
+								<td>ABS</td>
+								<td >2026.10.02</td>
+								<td>2026.10.02</td>
+								<td>
+									<a href="javascript:fncFileDown('9876576d-9479-4c4b-993f-54bd176d5ebe');">
+										<img src="images/contents/ico_file01_1.png" alt="pdf" />
+									</a>
+								</td>
+							</tr>
+						
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<!-- 등급속보 END -->
+
+	<!-- EDITOR'S CHOICE START -->
+	<div class="editors_choice">
+		<div class="editors_ui">
+			<h2>
+				<a href="/research/editorsChoice.do">Editor's Choice</a>
+				<span><a href="/research/editorsChoice.do">[더보기]</a></span>
+			</h2>
+
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26615')" title="석유화학사 신용도 재점검 – 공급충격과 산업구조 재편이 야기한 하방압력 변화">
+									석유화학사 신용도 재점검 – 공급충격과 산업구조 재편이 야기한 하방압력 변화
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013113','nBTdQcMMYZk', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.14</div>
+				</div>
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26621')" title="금리 상승기 캐피탈사 포트폴리오별 신용도 차별화 - 이익안정성 및 손실완충력 취약 기업 중심으로 모니터링 예정
+">
+									금리 상승기 캐피탈사 포트폴리오별 신용도 차별화 - 이익안정성 및 손실완충력 취약 기업 중심으로 모니터링 예정
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013108','4qXlQ4dMhVE', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.15</div>
+				</div>
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26677')" title="금리상승기, 저축은행의 실적 개선은 지속될 수 있을까?
+- 금리 상승에 따른 이자이익 민감도 및 대손 감내 수준 변화">
+									금리상승기, 저축은행의 실적 개선은 지속될 수 있을까? - 금리 상승에 따른 이자이익 민감도 및 대손 감내 수준 변화
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013130','2NxrBoA6Fec', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.28</div>
+				</div>
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26627')" title="미(未)의 늪에 빠진 건설업 - 미분양에 이어 미입주가 불러온 운전자금 리스크 분석
+">
+									미(未)의 늪에 빠진 건설업 - 미분양에 이어 미입주가 불러온 운전자금 리스크 분석
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013111','egzWT0oXCeA', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.16</div>
+				</div>
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26620')" title="2차전지 산업의 턴어라운드 기대와 잠재된 부담요인 - 셀 및 소재사별 대응 경과와 향후 신용도 방향성
+">
+									2차전지 산업의 턴어라운드 기대와 잠재된 부담요인 - 셀 및 소재사별 대응 경과와 향후 신용도 방향성
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013112','X7CxnD7JO74', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.15</div>
+				</div>
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26635')" title="미국 빅테크 기업의 AI투자 지속가능성 점검
+- 재무부담 증가 예상되지만, 2028년까지 투자 확대 지속할 대응능력 보유">
+									미국 빅테크 기업의 AI투자 지속가능성 점검 - 재무부담 증가 예상되지만, 2028년까지 투자 확대 지속할 대응능력 보유
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013114','3FhQJjhBoyY', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.17</div>
+				</div>
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26640')" title="전력기기 호황의 지속가능성과 한국 기업의 경쟁력 점검 ">
+									전력기기 호황의 지속가능성과 한국 기업의 경쟁력 점검 
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013116','IKyGWHRXbVg', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.18</div>
+				</div>
+			
+				<div class="editors_choice_item">
+					<div class="editors_choice_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26656')" title="AI 시대 한국 전력시장 주요 이슈와 발전사 신용도 전망">
+									AI 시대 한국 전력시장 주요 이슈와 발전사 신용도 전망
+								</a>
+							
+							
+						
+					</div>
+					<div class="editors_choice_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013115','HXW4Kr5PRaw', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="editors_choice_item_date">2026.09.21</div>
+				</div>
+			
+		</div>
+	</div>
+	<!-- EDITOR'S CHOICE END -->
+
+	<!-- NEW REPORT START -->
+	<div class="new_report">
+		<div class="new_report_ui">
+			<h2>
+				<a href="/research/researchAll.do">New Report</a>
+				<span><a href="/research/researchAll.do">[더보기]</a></span>
+			</h2>
+
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26715')" title="재생에너지 정책 변화가 태양광 밸류체인에 미치는 영향 점검 - 시장 확대는 긍정적이나 세그먼트별 수혜 정도는 상이
+">
+									재생에너지 정책 변화가 태양광 밸류체인에 미치는 영향 점검 - 시장 확대는 긍정적이나 세그먼트별 수혜 정도는 상이
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.10.06
+					</div>
+				</div>
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26695')" title="한화생명보험, 애큐온캐피탈∙저축은행 주식매매계약 체결 - 애큐온캐피탈∙저축은행 신용등급 상향검토(↑) 등급감시대상 등재
+">
+									한화생명보험, 애큐온캐피탈∙저축은행 주식매매계약 체결 - 애큐온캐피탈∙저축은행 신용등급 상향검토(↑) 등급감시대상 등재
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.10.01
+					</div>
+				</div>
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26694')" title="NICE e-Seminar 금융부문(리츠, 저축은행) Q&A">
+									NICE e-Seminar 금융부문(리츠, 저축은행) Q&A
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.10.01
+					</div>
+				</div>
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26693')" title="한화투자증권 유상증자 및 신종자본증권 발행 결정 - 증권·한화생명보험 신용도 영향 제한적, 증권 사업경쟁력 제고 전망
+">
+									한화투자증권 유상증자 및 신종자본증권 발행 결정 - 증권·한화생명보험 신용도 영향 제한적, 증권 사업경쟁력 제고 전망
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.10.01
+					</div>
+				</div>
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26691')" title="토큰증권 제도화, 조각투자를 넘어 자본시장 인프라로 - 시장 확장에 따른 증권업 사업화 전망과 신용평가 관련 주요 이슈
+">
+									토큰증권 제도화, 조각투자를 넘어 자본시장 인프라로 - 시장 확장에 따른 증권업 사업화 전망과 신용평가 관련 주요 이슈
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013128','Ar3L_9LISSI', event)">
+								<img src="/images/contents/ico_file05.png"/>
+							</a>
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.10.01
+					</div>
+				</div>
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26686')" title="NICE e-Seminar K자 양극화 산업(자동차부품, 식품, 유통) 신용위험 심층 분석 Q&A">
+									NICE e-Seminar K자 양극화 산업(자동차부품, 식품, 유통)  신용위험 심층 분석 Q&A
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.09.30
+					</div>
+				</div>
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26683')" title="[발표자료] 상장리츠 배당 및 재무구조 안정성 점검_2026 하반기 e-SEMINAR
+">
+									[발표자료] 상장리츠 배당 및 재무구조 안정성 점검_2026 하반기 e-SEMINAR
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013129','twWSqRoE1ro', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.09.30
+					</div>
+				</div>
+			
+				<div class="new_report_item">
+					<div class="new_report_item_title">
+						
+							
+								<a href="javascript:research_common.fn_preview('H26682')" title="[발표자료] 저축은행의 실적 개선은 지속될 수 있을까?_2026 하반기 e-SEMINAR
+">
+									[발표자료] 저축은행의 실적 개선은 지속될 수 있을까?_2026 하반기 e-SEMINAR
+								</a>
+							
+							
+						
+					</div>
+					<div class="new_report_item_movie">
+						
+							<a href="#" onclick="javascript:research_common.fn_move_youtube('1013130','2NxrBoA6Fec', event)">
+								<img src="/images/contents/ico_file06.png"/>
+							</a>
+						
+					</div>
+					<div class="new_report_item_date">
+						2026.09.30
+					</div>
+				</div>
+			
+		</div>
+	</div>
+	<!-- NEW REPORT END -->
+
+	<!-- KEY ISSUE START -->
+    <div class="key_issue">
+   		<div class="key_issue_ui">
+   			<div class="key_issue_slick">
+   				
+                       
+                           
+                               <div onclick="location.href='/research/topic_research.do?id=15'">
+   	                            <p><img alt="" src="/ckeditor/attach/QPMLcYIalHIwJGioIcmS.jpg" style="width: 291px; height: 201px;" /></p>
+
+                               </div>
+                           
+                           
+                       
+   				
+                       
+                           
+                               <div onclick="location.href='/research/topic_research.do?id=14'">
+   	                            <p><img alt="" src="/ckeditor/attach/dPGwCoXViNmDikFLjoqJ.jpg" style="width: 291px; height: 201px;" /></p>
+
+                               </div>
+                           
+                           
+                       
+   				
+                       
+                           
+                               <div onclick="location.href='/research/topic_research.do?id=13'">
+   	                            <p><img alt="" src="/ckeditor/attach/PJOikmlWtJgtfwSJcEjc.jpg" style="width: 291px; height: 201px;" /></p>
+
+                               </div>
+                           
+                           
+                       
+   				
+                       
+                           
+                               <div onclick="location.href='/research/topic_research.do?id=12'">
+   	                            <p><img alt="" src="/ckeditor/attach/eBHsyMDllyLbwnZQGIwd.jpg" style="width: 291px; height: 201px;" /></p>
+
+                               </div>
+                           
+                           
+                       
+   				
+   			</div>
+   		</div>
+   	</div>
+	<!-- KEY ISSUE END -->
+
+	<!-- RATING FOCUS START -->
+	<div class="rating_focus">
+		<div class="rating_focus_ui">
+			<div class="rating_focus_title">
+				<a href="/research/specialReport.do">
+					<img src="/images/main/btn_plus_white.png" class="ratingTrigger_ui_previous" style="cursor: pointer" />
+				</a>
+			</div>
+			<div class="rating_focus_content">
+				
+					<div class="rating_focus_item">
+						<div class="rating_focus_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26595')" title="금호타이어 장기신용등급을 A+/Stable로 상향조정 및 단기신용등급 A2+로 신규 평가">
+								
+								
+							
+
+							
+							
+								금호타이어 장기신용등급을 A+/Stable로 상향조정 및 단기신용등급 A2+...
+								
+								
+							
+
+							
+							</a>
+						</div>
+					</div>
+				
+					<div class="rating_focus_item">
+						<div class="rating_focus_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26560')" title="SK가스의 SK어드밴스드 흡수합병 결정 
+- SK어드밴스드 신용등급 상향검토(↑) 등급감시대상 등재
+">
+								
+								
+							
+
+							
+							
+								SK가스의 SK어드밴스드 흡수합병 결정 - SK어드밴스드 신용등급 상향검토(...
+								
+								
+							
+
+							
+							</a>
+						</div>
+					</div>
+				
+					<div class="rating_focus_item">
+						<div class="rating_focus_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26559')" title="SK이노베이션의 SK아이이테크놀로지 흡수합병 결정 - SK아이이테크놀로지 신용등급 상향검토(↑) 등급감시대상 등재
+">
+								
+								
+							
+
+							
+							
+								SK이노베이션의 SK아이이테크놀로지 흡수합병 결정 - SK아이이테크놀로지 신...
+								
+								
+							
+
+							
+							</a>
+						</div>
+					</div>
+				
+			</div>
+		</div>
+	</div>
+	<!-- RATING FOCUS END -->
+
+	<!-- RATING TRIGGER START -->
+	<div class="rating_trigger">
+		<div class="ratingTrigger_ui">
+			<div class="rating_trigger_title">
+				<a href="/disclosure/ratingTrigger.do" title="Rating Trigger 변경리스트 전체보기"><strong>Rating Trigger 변경리스트</strong></a>
+			</div>
+
+			<div class="rating_trigger_content">
+				<div class="ratingTrigger_slick">
+					
+						<div>
+							<a href="javascript:fncFileDown('dd95f2da-5e3b-414b-a1de-3af693d4da8e')" title="애큐온저축은...">애큐온저축은...</a>
+						</div>
+					
+						<div>
+							<a href="javascript:fncFileDown('ef282b7a-0e94-4a00-aa91-68e1db703f69')" title="애큐온캐피탈">애큐온캐피탈</a>
+						</div>
+					
+						<div>
+							<a href="javascript:fncFileDown('3493a760-b453-4e51-99e7-e7873db79dc9')" title="금호타이어">금호타이어</a>
+						</div>
+					
+						<div>
+							<a href="javascript:fncFileDown('43da1e77-acb2-47cf-995d-98d84e09259e')" title="일신건영">일신건영</a>
+						</div>
+					
+						<div>
+							<a href="javascript:fncFileDown('74eb29e8-5a23-4cf6-95c2-caf4c99164c0')" title="에스케이어드...">에스케이어드...</a>
+						</div>
+					
+						<div>
+							<a href="javascript:fncFileDown('5e273694-53b8-44ed-a89c-f6db2549f75c')" title="에스케이아이...">에스케이아이...</a>
+						</div>
+					
+						<div>
+							<a href="javascript:fncFileDown('5d5134c2-0dc4-4e5d-b905-8e6b73b7518e')" title="에코프로">에코프로</a>
+						</div>
+					
+						<div>
+							<a href="javascript:fncFileDown('55550df9-25e8-45d6-9935-9531c2e601d3')" title="에스케이실트...">에스케이실트...</a>
+						</div>
+					
+				</div>
+			</div>
+
+			<div class="rating_trigger_footer">
+				<a href="/disclosure/ratingTrigger.do">
+					<img src="/images/main/btn_plus_2.png" class="ratingTrigger_ui_previous" style="cursor: pointer" />
+				</a>
+			</div>
+		</div>
+	</div>
+	<!-- RATING TRIGGER END -->
+
+	<!-- Rating Insight START -->
+	<div class="rating_insight">
+		<div class="rating_insight_ui">
+			<div class="rating_insight_title">
+				<a href="/research/specialReport.do">
+					<img src="/images/main/btn_plus_white.png" class="ratingTrigger_ui_previous" style="cursor: pointer;" />
+				</a>
+			</div>
+
+			<div class="rating_insight_content">
+				
+					<div class="rating_insight_item">
+						<div class="rating_insight_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26619')" title="기업 자금조달의 단기화, 배경과 위험 - 불안정한 거시경제 환경 속, 유동성 위험 전이 가능성 상승
+">
+								
+								
+							
+
+							<div class="rating_insight_content_title">
+								
+									기업 자금조달의 단기화, 배경과 위험 - 불안정한 거시경제 환경 속, 유동성...
+									
+									
+								
+								
+									<label style="display: inline-block; width: 20px;" onclick="javascript:research_common.fn_move_youtube('1013085','DuOPpQa8QNI', event)">
+										<img src="/images/contents/ico_file06.png"/>
+									</label>
+								
+							</div>
+						</a>
+
+						</div>
+					</div>
+				
+					<div class="rating_insight_item">
+						<div class="rating_insight_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H25455')" title="자산기반 조달 확대 : 무보증 채권자의 회수기반은 안전한가">
+								
+								
+							
+
+							<div class="rating_insight_content_title">
+								
+									
+									자산기반 조달 확대 : 무보증 채권자의 회수기반은 안전한가
+									
+								
+								
+									<label style="display: inline-block; width: 20px;" onclick="javascript:research_common.fn_move_youtube('1012465','V4bKlT6DW-w', event)">
+										<img src="/images/contents/ico_file06.png"/>
+									</label>
+								
+							</div>
+						</a>
+
+						</div>
+					</div>
+				
+					<div class="rating_insight_item">
+						<div class="rating_insight_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26678')" title="상장리츠 배당 및 재무구조 안정성 점검 
+- 금리상승기, 배당과 재무안정성의 지속가능한 균형 필요">
+								
+								
+							
+
+							<div class="rating_insight_content_title">
+								
+									상장리츠 배당 및 재무구조 안정성 점검  - 금리상승기, 배당과 재무안정성의...
+									
+									
+								
+								
+									<label style="display: inline-block; width: 20px;" onclick="javascript:research_common.fn_move_youtube('1013129','twWSqRoE1ro', event)">
+										<img src="/images/contents/ico_file06.png"/>
+									</label>
+								
+							</div>
+						</a>
+
+						</div>
+					</div>
+				
+					<div class="rating_insight_item">
+						<div class="rating_insight_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26616')" title="증권업 호황의 이면, 시험대에 오른 이익의 지속가능성">
+								
+								
+							
+
+							<div class="rating_insight_content_title">
+								
+									
+									증권업 호황의 이면, 시험대에 오른 이익의 지속가능성
+									
+								
+								
+									<label style="display: inline-block; width: 20px;" onclick="javascript:research_common.fn_move_youtube('1013110','ObjIFCksyqo', event)">
+										<img src="/images/contents/ico_file06.png"/>
+									</label>
+								
+							</div>
+						</a>
+
+						</div>
+					</div>
+				
+			</div>
+		</div>
+	</div>
+	<!-- Rating Insight END -->
+
+	<!-- RESEARCH START -->
+	<div class="research_topview">
+		<div class="research_topview_ui">
+			<div class="research_topview_title">
+				<span>Research *조회수기준</span>
+			</div>
+
+			<div class="research_topview_content">
+				
+					<div class="research_topview_item">
+						<div class="research_topview_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26266')" title="중앙일보 계열 관련 금융업권별 익스포저 검토 - 익스포저의 양적부담이 있는 한양증권의 신용도에 대한 의견
+">
+								
+								
+							
+
+							<div class="research_topview_content_title">
+								
+									중앙일보 계열 관련 금융업권별 익스포저 검토 - 익스포저의 양적부담이 있는 ...
+									
+									
+								
+								
+							</div>
+						</a>
+						</div>
+					</div>
+				
+					<div class="research_topview_item">
+						<div class="research_topview_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H25920')" title="상장리츠 차환리스크 점검 : NICE Coverage 해외자산 Exposure 및 시장성조달비중 현황">
+								
+								
+							
+
+							<div class="research_topview_content_title">
+								
+									상장리츠 차환리스크 점검 : NICE Coverage 해외자산 Exposur...
+									
+									
+								
+								
+									<label style="display: inline-block; width: 20px;" onclick="javascript:research_common.fn_move_youtube('1012765','1n9z4Z0QW88', event)">
+										<img src="/images/contents/ico_file06.png"/>
+									</label>
+								
+							</div>
+						</a>
+						</div>
+					</div>
+				
+					<div class="research_topview_item">
+						<div class="research_topview_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26417')" title="금리상승기 진입, 주요 금융업권에 미치는 영향 점검 : 전반적으로는 다소 부정적이나, 영향 정도는 업권별로 차별화될 전망
+">
+								
+								
+							
+
+							<div class="research_topview_content_title">
+								
+									금리상승기 진입, 주요 금융업권에 미치는 영향 점검 : 전반적으로는 다소 부...
+									
+									
+								
+								
+									<label style="display: inline-block; width: 20px;" onclick="javascript:research_common.fn_move_youtube('1012945','Pgpx5KbXAGc', event)">
+										<img src="/images/contents/ico_file06.png"/>
+									</label>
+								
+							</div>
+						</a>
+						</div>
+					</div>
+				
+					<div class="research_topview_item">
+						<div class="research_topview_item_wrap">
+							
+								
+									<a href="javascript:research_common.fn_preview('H26344')" title="기업부문 2026년 상반기 신용등급 변동과 하반기 방향성 - 하향조정 우세 속 고금리-고물가-고환율의 도전적 환경 직면">
+								
+								
+							
+
+							<div class="research_topview_content_title">
+								
+									기업부문 2026년 상반기 신용등급 변동과 하반기 방향성 - 하향조정 우세 ...
+									
+									
+								
+								
+									<label style="display: inline-block; width: 20px;" onclick="javascript:research_common.fn_move_youtube('1012886','V0H4RNlUsTk', event)">
+										<img src="/images/contents/ico_file05.png"/>
+									</label>
+								
+							</div>
+						</a>
+						</div>
+					</div>
+				
+			</div>
+		</div>
+	</div>
+	<!-- RESEARCH END -->
+
+	<!-- ESG평가리스트 START -->
+	<div class="esg">
+		<div class="esg_ui">
+			<div class="esg_title">
+				<a href="esg/esgReport.do" title="ESG평가 등급리스트"><strong>ESG평가 등급리스트</strong></a>
+			</div>
+
+			<div class="esg_content">
+				<div class="esg_slick">
+					
+						<div>
+							
+								
+									<a href="javascript:fncFileDown('3c7ca8fd-539a-4861-8270-654bdf2f311f')" title="한화에너지, 녹색채권 사후평가(최종) 인증등급 Green 1_제23-2회">한화에너지, 녹...</a>
+								
+								
+							
+						</div>
+					
+						<div>
+							
+								
+									<a href="javascript:fncFileDown('ea7c8fca-3a86-4e27-8420-223ecd0848f7')" title="신보2026제17차유동화전문(유), ESG채권(사회) 인증등급 Social 1">신보2026제1...</a>
+								
+								
+							
+						</div>
+					
+						<div>
+							
+								
+									<a href="javascript:fncFileDown('00e2e357-f539-4489-80c4-b7b4045d6d2c')" title="신보2026제16차유동화전문(유), ESG채권(사회) 인증등급 Social 1">신보2026제1...</a>
+								
+								
+							
+						</div>
+					
+						<div>
+							
+								
+									<a href="javascript:fncFileDown('bd0fe002-6646-4ca8-b86c-fa42986c5e48')" title="신보2026제15차유동화전문(유), ESG채권(사회) 인증등급 Social 1">신보2026제1...</a>
+								
+								
+							
+						</div>
+					
+						<div>
+							
+								
+									<a href="javascript:fncFileDown('7c7acd46-0083-48eb-8154-b24d2625f0ec')" title="신보2026제15차유동화전문(유), 한국형 녹색채권 사전 외부검토 적합">신보2026제1...</a>
+								
+								
+							
+						</div>
+					
+				</div>
+			</div>
+
+			<div class="esg_footer">
+				<a href="esg/esgReport.do">
+					<img src="/images/main/btn_plus_2.png" class="ratingTrigger_ui_previous" style="cursor: pointer" />
+				</a>
+			</div>
+		</div>
+	</div>
+	<!-- ESG평가리스트 END -->
+
+	<!-- BANNER LIST START -->
+	<div class="banner">
+		<div class="niceNotice_ui">
+			<div class="niceNotice_slick">
+				
+					
+						
+                            <div>
+								
+									
+										<a href="javascript:fn_showpopuplayer('layer_1011568');"><p><img alt="" src="/ckeditor/attach/yTMSqTYxVQYeqBffoCWk.jpg" style="width: 290px; height: 180px;" usemap="#banner_251119.jpg" /><map name="banner_251119.jpg"><area coords="0,0,268,162" href="javascript:fn_showpopuplayer('layer_1011568')" shape="rect" target="_self" /></map></p>
+</a>
+									
+									
+									
+								
+							</div>
+						
+					
+					
+				
+			</div>
+		</div>
+	</div>
+	<!-- BANNER LIST END -->
+</div>
+
+
+
+
+
+<div id="layer_businessPartnershipInquiry" class="pn_layer-bisiness-wrap">
+	<div class="pn_pop-location">
+		<div class="pn_pop-layer">
+			<div class="pn_pop-container">
+				<div class="pn_pop-conts">
+					<div class="pn_noticeTitle">사업제휴 문의</div>
+					<div class="pn_noticeBlue">사업제휴 문의처 : partnership@nicerating.com</div>
+
+					<div class="pn_noticeBottom" align="right">
+						<a href="javascript:fn_closeBusinessPartnershipInquiry();" class="pn_btn-layerClose">닫기x</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="layer_popup" class="layer-wrap">
+   <div class="pop-layer">
+       <div class="pop-container" style="width: 400px;">
+           <div class="pop-conts" style="background-color: #FFFFFF;" >
+               <div class="noticeTitle">유료회원 서비스</div>
+               <div class="noticeImg"></div>
+               <div class=noticeContents>이 서비스는 NICE신용평가의 유료회원을 위해 제공해 드리고 있습니다. 유료회원 가입은 아래로 문의하시기 바랍니다. 감사합니다.</div>
+               <div class="noticeBlue">유료회원 가입 문의: 02-2014-6339</div>
+            <div align="left" >
+               <a href="/logIn.do" class="noticeBtn">로그인</a>
+           </div>
+
+           <div class="noticeBottom" align="right" >
+               <a href="javascript:research_common.fn_popup_layer('layer_popup', false)" class="btn-layerClose">닫기x</a>
+           </div>
+           </div>
+       </div>
+   </div>
+</div>
+
+<footer>
+	<div class="footer_content">
+		<div class="footer_menu__left">
+			<ul class="f_menu">
+				<li><a href="/customer/codeConduct.do">Code of Conduct</a></li>
+				<li><a href="/customer/transparencyReport.do">투명성보고서</a></li>
+				<li><a href="/customer/copyrightPolicy.do">저작권관리정책</a></li>
+				<li><a class="policy" href="/customer/individualPolicy.do"><strong>개인정보처리방침</strong></a></li>
+				<li><a href="/customer/useAgreement.do">이용약관</a></li>
+				<li><a href="/publish/evalInquiry.do?index=4">고객센터</a></li>
+				<li><a href="/customer/cyberCivilCenter.do">준법감시센터</a></li>
+				<li><a href="javascript:fn_showBusinessPartnershipInquiry();">제휴문의</a></li>
+				<li><a href="/aboutUs/ceoGreeting.do">회사소개</a></li>
+				<li><a target="_blank" href="https://nice.career.greetinghr.com">채용정보</a></li>
+			</ul>
+			<div class="f_address">
+				<div>서울특별시 영등포구 은행로 17(여의도동) 나이스그룹 1사옥 4F~5F, Tel.02-2014-6200, Fax.02-2014-6205</div>
+				<div>ⓒ NICE Investors Service Co.,Ltd</div>
+			</div>
+		</div>
+		<div>
+			<img src="/images/common/nice_white_symbol_20240701.png" alt="NICE 신용평가" style="height: 90px; object-fit:contain;">
+		</div>
+	</div>
+</footer>
+
+<span itemscope="" itemtype="http://schema.org/Organization">
+	<link itemprop="url" href="https://www.nicerating.com">
+	<a itemprop="sameAs" href="https://www.youtube.com/channel/UC1RObGm1rRzwQeqjz_LEbIw"></a>
+</span>
+
+<script>
+	$(document).ready(function() {
+		settingMobile();
+		$("#layer_businessPartnershipInquiry").fadeOut();
+	});
+
+	function settingMobile() {
+		if ("N" == "M") {
+			$(".chkMmenu").css("display", "");
+		}
+	}
+
+	function goMweb() {
+		location.href = "https://m.nicerating.com:444";
+	}
+
+	function fn_showBusinessPartnershipInquiry() {
+		$("#layer_businessPartnershipInquiry").fadeIn();
+	}
+
+	function fn_closeBusinessPartnershipInquiry() {
+		$("#layer_businessPartnershipInquiry").fadeOut();
+	}
+</script>
+
+<style>
+	footer .f_menu span:not(:first-child) {
+		padding-left : 10px !important;
+		margin-left : 10px !important;
+	}
+</style>
+
+
+	<div id="layer_1011568" class="layer-wrap">
+		<div class="pop-layer">
+			<div class="pop-container">
+				<div class="pop-conts" style="width: 476px;">
+					<div><p><img alt="" src="/ckeditor/attach/bLDAeYdXFioiiISZBXDz.jpg" style="width: 476px; height: 690px;" /></p>
+</div>
+					<div class="btn-r" style="background: #3e3e3e;">
+						<a href="javascript:fn_closepopuplayer('layer_1011568');" class="btn-layerClose">
+							<font color="white">[닫기]</font>
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+<form method="post" name="cmpform" id="cmpform">
+	<input type="hidden" name="cmpCd" id="cmpCd" />
+</form>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	$("input, text").placeholder();
+	$(".niceNotice_slick").slick({dots: true, infinite: true, speed: 2000, slidesToShow: 1, adaptiveHeight: true, autoplay: true, slidesToScroll : 1, autoplaySpeed : 2000});
+	$(".key_issue_slick").slick({dots: true, infinite: true, speed: 2000, slidesToShow: 1, adaptiveHeight: true, autoplay: true, slidesToScroll : 1, autoplaySpeed : 2000, arrows: false});
+    $(".ratingTrigger_slick").slick({dots: false, infinite: true, speed: 3000, slidesToShow: 1, adaptiveHeight: true, autoplay: true, slidesToScroll : 1, autoplaySpeed : 3000, arrows: false});
+	$(".esg_slick").slick({dots: false, infinite: true, speed: 3000, slidesToShow: 1, adaptiveHeight: true, autoplay: true, slidesToScroll : 1, autoplaySpeed : 3000, arrows: false});
+    jsCreate.tabToggle($(".news_ui"));
+    slideToggle();
+});
+
+function goView(gubun, cmpCd) {
+  $("input[name=cmpCd]").val(cmpCd);
+  $("#cmpform").attr("method", "get");
+  $("#cmpform").attr("target", "_self");
+
+  if(gubun == 'BOND') {
+    $("#cmpform").attr("action", "/disclosure/companyGradeInfo.do");            // 산업
+  } else if(gubun == 'ABS') {
+    $("#cmpform").attr("action", "/disclosure/securitizationCompanyGrade.do");  // 구조화증권
+  }
+  $("#cmpform").submit();
+}
+
+function fn_showpopuplayer(id) {
+  $("#" + id).fadeIn(400);
+}
+
+function fn_closepopuplayer(id) {
+	$("#" + id).fadeOut(400);
+}
+
+</script>
+</body>
+</html>

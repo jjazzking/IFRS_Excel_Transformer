@@ -1,0 +1,57 @@
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<title></title>
+<link rel="icon" type="image/png" href="/type/common/img/common/favicon.png">
+<link rel="stylesheet" type="text/css" href="/type/KOR_A/css/style.css" />
+<script type="text/javascript" src="/type/common/js/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="/type/common/js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="/type/common/js/owl.carousel.js"></script>
+<script type="text/javascript" src="/type/common/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="/type/common/js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript" src="/type/KOR_A/js/bootstrap-datepicker.ko.min.js"></script>
+<script type="text/javascript" src="/type/common/js/jquery.izoomify.js?v=20220419104800"></script>
+<script type="text/javascript" src="/type/common/js/ui.js?v=20220419104800"></script>
+
+<script>
+</script>
+<style>
+body.darkmode{
+	background-color:#323248;
+}
+</style>
+</head>
+<body>
+	<div class="error-wrap">
+		<h1>
+			<a href="/index.do"><embed type="image/svg+xml" src="/type/common/img/common/img-logo.svg" alt="한국기업평가" /></a>
+		</h1>
+
+		<div class="inner">
+			<img src="/type/common/img/common/ico-error.svg" alt="" class="img-error">
+			
+			<p class="big">이용에 불편을 드려 죄송합니다.</p>
+			
+			<hr class="space10">
+			
+			<p class="medium">페이지를 찾을 수가 없거나 <br>오류로 인하여 현재 페이지를 볼 수 없습니다.</p>
+			
+			<hr class="space30">
+			
+			<span>찾으시려는 페이지의 주소가 변경 혹은 삭제되어 요청하신 페이지를 찾을 수 없습니다. <br>서비스 이용에 불편을 드려서 대단히 죄송합니다. 빠르게 제공해 드리겠습니다.</span>
+			
+			<hr class="space40">
+
+			<div class="btn-wrap center">
+				<button type="button" class="btn btn-lg btn-primary" onclick="javascript:location.href='/index.do'">홈페이지 이동하기</button>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

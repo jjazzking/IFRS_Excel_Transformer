@@ -1,0 +1,204 @@
+
+### 6단계 — 신평사 사이트
+
+-- kis/robots.txt: 99 chars
+User-agent: Googlebot
+User-agent: Daumoa
+User-agent: Yeti
+Allow: /
+
+User-agent: *
+Disallow: /
+
+-- kis/: 164960 chars
+    /ratings/hot_disclosure.do | 더보기
+    /ratingsSearch/corp_search.do | 
+    /research/ratings_highlights.do | 더보기
+    javascript:fn_file('R2', '9', 'LS전선㈜, ㈜LS 무보증사채 등급전망 ‘긍정적’ 변경 사유 및 Forward Looking', 'CI20260630-11.pdf', '등급 하이라이트', '20260630') | LS전선㈜, ㈜LS 무보증사채 등급전망 ‘긍정적’ 변경 사유 및 Forw
+    javascript:fn_file('R2', '9', '동화기업㈜의 등급전망 변경(안정적 → 부정적) 사유 및 Forward Looking', 'CI20260901-8.pdf', '등급 하이라이트', '20260901') | 동화기업㈜의 등급전망 변경(안정적 → 부정적) 사유 및 Forward L
+    javascript:fn_file('R2', '9', '두산퓨얼셀㈜ 무보증사채 등급전망 변경(안정적→부정적) 사유 및 Forward Looking', 'CI20260630-14.pdf', '등급 하이라이트', '20260630') | 두산퓨얼셀㈜ 무보증사채 등급전망 변경(안정적→부정적) 사유 및 Forwa
+    javascript:fn_file('R2', '9', '씨제이씨지브이㈜ 등급전망 변경(긍정적 → 안정적) 사유 및 Forward Looking Updates', 'CI20260630-16.pdf', '등급 하이라이트', '20260630') | 씨제이씨지브이㈜ 등급전망 변경(긍정적 → 안정적) 사유 및 Forward
+    javascript:fn_file('R2', '9', '애큐온캐피탈 지분 인수 우선협상대상자로 한화생명보험 선정 - 애큐온캐피탈: 유사시 계열 지원가능성 ...', 'CI20260630-23.pdf', '등급 하이라이트', '20260630') | 애큐온캐피탈 지분 인수 우선협상대상자로 한화생명보험 선정 - 애큐온캐피탈
+    javascript:fn_file('R2', '9', '한화엔진㈜ 신용등급 상향(BBB/긍정적 → BBB+/긍정적) 사유', 'CI20260901-3.pdf', '등급 하이라이트', '20260901') | 한화엔진㈜ 신용등급 상향(BBB/긍정적 → BBB+/긍정적) 사유
+    javascript:fn_file('R2', '9', '한화투자증권㈜ 유상증자에 대한 한국신용평가의 의견', 'CI20261001-1.pdf', 'Issuer Comment', '20261001') | 
+    javascript:fn_file('R2', '9', '한화투자증권㈜ 유상증자에 대한 한국신용평가의 의견', 'CI20261001-1.pdf', 'Issuer Comment', '20261001') | 한화투자증권㈜ 유상증자에 대한 한국신용평가의 의견
+    javascript:fn_file('R8', '2', 'SK', 'rs20260922-23.pdf','Rating Summary','20260922') | 
+    javascript:fn_file('R8', '2', '구미도시공사', 'rs20260929-25.pdf','Rating Summary','20260929') | 
+    javascript:fn_file('R8', '2', '새만금개발공사', 'rs20260929-28.pdf','Rating Summary','20260929') | 
+    javascript:fn_file('R8', '2', '세종도시교통공사', 'rs20260930-18.pdf','Rating Summary','20260930') | 
+    javascript:fn_file('R8', '2', '울산광역시도시공사', 'rs20260923-15.pdf','Rating Summary','20260923') | 
+    javascript:fn_file('R8', '2', '충북개발공사', 'rs20261001-8.pdf','Rating Summary','20261001') | 
+    javascript:fn_file('R8', '2', '파라다이스', 'rs20260923-22.pdf','Rating Summary','20260923') | 
+    javascript:fn_file('R8', '2', '한국도로공사', 'rs20261002-21.pdf','Rating Summary','20261002') | 
+    javascript:fn_file('R8', '2', '한국도로공사', 'rs20261002-22.pdf','Rating Summary','20261002') | 
+    javascript:fn_file('R8', '2', '한국도로공사', 'rs20261002-23.pdf','Rating Summary','20261002') | 
+    javascript:fn_file('R8', '2', '한국전력공사', 'rs20260930-47.pdf','Rating Summary','20260930') | 
+    javascript:fn_file('R8', '2', '한국전력공사', 'rs20260930-48.pdf','Rating Summary','20260930') | 
+    javascript:fn_file('R8', '2', '한국전력공사', 'rs20260930-49.pdf','Rating Summary','20260930') | 
+  ! GET https://www.kisrating.com/main.do (1): HTTP Error 404: Not Found
+  ! GET https://www.kisrating.com/main.do (2): HTTP Error 404: Not Found
+  ! GET https://www.kisrating.com/main.do (3): HTTP Error 404: Not Found
+-- kis/main.do: 받지 못함
+  ! GET https://www.kisrating.com/index.do (1): HTTP Error 404: Not Found
+  ! GET https://www.kisrating.com/index.do (2): HTTP Error 404: Not Found
+  ! GET https://www.kisrating.com/index.do (3): HTTP Error 404: Not Found
+-- kis/index.do: 받지 못함
+
+-- kr/robots.txt: 1781 chars
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<title></title>
+<link rel="icon" type="image/png" href="/type/common/img/common/favicon.png">
+<link rel="stylesheet" type="text/css" href="/type/KOR_A/css/style.css" />
+<script type="text/javascript" src="/type/common/js/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="/type/common/js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="/type/common/js/owl.carousel.js"></script>
+<script type="text/javascript" src="/type/common/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="/type/common/js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript" src="/type/KOR_A/js/bootstrap-datepicker.ko.min.js"></script>
+<script type="text/javascript" src="/type/common/js/jquery.izoomify.js?v=20220419104800"></script>
+<script type="text/javascript" src="/type/common/js/ui.js?v=20220419104800"></script>
+
+<script>
+</script>
+<style>
+body.darkmode{
+	background-color:#323248;
+}
+</style>
+</head>
+<body>
+	<div class="error-wrap">
+		<h1>
+			<a href="/index.do"><embed type="image/svg+xml" src="/type/common/img/common/img-logo.svg" alt="한국기업평가" /></a>
+		</h1>
+
+		<div class="inner">
+			<img src="/type/common/img/common/ico-error.svg" alt="" class="img-error">
+			
+			<p class="big">이용에 불편을 드려 죄송합니다.</p>
+			
+			<hr class="space10">
+			
+			<p class="medium">페이지를 찾을 수가 없거나 <br>오류로 인하여 현재 페이지를 볼 수 없습니다.</p>
+			
+			<hr class="space30">
+			
+			<span>찾으시려는 페이지의 주소가 변경 혹은 삭제되어 요청하신 페이지를 찾을 수 없습니다. <
+
+-- kr/: 185833 chars
+    /cms/frCmnCon/index.do?MENU_ID=10 | 등급공시
+    /cms/frCmnCon/index.do?MENU_ID=1490 | 등급 정의
+    /cms/frCmnCon/index.do?MENU_ID=1510 | 기업 ESG 평가 등급리스트
+    /cms/frCmnCon/index.do?MENU_ID=160 | Rating Performance
+    /cms/frCmnCon/index.do?MENU_ID=1640 | 등급변경List(프리미엄)
+    /cms/frCmnCon/index.do?MENU_ID=240 | 등급정의안내
+    /cms/frCmnCon/index.do?MENU_ID=270 | 등급평정절차
+    /cms/frCmnCon/index.do?MENU_ID=360 | 신용등급공시
+    /cms/frCmnCon/index.do?MENU_ID=370 | 등급소멸속보
+    /cms/frCmnCon/index.do?MENU_ID=380 | 등급변경 List
+    /cms/frCmnCon/index.do?MENU_ID=400 | 유효등급 List
+    /cms/frCmnCon/index.do?MENU_ID=430 | 등급별통계
+    /cms/frCmnCon/index.do?MENU_ID=460 | 신용등급변화표
+    /cms/frCmnCon/index.do?MENU_ID=500 | SF 유효등급
+    /cms/frCmnCon/index.do?MENU_ID=510 | SF 등급검색
+    /cms/frCmnCon/index.do?MENU_ID=540 | Rating Action & Forward Looking
+    /cms/frCmnCon/index.do?MENU_ID=600 | 등급변동요인/금융재무자료
+    /cms/frCmnCon/index.do?MENU_ID=690 | 신용등급추이
+    /cms/frCmnCon/index.do?MENU_ID=870 | 기업신용평가
+    /cms/frCmnCon/index.do?MENU_ID=90 | 등급검색
+    /cms/frCmnCon/index.do?MENU_ID=960 | 등급 정의
+    /cms/frCmnCon/index.do?MENU_ID=990 | ESG 인증평가 등급리스트
+    http://www.fitchratings.com | Fitch Ratings
+    http://www.korearatings.com/ajaxa/fileCpnt/fileDownload.do?FILE_NM=info1.pdf&FILE_ORG_NM=신용정보 활용체제의 공시.pdf | 신용정보활용체제의 공시
+    https://t.me/korearatings | 
+
+-- kr/main.do: 1781 chars
+
+-- kr/index.do: 185833 chars
+    /cms/frCmnCon/index.do?MENU_ID=10 | 등급공시
+    /cms/frCmnCon/index.do?MENU_ID=1490 | 등급 정의
+    /cms/frCmnCon/index.do?MENU_ID=1510 | 기업 ESG 평가 등급리스트
+    /cms/frCmnCon/index.do?MENU_ID=160 | Rating Performance
+    /cms/frCmnCon/index.do?MENU_ID=1640 | 등급변경List(프리미엄)
+    /cms/frCmnCon/index.do?MENU_ID=240 | 등급정의안내
+    /cms/frCmnCon/index.do?MENU_ID=270 | 등급평정절차
+    /cms/frCmnCon/index.do?MENU_ID=360 | 신용등급공시
+    /cms/frCmnCon/index.do?MENU_ID=370 | 등급소멸속보
+    /cms/frCmnCon/index.do?MENU_ID=380 | 등급변경 List
+    /cms/frCmnCon/index.do?MENU_ID=400 | 유효등급 List
+    /cms/frCmnCon/index.do?MENU_ID=430 | 등급별통계
+    /cms/frCmnCon/index.do?MENU_ID=460 | 신용등급변화표
+    /cms/frCmnCon/index.do?MENU_ID=500 | SF 유효등급
+    /cms/frCmnCon/index.do?MENU_ID=510 | SF 등급검색
+    /cms/frCmnCon/index.do?MENU_ID=540 | Rating Action & Forward Looking
+    /cms/frCmnCon/index.do?MENU_ID=600 | 등급변동요인/금융재무자료
+    /cms/frCmnCon/index.do?MENU_ID=690 | 신용등급추이
+    /cms/frCmnCon/index.do?MENU_ID=870 | 기업신용평가
+    /cms/frCmnCon/index.do?MENU_ID=90 | 등급검색
+    /cms/frCmnCon/index.do?MENU_ID=960 | 등급 정의
+    /cms/frCmnCon/index.do?MENU_ID=990 | ESG 인증평가 등급리스트
+    http://www.fitchratings.com | Fitch Ratings
+    http://www.korearatings.com/ajaxa/fileCpnt/fileDownload.do?FILE_NM=info1.pdf&FILE_ORG_NM=신용정보 활용체제의 공시.pdf | 신용정보활용체제의 공시
+    https://t.me/korearatings | 
+  ! GET https://www.nicerating.com/robots.txt (1): Remote end closed connection without response
+  ! GET https://www.nicerating.com/robots.txt (2): Remote end closed connection without response
+  ! GET https://www.nicerating.com/robots.txt (3): Remote end closed connection without response
+-- nice/robots.txt: 받지 못함
+
+-- nice/: 148 chars
+
+-- nice/main.do: 85978 chars
+    /analyst/index.do?deptCode=251600 | 기업평가본부
+    /datacenter/chgCreditRatingBond.do | Data Center
+    /datacenter/chgCreditRatingBond.do | 등급데이터(종합)
+    /datacenter/chgCreditRatingBond.do | 등급변동(기간조회)
+    /datacenter/ratingMonitoringprediction.do | 등급전망/감시(기준일조회)
+    /datacenter/ratingSpreadBond.do | 등급분포(기준일조회)
+    /datacenter/validRating.do | 유효등급(기준일조회)
+    /disclosure/bondCreditGrade.do | 등급현황 및 분포
+    /disclosure/companySearch.do | 등급검색
+    /disclosure/creditGradeChange.do | 신용등급변동표
+    /disclosure/dayRatingNews.do | 
+    /disclosure/dayRatingNews.do | 등급공시
+    /disclosure/dayRatingNews.do | 등급속보
+    /disclosure/dayRatingNews.do | 최근등급속보
+    /disclosure/gradeSearch.do | 등급별 검색
+    /disclosure/longTermGrade.do | 장기등급
+    /disclosure/niceRatingRequest.do | 공시 문의
+    /disclosure/outlookList.do | 등급전망 Non-Stable
+    /disclosure/ratingChangeList.do | 등급변동리스트
+    /disclosure/ratingChangeList.do? | 등급변동리스트
+    /disclosure/ratingExtinctionNews.do | 등급소멸속보
+    /disclosure/ratingPerformance.do | Rating Performance
+    /disclosure/ratingTrigger.do | 
+    /disclosure/ratingTrigger.do | NICE Rating Trigger
+    /disclosure/ratingTrigger.do | Rating Trigger
+    /disclosure/ratingTrigger.do | Rating Trigger 변경리스트
+    /disclosure/shortTermGrade.do | 단기등급
+    /disclosure/shortTermGrade.do | 등급정의
+    /disclosure/validRatingSearch.do | 유효등급 리스트
+    /disclosure/yearDefaultRates.do | 등급통계
+    /esg/esgReport.do | ESG평가 등급리스트
+    /publish/cmpCreditEvalMean.do | 기업신용평가
+    /research/issueReport.do | 이슈리포트
+    /research/ratingOutlookComment.do | 등급·전망코멘트
+    /research/ratingPerformance.do | Rating Performance
+    /research/ratingTrigger.do | NICE Rating Trigger
+    http://eng.nicerating.com | ENG
+    https://www.nicerating.com | 
+    javascript:research_common.fn_preview('H26560') | SK가스의 SK어드밴스드 흡수합병 결정 - SK어드밴스드 신용등급 상향검
+    javascript:research_common.fn_preview('H26595') | 금호타이어 장기신용등급을 A+/Stable로 상향조정 및 단기신용등급 A
+  ! GET https://www.nicerating.com/index.do (1): HTTP Error 404: 404
+  ! GET https://www.nicerating.com/index.do (2): HTTP Error 404: 404
+  ! GET https://www.nicerating.com/index.do (3): HTTP Error 404: 404
+-- nice/index.do: 받지 못함
+
+끝.
