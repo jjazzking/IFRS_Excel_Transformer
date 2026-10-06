@@ -1,6 +1,6 @@
 import React from 'react';
 import { Star } from 'lucide-react';
-import { RateRowMeta, RatesDay } from '../types';
+import { CellShade, RateRowMeta, RatesDay } from '../types';
 import { RateColumn, cellValue, shadeOf } from '../utils/ratesQuery';
 
 interface RatesMatrixProps {
@@ -19,10 +19,13 @@ interface RatesMatrixProps {
   emptyHint: string;
 }
 
-const SHADE_BG = {
+const SHADE_BG: Record<CellShade, string> = {
   soft: 'bg-[#FFF2CC]',
   strong: 'bg-[#FFD966] font-bold',
-} as const;
+  // 보간 열 — 고시값이 아니라 계산한 값이라 한 단계 진하게
+  interp: 'bg-[#FFE699]',
+  interpStrong: 'bg-[#FFC000] font-bold',
+};
 
 /**
  * 왼쪽 아래 — 금투협 표를 그대로 보여 주고, 고른 행·열에 음영을 칠한다.
@@ -83,7 +86,7 @@ export const RatesMatrix: React.FC<RatesMatrixProps> = ({
                   title={c.termIndex === undefined ? '보간 열 — 만기 단계에서 뺄 수 있습니다' : '눌러서 이 만기 고르기'}
                   className={`border border-slate-300 px-1.5 py-1 font-semibold whitespace-nowrap ${
                     c.termIndex !== undefined ? 'cursor-pointer hover:bg-emerald-100' : 'italic'
-                  } ${c.picked ? SHADE_BG.soft : 'bg-slate-100'} text-slate-700`}
+                  } ${c.picked ? SHADE_BG[c.termIndex === undefined ? 'interp' : 'soft'] : 'bg-slate-100'} text-slate-700`}
                 >
                   {c.label}
                 </th>
@@ -114,7 +117,7 @@ export const RatesMatrix: React.FC<RatesMatrixProps> = ({
                   </th>
                   {columns.map(c => {
                     const v = cellValue(terms, values, c);
-                    const shade = shadeOf(rowPicked, c.picked);
+                    const shade = shadeOf(rowPicked, c.picked, c.termIndex === undefined);
                     return (
                       <td
                         key={c.key}

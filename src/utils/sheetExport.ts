@@ -24,11 +24,14 @@ function cellText(value: string | number | null, digits?: number): string {
 
 /**
  * 음영 색 — 엑셀 기본 팔레트의 노랑 두 단계. 조서에서 형광펜으로 칠하는 그 색이다.
+ * 보간 열은 같은 계열에서 한 단계씩 진한 색(황금색 40% 밝게 / 황금색)을 쓴다.
  * 미리보기(`SHADE_PREVIEW_CLASS`)와 같은 색을 쓴다.
  */
 export const SHADE_FILL: Record<CellShade, string> = {
   soft: '#FFF2CC',
   strong: '#FFD966',
+  interp: '#FFE699',
+  interpStrong: '#FFC000',
 };
 
 function shadeCss(shade: CellShade | null | undefined): string {

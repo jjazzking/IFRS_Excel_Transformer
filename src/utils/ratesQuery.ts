@@ -31,6 +31,8 @@ export interface PurposeGuide {
   rowAdvice: string;
   /** 만기는 무엇에 맞추는지 */
   termAdvice: string;
+  /** 이 용도에 권하는 이자율과 그 이유 — 안내 카드 맨 위에 보여 준다 */
+  recommend?: Recommendation;
   /** 실무에서 자주 틀리는 점 */
   cautions: string[];
   refs: ParagraphRef[];
@@ -38,6 +40,15 @@ export interface PurposeGuide {
   presetRows: string[];
   /** 고르지는 않지만 '권장'으로 표시하는 행 */
   suggestRow?: (row: RateRowMeta) => boolean;
+}
+
+export interface Recommendation {
+  /** 권하는 이자율 (표의 어느 행인지) */
+  rate: string;
+  /** 왜 이 이자율인가 — 짧은 결론(point) + 풀어 쓴 설명(detail) + 근거(ref) */
+  reasons: { point: string; detail: string; ref?: string }[];
+  /** 고르면 안 되는 이자율과 그 이유 */
+  avoid?: { rate: string; why: string };
 }
 
 const isPublicUnsecuredCorp = (r: RateRowMeta) => r.category.startsWith('회사채 I(') && r.type === '무보증';
@@ -52,6 +63,29 @@ export const PURPOSES: PurposeGuide[] = [
       '리스의 내재이자율을 쉽게 산정할 수 있으면 그 이자율로, 그렇지 않으면 리스이용자의 증분차입이자율로 리스료를 할인한다. 재평가·리스변경 때는 그 시점의 수정 할인율을 다시 정한다.',
     rowAdvice: '회사(리스이용자) 신용등급에 맞는 회사채 행. 신용등급이 없으면 비슷한 회사의 등급이나 내부 신용평가를 근거로 고른다.',
     termAdvice: '리스기간. 표에 없는 기간이면 선형보간을 쓴다.',
+    recommend: {
+      rate: '회사 신용등급의 회사채 (공모 · 무보증)',
+      reasons: [
+        {
+          point: '내재이자율은 대개 알 수 없다',
+          detail: '리스제공자의 무보증잔존가치·리스개설직접원가를 리스이용자가 알기 어려워, 실무에서는 대부분 증분차입이자율로 할인한다.',
+          ref: '제1116호 문단 26',
+        },
+        {
+          point: '증분차입이자율 = 회사가 지금 빌릴 때의 이자율',
+          detail: '회사 신용위험이 들어간 이율이어야 한다. 회사와 같은 등급의 회사채 수익률이 시장에서 관측되는 가장 가까운 출발점이다.',
+          ref: '제1116호 부록 A',
+        },
+        {
+          point: '공모 무보증이 조정의 출발점',
+          detail: '고시가 가장 두텁고 담보가 없는 기본 상태라, 여기서 담보(사용권자산)·기간·통화 차이를 더하고 빼기 쉽다.',
+        },
+      ],
+      avoid: {
+        rate: '국고채',
+        why: '회사 신용위험이 빠져 할인율이 낮아지고 리스부채·사용권자산이 과대계상된다.',
+      },
+    },
     cautions: [
       '증분차입이자율은 리스이용자가 비슷한 기간에 걸쳐 비슷한 담보로 사용권자산과 가치가 비슷한 자산을 비슷한 경제적 환경에서 획득하는 데 필요한 자금을 차입한다면 지급해야 하는 이자율이다(부록 A). 회사채 수익률에서 담보·기간·통화 차이를 어떻게 조정했는지 조서에 남긴다.',
       '리스변경으로 별도 리스가 아니면 변경 유효일의 수정 할인율을 쓴다 — 최초 할인율을 그대로 쓰지 않는다.',
@@ -68,6 +102,29 @@ export const PURPOSES: PurposeGuide[] = [
       '화폐의 시간가치 영향이 중요하면 예상 지출액의 현재가치로 평가한다. 할인율은 화폐의 시간가치와 부채의 특유한 위험에 대한 현행 시장의 평가를 반영한 세전 이율이다.',
     rowAdvice: '미래현금흐름에 위험을 이미 반영했다면 무위험이자율(국고채)을 쓴다. 위험을 할인율로 반영하는 경우에만 위험을 더한 이율을 쓴다.',
     termAdvice: '예상 지출 시기 (복구충당부채는 복구 예정 시점까지의 기간).',
+    recommend: {
+      rate: '국고채 (무위험이자율)',
+      reasons: [
+        {
+          point: '할인율은 시간가치 + 부채 특유의 위험',
+          detail: '두 가지를 반영한 세전 이율이어야 한다. 다만 같은 위험을 현금흐름과 할인율에 두 번 넣으면 안 된다.',
+          ref: '제1037호 문단 47',
+        },
+        {
+          point: '위험은 보통 현금흐름 추정에 이미 들어 있다',
+          detail: '시나리오 가중·위험조정으로 지출액을 추정했다면 할인율에는 시간가치만 남는다 — 무위험이자율인 국고채가 맞다.',
+          ref: '제1037호 문단 47',
+        },
+        {
+          point: '복구 시점까지 만기를 맞추기 쉽다',
+          detail: '국고채는 매일 고시되고 50년까지 만기가 촘촘해, 먼 복구 예정 시점도 보간으로 맞출 수 있다.',
+        },
+      ],
+      avoid: {
+        rate: '회사채 · 회사 차입이자율',
+        why: '현금흐름에 위험을 반영해 놓고 위험이 더해진 이율로 다시 할인하면 위험이 이중 반영되어 충당부채가 과소계상된다.',
+      },
+    },
     cautions: [
       '현금흐름 추정에 반영한 위험을 할인율에 다시 넣지 않는다 (문단 47) — 이중 반영.',
       '할인액의 상각(기간 경과에 따른 증가)은 차입원가로 인식한다 (문단 60).',
@@ -83,6 +140,29 @@ export const PURPOSES: PurposeGuide[] = [
       '보고기간 말 현재 우량회사채의 시장수익률을 참조해 정한다. 그런 회사채의 시장이 두텁지 않으면 국공채의 시장수익률을 쓴다. 할인율에는 퇴직급여의 예상 지급 시기를 반영한다.',
     rowAdvice: '우량회사채 — 실무에서는 회사채 무보증 AA- 이상을 쓰는 경우가 많다. 계리 보고서의 할인율과 같은 행을 고른다.',
     termAdvice: '확정급여채무의 듀레이션(가중평균 지급 시기). 계리 보고서에 적힌 듀레이션에 맞추고, 사이 값은 보간한다.',
+    recommend: {
+      rate: '우량회사채 (공모 · 무보증 AA- 이상)',
+      reasons: [
+        {
+          point: '기준서가 우량회사채를 직접 지정한다',
+          detail: '보고기간 말 현재 우량회사채의 시장수익률을 참조해 할인율을 정한다. 시장이 두텁지 않을 때만 국공채로 내려간다.',
+          ref: '제1019호 문단 83',
+        },
+        {
+          point: '회사 자신의 신용등급이 아니다',
+          detail: '할인율에 기업 고유의 신용위험을 넣지 않으므로, 회사 등급과 상관없이 우량 등급의 수익률을 쓴다.',
+          ref: '제1019호 문단 84',
+        },
+        {
+          point: '실무와 계리 보고서가 같은 행을 쓴다',
+          detail: 'AA- 이상(AAA·AA+·AA0·AA-)을 우량으로 보는 경우가 많다. 계리 보고서의 행·기준일과 맞춰 두면 대사가 쉽다.',
+        },
+      ],
+      avoid: {
+        rate: '회사 등급의 회사채 · 회사 차입이자율',
+        why: '회사 신용위험이 들어가 할인율이 높아지고 확정급여채무가 과소계상된다.',
+      },
+    },
     cautions: [
       '할인율에는 기업 고유의 신용위험을 반영하지 않는다 (문단 84) — 회사 자신의 차입이자율이 아니다.',
       '계리 보고서의 할인율이 이 표의 같은 기준일·같은 행과 맞는지 대사한다.',
@@ -252,9 +332,11 @@ export function cellValue(
   return interpolate(terms.map(termYears), values, col.years).value;
 }
 
-export function shadeOf(rowPicked: boolean, colPicked: boolean): CellShade | null {
-  if (rowPicked && colPicked) return 'strong';
-  if (rowPicked || colPicked) return 'soft';
+/** 보간 열(`interpolated`)은 고시값과 구별되게 한 단계 진한 음영을 쓴다 */
+export function shadeOf(rowPicked: boolean, colPicked: boolean, interpolated = false): CellShade | null {
+  if (rowPicked && colPicked) return interpolated ? 'interpStrong' : 'strong';
+  if (colPicked) return interpolated ? 'interp' : 'soft';
+  if (rowPicked) return 'soft';
   return null;
 }
 
@@ -282,7 +364,7 @@ export function buildRatesTable(
       numeric: true,
       digits: 3,
       width: 9,
-      shade: c.picked ? ('soft' as const) : undefined,
+      shade: shadeOf(false, c.picked, c.termIndex === undefined) ?? undefined,
     })),
   ];
 
@@ -304,7 +386,7 @@ export function buildRatesTable(
         r.grade,
         ...cols.map(c => cellValue(terms, values, c)),
       ],
-      shades: [labelShade, labelShade, labelShade, ...cols.map(c => shadeOf(rowPicked, c.picked))],
+      shades: [labelShade, labelShade, labelShade, ...cols.map(c => shadeOf(rowPicked, c.picked, c.termIndex === undefined))],
     };
   });
 
@@ -318,7 +400,7 @@ export function buildRatesTable(
   }
   const interp = cols.filter(c => c.termIndex === undefined);
   if (interp.length > 0) {
-    notes.push(`(보간) 열은 앞뒤 고시 만기의 수익률을 잔존기간으로 선형보간`);
+    notes.push(`(보간) 열은 앞뒤 고시 만기의 수익률을 잔존기간으로 선형보간 (진한 음영)`);
   }
   if (options.citation) notes.push(`근거: ${options.citation}`);
 
