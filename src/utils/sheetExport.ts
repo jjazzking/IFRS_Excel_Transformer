@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { CellShade, ClipboardExportResult, SheetTable, TableTheme } from '../types';
-import { getThemeStyles, numericTd, styleAttr, totalTd } from './tableTheme';
+import { getThemeStyles, numericTd, styleAttr, totalTd, withFill } from './tableTheme';
 
 /**
  * 여러 열짜리 표를 엑셀 조서에 붙일 수 있는 형태로 바꾼다.
@@ -36,17 +36,13 @@ export const SHADE_FILL: Record<CellShade, string> = {
 
 /**
  * 칸 서식에 음영을 덧칠한 `<td>` 여는 태그.
- *
- * 서식(테마)에도 `background-color` 가 이미 들어 있다. 브라우저는 뒤에 적힌 값을 쓰지만
- * 엑셀은 앞의 것을 쓰는 경우가 있어, 음영을 칠할 칸은 테마의 배경을 지우고 하나만 남긴다.
- * 적는 법도 엑셀이 스스로 복사할 때 쓰는 모양(`background` + `mso-pattern:black none`)을
- * 따르고, `bgcolor` 속성도 함께 달아 어느 쪽으로 읽든 색이 남게 한다.
+ * 배경은 `withFill` 로 하나만 남기고, `bgcolor` 속성도 함께 달아 엑셀이 어느 쪽으로 읽든
+ * 색이 남게 한다.
  */
 function shadedTdOpen(style: string, shade: CellShade | null | undefined): string {
   if (!shade) return `<td style="${styleAttr(style)}">`;
   const fill = SHADE_FILL[shade];
-  const css = `${style.replace(/background(-color)?\s*:[^;]*;?/g, '')} background: ${fill}; mso-pattern: black none;`;
-  return `<td bgcolor="${fill}" style="${styleAttr(css)}">`;
+  return `<td bgcolor="${fill}" style="${styleAttr(withFill(style, fill))}">`;
 }
 
 function escapeHtml(str: string): string {
