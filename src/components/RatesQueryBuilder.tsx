@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Check, ChevronRight, Plus, Star, X } from 'lucide-react';
 import { RateRowMeta } from '../types';
-import { Chip, TierButton, toggle } from './TierControls';
+import { Chip, StepReset, TierButton, toggle } from './TierControls';
 import { PURPOSES, PURPOSE_BY_VALUE, RatePurpose, quarterEnds, termLabel } from '../utils/ratesQuery';
 import { isIsoDate } from '../utils/dateRange';
 
@@ -26,28 +26,20 @@ interface RatesQueryBuilderProps {
 /**
  * 왼쪽 위 — 용도 → 기준일 → 종류·등급(행) → 만기(열) 순으로 좁혀 간다.
  *
- * 환율 작업대와 같은 규칙이다. 한 단계를 고르면 다음 단계가 열리고, 고른 단계 버튼을
- * 다시 누르면 취소된다 (아래 단계에 고른 것이 남아 있으면 취소하지 않는다).
+ * 환율 작업대와 같은 규칙이다. 한 단계를 고르면 다음 단계가 열리고, 단계마다 제목 옆
+ * '초기화'로 그 단계만 비운다 (아래 단계에서 고른 것은 남아 있다가 다시 열리면 그대로 보인다).
  * 행과 열은 아래 표에서 머리글을 눌러 고를 수도 있다.
  */
 export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onChange, terms, rows, bounds }) => {
-  const [blockedNote, setBlockedNote] = useState<string | null>(null);
-  const noteTimer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(noteTimer.current), []);
-  const showBlocked = (step: string) => {
-    setBlockedNote(step);
-    window.clearTimeout(noteTimer.current);
-    noteTimer.current = window.setTimeout(() => setBlockedNote(null), 2500);
-  };
-
   const guide = query.purpose ? PURPOSE_BY_VALUE.get(query.purpose) : undefined;
 
-  const steps: { key: string; title: string; done: boolean; body: React.ReactNode }[] = [];
+  const steps: { key: string; title: string; done: boolean; reset?: () => void; body: React.ReactNode }[] = [];
 
   steps.push({
     key: 'purpose',
     title: '용도',
     done: query.purpose !== null,
+    reset: query.purpose !== null ? () => onChange({ purpose: null }) : undefined,
     body: (
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-1.5">
         {PURPOSES.map(p => (
@@ -57,13 +49,8 @@ export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onC
             active={query.purpose === p.value}
             label={p.label}
             hint={p.hint}
-            locked={query.purpose === p.value && query.date !== null}
             onClick={() => {
-              if (query.purpose === p.value) {
-                if (query.date !== null) showBlocked('purpose');
-                else onChange({ purpose: null });
-                return;
-              }
+              if (query.purpose === p.value) return;
               // 용도를 바꾸면 그 용도의 권장 행을 미리 칠한다. 권장 행이 없는 용도(리스 —
               // 회사 등급마다 다르다)면 이미 고른 행을 그대로 둔다.
               onChange({ purpose: p.value, ...(p.presetRows.length ? { rowCodes: p.presetRows } : {}) });
@@ -78,6 +65,7 @@ export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onC
     key: 'date',
     title: '기준일',
     done: query.date !== null,
+    reset: query.date !== null ? () => onChange({ date: null }) : undefined,
     body: <DatePicker date={query.date} bounds={bounds} onChange={date => onChange({ date })} />,
   });
 
@@ -85,6 +73,7 @@ export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onC
     key: 'rows',
     title: guide?.rowAdvice ? `종류·등급 (행) — ${guide.rowAdvice}` : '종류·등급 (행, 여러 개 가능)',
     done: query.rowCodes.length > 0,
+    reset: query.rowCodes.length > 0 ? () => onChange({ rowCodes: [] }) : undefined,
     body: (
       <RowPicker
         rows={rows}
@@ -99,6 +88,10 @@ export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onC
     key: 'terms',
     title: guide?.termAdvice ? `만기 (열) — ${guide.termAdvice}` : '만기 (열, 여러 개 가능)',
     done: query.termIdx.length + query.customTerms.length > 0,
+    reset:
+      query.termIdx.length + query.customTerms.length > 0
+        ? () => onChange({ termIdx: [], customTerms: [] })
+        : undefined,
     body: (
       <TermPicker
         terms={terms}
@@ -128,13 +121,9 @@ export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onC
               <p className="text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
                 {s.title}
                 {!s.done && <ChevronRight className="w-3 h-3 text-emerald-500 shrink-0" />}
+                {s.reset && <StepReset id={`btn-rates-reset-${s.key}`} onClick={s.reset} />}
               </p>
               {s.body}
-              {blockedNote === s.key && (
-                <p role="status" className="mt-1 text-[10px] text-amber-600">
-                  아래 단계에서 고른 것을 먼저 해제해야 취소됩니다.
-                </p>
-              )}
             </div>
           </li>
         ))}
@@ -231,11 +220,7 @@ const RowPicker: React.FC<{
           </div>
         </div>
       ))}
-      {picked.length > 0 && (
-        <button onClick={() => onChange([])} className="text-[10px] text-slate-400 hover:text-slate-700 cursor-pointer">
-          {picked.length}개 선택 · 모두 해제
-        </button>
-      )}
+      {picked.length > 0 && <p className="text-[10px] text-slate-400">{picked.length}개 선택</p>}
     </div>
   );
 };
