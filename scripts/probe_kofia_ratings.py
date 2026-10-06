@@ -327,8 +327,66 @@ def stage6() -> None:
                 print("   ", h, "|", t)
 
 
+VALID_LISTS = {
+    "kr": ["/cms/frCmnCon/index.do?MENU_ID=400", "/cms/frCmnCon/index.do?MENU_ID=870", "/cms/frCmnCon/index.do?MENU_ID=90"],
+    "nice": ["/disclosure/validRatingSearch.do", "/datacenter/validRating.do", "/disclosure/companySearch.do"],
+}
+TERMS_WORDS = r"약관|저작권|이용정책|이용안내|법적고지|copyright|terms|policy"
+RISK_WORDS = r"수집|복제|크롤|스크래|무단|자동화|기계적|재배포|전재|상업적|2차"
+
+
+def strip_tags(html: str) -> str:
+    html = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", html)
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html)).strip()
+
+
+def stage7() -> None:
+    """5차 — 한기평 · NICE 이용약관(수집 · 복제 조항)과 유효등급 화면이 자료를 어떻게 받는지."""
+    print("\n### 7단계 — 이용약관")
+    for key in ("kr", "nice"):
+        base = AGENCIES[key]
+        home = get(base + ("/index.do" if key == "kr" else "/main.do")) or ""
+        links = sorted(set(re.findall(r'href="([^"#]+)"[^>]*>\s*([^<]{0,40})', home)))
+        terms = [(h, t.strip()) for h, t in links if re.search(TERMS_WORDS, h + t, re.I)]
+        print(f"\n== {key} 약관 링크: {terms}")
+        for h, t in terms[:6]:
+            url = h if h.startswith("http") else base + ("" if h.startswith("/") else "/") + h
+            text = get(url)
+            time.sleep(POLITE_DELAY_SEC)
+            if not text:
+                continue
+            plain = strip_tags(text)
+            save(f"terms_{key}_{flat(h)[:60]}.txt", plain)
+            print(f"\n-- {key} {h} ({t}) {len(plain)}자")
+            for m in re.finditer(RISK_WORDS, plain):
+                print("   …" + plain[max(0, m.start() - 150): m.end() + 150] + "…")
+
+    print("\n### 8단계 — 유효등급 화면")
+    for key, paths in VALID_LISTS.items():
+        base = AGENCIES[key]
+        for path in paths:
+            text = get(base + path)
+            time.sleep(POLITE_DELAY_SEC)
+            if not text:
+                print(f"-- {key}{path}: 받지 못함")
+                continue
+            save(f"valid_{key}_{flat(path)[:60]}.html", text)
+            print(f"\n-- {key}{path}: {len(text)} chars · 제목 {re.findall(r'<title>([^<]*)', text)[:1]}")
+            # 표를 그리는 자료 요청 — form action, ajax url, .do 경로
+            for u in sorted(set(re.findall(r"""["'](/[A-Za-z0-9_/\-]+\.(?:do|json|jsp))""", text)))[:60]:
+                print("    url", u)
+            for f in re.findall(r"<form[^>]*>", text)[:5]:
+                print("    form", f[:200])
+            for nm in sorted(set(re.findall(r'name="([A-Za-z_][\w]*)"', text)))[:60]:
+                print("    field", nm)
+            heads = re.findall(r"<th[^>]*>\s*([^<]{1,20})", text)
+            print("    th", heads[:40])
+            rows = re.findall(r"<tr[^>]*>(.*?)</tr>", text, re.S)
+            print(f"    tr {len(rows)}개 — 앞 3개:", [strip_tags(r)[:150] for r in rows[1:4]])
+
+
 def main() -> int:
-    stage6()
+    stage7()
     print("\n끝.")
     return 0
 
