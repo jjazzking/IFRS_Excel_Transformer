@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/css/sub.css" type="text/css"?>
+<?xml-stylesheet href="/css/basic.css" type="text/css"?>
+<?xml-stylesheet href="/css/form.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:w2="http://www.inswave.com/websquare"
+	xmlns:xf="http://www.w3.org/2002/xforms">
+	<head>
+		<w2:buildDate />
+		<xf:model>
+			<xf:instance>
+				<data xmlns="" />
+			</xf:instance>
+		</xf:model>
+		<script src="/js/date.js" type='text/javascript'></script>
+		<script type="javascript"><![CDATA[
+			
+			var currIndex = 0;                                           // 현재 행 ( 그리드내에서 탭키 이벤트시 다음행으로 이동 처리)
+			var divisionId= WebSquare.net.getParameter( "divisionId" );
+			var divisionNm= decodeURIComponent(WebSquare.net.getParameter( "divisionNm" ));
+			var tabIdx = WebSquare.net.getParameter( "tabIdx" );
+			
+			var existDt = "";
+			var srchEndDt = "";
+			var todayDD = "";
+
+        /**************************************************************************
+         * function    : init
+         * Description : 서브 메인 화면 초기화
+         * Parameter   : 
+         * Return      : 
+         **************************************************************************/
+         function init() {
+				this.document.title=divisionNm;
+				resizeIframe();
+				
+				todayDD = WebSquare.date.getCurrentServerDate( "yyyyMMdd" );
+				//startDtDD.setValue( "20140310" );
+				//endDtDD.setValue( "20140330" );
+				
+				getExistMaxDate();
+				
+				startDtDD.setValue( getValue("respDate/root/message/BISCdtRnkCmpListDTO/BISCdtRnkCmpDTO/standardDt") );
+				
+				endDtDD.setValue( srchEndDt );
+				
+				//searchData1();
+				
+				grdMain.setColumnBackgroundColor( 0 , "#f2f6f7" );
+				
+				
+			}
+			
+			function getExistMaxDate(){
+				var BISCdtRnkCmpDTO = WebSquare.xml.indent(getInstanceNode("BISCdtRnkCmpDTO"));
+		       	
+		      callProFrameProcess("BIS-KOFIABOND","BISCdtRnkCmpSrchSO","getExistMaxDate",BISCdtRnkCmpDTO,"respDate");		
+			}
+			
+
+			/**************************************************************************
+         * function    : callBack
+         * Description : submission 실행 후 Callback
+         * Parameter   : retAction(submission 실행 Action), rowCount(조회 목록 총 건수)
+         * Return      : null
+         **************************************************************************/
+        	function callBack(svcId,fnId,strResp) {   
+				
+				
+				if (svcId == "BISCdtRnkCmpSrchSO") {
+					
+					grdMain.setColumnVisible( 5 , true );
+					grdMain.setColumnVisible( 6 , true );
+					grdMain.setColumnVisible( 7 , true );
+
+					if (fnId == "selectData") {
+					
+						grdMain.setXML( getInstanceNode("resp/root/message/BISCdtRnkCmpListDTO") );
+						/*	
+						var radio1Val = radio1.getValue();	
+						
+						if(radio1Val == 1){
+							grdMain.setColumnVisible( 7 , false );
+							
+						}else if(radio1Val == 2){
+							grdMain.setColumnVisible( 5 , false );
+							
+						}else if(radio1Val == 4){
+							grdMain.setColumnVisible( 5 , false );
+						
+						}else {
+							grdMain.setColumnVisible( 2 , true );
+							grdMain.setColumnVisible( 5 , true );
+							grdMain.setColumnVisible( 6 , true );
+							grdMain.setColumnVisible( 7 , false );
+						}
+						*/
+						
+	        			for(var i=0;i<grdMain.getRowCount();i++){
+	        				/*
+	        				if( (radio1Val != 2) || radio1Val != 3 ){
+	        					data0 = grdMain.getCellData( i , 0 );
+	        					data9 = grdMain.getCellData( i , "companyNm" ); //회사명(max)
+	        					
+        						if(data0.indexOf(data10.replace("(주)", ""))>0){
+	        							
+	        					
+	        					} else {
+	        						textData = data0 +"<br>("+data9+")";
+	        						grdMain.setCellData( i , 0 ,textData);
+	        					}
+	        					
+	        				}else {
+	        					grdMain.setCellData( i , 0 ,data0);
+	        					
+	        				}
+	        				*/
+	        				
+	        				
+	        				
+	        				var data2 = grdMain.getCellData( i , 2 );
+	        				if(data2==""){
+	        					grdMain.setCellData( i , 2 , "-");
+	        				}
+	        				
+	        				var data3 = grdMain.getCellData( i , 3 );
+	        				if(data3==""){
+	        					grdMain.setCellData( i , 3 , "-");
+	        				}
+	        				
+	        				var data4 = grdMain.getCellData( i , 4 );
+	        				if(data4==""){
+	        					grdMain.setCellData( i , 4 , "-");
+	        				}
+	        				
+	        				var data5 = grdMain.getCellData( i , 5 );
+	        				if(data5 ==""){
+	        					grdMain.setCellData( i , 5 , "-");
+	        				} 
+	        				
+	        				var data6 = grdMain.getCellData( i , "creditWatch" ); 
+	        				var data8 = getValue("resp/root/message/BISCdtRnkCmpListDTO/BISCdtRnkCmpDTO[" + (i + 1) + "]/val1");
+	        				/*
+	        				한국신용평가	A15001    01
+							한국기업평가	A10001    02
+							한국신용정보	A15002    03
+							서울신용정보	A15003    04
+	        				*/
+	        				
+	        				if(data6==""){
+	        					grdMain.setCellData( i , 6 , "-");
+	        				} else if (data6 == "10" && data8 == "A15001") {
+	        					grdMain.setCellData( i , 6 , "상향검토");
+	        				} else if (data6 == "10" && (data8 == "A10001" || data8 == "A15003")) {
+	        					grdMain.setCellData( i , 6 , "↑");
+	        				} else if (data6 == "10" && data8 == "A15002") {
+	        					grdMain.setCellData( i , 6 , "↑");
+	        				} else if (data6 == "20" && data8 == "A15001") {
+	        					grdMain.setCellData( i , 6 , "하향검토");
+	        				} else if (data6 == "20" && (data8 == "A10001" || data8 == "A15003")) {
+	        					grdMain.setCellData( i , 6 , "↓");
+	        				} else if (data6 == "20" && data8 == "A15002") {
+	        					grdMain.setCellData( i , 6 , "↓");
+	        				} else if (data6 == "30" && data8 == "A15001") {
+	        					grdMain.setCellData( i , 6 , "미확정검토");
+	        				} else if (data6 == "30" && (data8 == "A10001" || data8 == "A15003")) {
+	        					grdMain.setCellData( i , 6 , "↕");
+	        				} else if (data6 == "30" && data8 == "A15002") {
+	        					grdMain.setCellData( i , 6 , "◆");
+	        				} else {
+	        					grdMain.setCellData( i , 6 , "-");
+	        				}
+	        				
+	        				var data7 = grdMain.getCellData( i , 7 );
+	        				if(data7=="" || data7=="00"){
+	        					grdMain.setCellData( i , 7 , "-");
+							} else if(data7.substr(0,1)=="0" && data7.substr(1)!="0"){
+	        					data7 = data7.substr(1);
+	        					grdMain.setCellData( i , 7 , data7+"월");
+	        				} else {
+	        					grdMain.setCellData( i , 7 , data7+"월");
+	        				}
+	        				
+	        			}		        			
+		        		
+		 				}else if( fnId == "getExistMaxDate"){
+		 					existDt = getValue("respDate/root/message/BISCdtRnkCmpListDTO/BISCdtRnkCmpDTO[1]/standardDt"); 
+		 					
+		 					startDtDD.setValue( addMonth(existDt, -1) );
+							endDtDD.setValue( existDt );
+							
+							searchData1();
+		 				}
+		 				
+		 			}
+		 			resizeIframe();
+            }
+			
+			
+			function fnImageClick(data) {
+				comFileDownload2(data);
+			}
+			function comFileDownload2(fileName) {
+        	  	WebSquare.net.download( "/jsp/download2.jsp?"
+					+"&fileName="+encodeURIComponent(WebSquare.text.BASE64Encoder(fileName)), "", "post" );
+        	}
+
+			
+          	/**************************************************************************
+			 * function    : custFileDownImgCol
+			 * Description : grid cell에 다운로드 버튼 이미지 보여주기 (커스텀 포맷터 사용)
+			 * Parameter   : data,formattedData,row,col (커스텀 포맷터 기본 인자값들)
+			 * Return      : null
+			 **************************************************************************/
+			function custFileDownImgCol(data,formattedData,row,col){				  
+				// 스트링 값을 읽어 파일다운 버튼 이미지 생성				 
+				var str = "";			
+				
+				//if (data.length > 0){
+				if(data != ""){
+					// 이미지 태그 생성
+					str = str + '<img src="/images/btn/allfile.gif" style="cursor:pointer;"' + ' title="" onclick="fnImageClick(\''+data+'\');"/>';
+				} 
+								
+				return str;
+			}			      		
+			
+			
+        	
+        	/**************************************************************************
+         * function    : searchData1
+         * Description : 신용등급 비교공시
+         * Parameter   : null
+         * Return      : null
+         **************************************************************************/
+        	function searchData1() {
+        		
+        		if ( isValidDate(startDtDD.getValue()) == false || isValidDate(endDtDD.getValue()) == false ) {
+					shotMsg("C_I029");
+					return;
+				}
+				
+				if  ( startDtDD.getValue() > endDtDD.getValue() ) {
+					shotMsg("C_I055");
+					return;
+				}
+
+		      
+        		setValue("BISCdtRnkCmpDTO/inquiryStd", radio1.getValue());	//종류
+        		setValue("BISCdtRnkCmpDTO/schField", radio2.getValue());		//조회범위
+				
+				setValue("BISCdtRnkCmpDTO/standardDt1", startDtDD.getValue()); // 조회 시작일
+        		setValue("BISCdtRnkCmpDTO/standardDt2", endDtDD.getValue()); // 조회 종료일	
+        		
+        		setValue("BISCdtRnkCmpDTO/val10", "3");	//탭2 - 평정기간별	
+        		
+		      var BISCdtRnkCmpDTO = WebSquare.xml.indent(getInstanceNode("BISCdtRnkCmpDTO"));
+		       	
+		      callProFrameProcess("BIS-KOFIABOND","BISCdtRnkCmpSrchSO","selectData",BISCdtRnkCmpDTO,"resp");			       	
+        	}
+        	
+            
+            
+         /**************************************************************************
+          * function    : excelDownLoad
+          * Description : 그리드의 내용을 엑셀로 다운로드
+          * Parameter   : null
+          * Return      : null
+          **************************************************************************/
+         function excelDownLoad(removeCol) {
+         	saveExcelDown(grdMain, divisionNm, "1", true, false, removeCol);
+         }
+         
+         
+         
+        	 /**************************************************************************
+			* function    : openPopItmIssInfo
+			* Description : 종목명/KR코드 검색 팝업
+			* Parameter   : null
+			* Return      : null
+			**************************************************************************/
+			function openPopItmIssInfo(row, col){
+				//openPopup2("popCallBackIssueCompNmInfo", "/xml/Com/pop/CmnPopIssueCompNm.xml",
+				openPopup2("popCallBackItmIssInfo", "/xml/Com/pop/BISItmIssInfoPop.xml&itemCd=" + grdMain.getCellData( row , col ),
+						{ width      : 650
+						, height     : 600 
+						, resizable  : false
+						, scrollbars : false }
+						, {
+							//itemCd : grdMain.getCellData( row , col )
+						}
+				);
+				//BISIssCompPop.xml
+			}
+	        
+	        
+	        /**************************************************************************
+			* function    : popCallBackItmIssInfo
+			* Description : 종목명/KR코드 검색 팝업 Open
+			* Parameter   : null
+			* Return      : null
+			**************************************************************************/
+			function popCallBackItmIssInfo(retXml, popId){
+				//WebSquare.ModelUtil.setInstanceNode( retXml, "respIssCompNmInfo", null, "replace" );
+				//WebSquare.ModelUtil.copyChildrenNodes("respIssCompNmInfo/BISComPopItemCdDTO", "BWKQIBBndRegDetailDTO", "overwrite");
+				WebSquare.util.closePopup(popId);
+				
+			}         
+         
+			init();			
+        ]]></script>
+	</head>
+	<body>
+		<xf:group id="maincontentWrap" style="overflow:hidden;" class="" tagname="div">
+			<w2:wframe id="wfrmSearch" style="" src="" mode="sync"></w2:wframe>
+
+
+			<xf:group id="grpSearchForm" style="" class="mgt10">
+				<xf:group id="group61" style="" class="impCoheader" tagname="div">
+					<xf:group id="group62" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox34" style="" class="impCotic" label="종류"></w2:textbox>
+					</xf:group>
+					<xf:group id="group63" style="" class="impCoco1" tagname="div">
+						<xf:group id="group88" style="" class="fl  mgl10 w600" tagname="div">
+							<xf:select1 renderType="radiogroup" id="radio1" selectedIndex="0" cols="" appearance="full" style=""
+								itemtagname="li" name="fruit1" class="mgt10 mg" tagname="ul" rows="">
+								<xf:choices>
+									<xf:item>
+										<xf:label>채권</xf:label>
+										<xf:value>1</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>기업어음</xf:label>
+										<xf:value>2</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>전자단기사채</xf:label>
+										<xf:value>4</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>ABS</xf:label>
+										<xf:value>30</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>ABCP</xf:label>
+										<xf:value>31</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>AB전자단기사채</xf:label>
+										<xf:value>32</xf:value>
+									</xf:item>
+								</xf:choices>
+								<script ev:event="onchange" type="javascript"><![CDATA[
+									searchData1();
+								 ]]></script>
+							</xf:select1>
+						</xf:group>
+					</xf:group>
+				</xf:group>
+				<xf:group id="group77" style="" class="impCocontent" tagname="div">
+					<xf:group id="group2" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox1" style="" class="impCotic" label="조회기간"></w2:textbox>
+					</xf:group><xf:group id="group3" style="" class="impCoco2" tagname="div">
+						<xf:group id="group9" style="width:270px;" class="impCoco2" tagname="div">
+							<xf:group id="group10" style="" class="fl mgt8 mgl10 w120">
+								<w2:textbox id="textbox4" for="startDtDD" class="hid" label="조회 시작일"></w2:textbox>
+								<w2:inputCalendar id="startDtDD" calendarImageOver="/images/calendar.png" ref="" title="조회 시작일" calendarValueType="yearMonthDate" style="" rendertype="native" useCalendarTabIndex="true" class="w95 h17" calendarImage="/images/calendar.png" useanchormove="true" calendarClass="">
+								</w2:inputCalendar>
+							</xf:group>
+							<w2:textbox id="textbox5" style="" class="fl mgt13 mgl2 w10" label="~"></w2:textbox>
+							<xf:group id="group11" style="" class="fl mgt8 mgl5 w120">
+								<w2:textbox id="textbox6" for="endDtDD" class="hid" label="조회 종료일"></w2:textbox>
+								<w2:inputCalendar id="endDtDD" calendarImageOver="/images/calendar.png" ref="" title="조회 종료일" calendarValueType="yearMonthDate" style="" rendertype="native" useCalendarTabIndex="true" class="w95 h17" calendarImage="/images/calendar.png" useanchormove="true" calendarClass="">
+								</w2:inputCalendar>
+							</xf:group>
+						</xf:group>
+						
+					</xf:group><xf:group id="group84" style="" class="impCorow" tagname="div">
+						<w2:textbox id="textbox47" style="" class="impCotic" label="조회범위"></w2:textbox>
+					</xf:group>
+					<xf:group id="group85" style="" class="2" tagname="div">
+						<xf:group id="group86" style="" class="fl  mgl10 w180" tagname="div">
+							<xf:select1 renderType="radiogroup" id="radio2" selectedIndex="0" cols="" appearance="full" style=""
+								itemtagname="li" name="fruit2" class="mgt10 mg" tagname="ul" rows="">
+								<xf:choices>
+									<xf:item>
+										<xf:label>모두</xf:label>
+										<xf:value>1</xf:value>
+									</xf:item>
+									<xf:item>
+										<xf:label>변동사항만</xf:label>
+										<xf:value>2</xf:value>
+									</xf:item>
+
+								</xf:choices>
+							</xf:select1>
+						</xf:group>
+					</xf:group><xf:group id="group83" style="" class="fr mgt7 mgr10" tagname="a">
+							<w2:attributes>
+								<w2:href>javascript:searchData1();</w2:href>
+								<w2:title>조회</w2:title>
+								<w2:target></w2:target>
+							</w2:attributes>
+							<xf:image id="image3" title="" style="" alt="조회" src="/images/sub/sub_search_btn03.gif"></xf:image>
+						</xf:group>
+				</xf:group>
+				<xf:group id="group89" style="position:relative; margin:10px 0 0px 0; width:100%; height:15px;" class="" tagname="div">
+					<xf:group id="group90" style="" class="fr" tagname="">
+						<w2:textbox id="textbox48" style="" class="fl mgt5" label=""></w2:textbox>
+						<xf:group id="group91" style="" class="fl mgl5 mgr5" tagname="a">
+							<w2:attributes>
+								<w2:href>javascript:excelDownLoad();</w2:href>
+								<w2:title>엑셀 다운로드 바로가기</w2:title>
+							</w2:attributes>
+							<xf:image id="image4" style="" alt="엑셀 다운로드 아이콘 이미지" src="/images/sub/excel_btn.gif"></xf:image>
+						</xf:group>
+					</xf:group>
+				</xf:group>
+
+			</xf:group>
+			<xf:group id="grpChartBtn" style="display:none;" class="mgt5 mgb5" tagname="div">
+				<xf:group id="graphBtn" style="" class="" tagname="a">
+					<w2:attributes>
+						<w2:href>javascript:chartReadingProc();</w2:href>
+					</w2:attributes>
+					<xf:image id="imgChartBtn" style="" alt="그래프닫기" class="chtbtn" src="/images/sub/graph_btn_off.gif"></xf:image>
+				</xf:group>
+			</xf:group>
+			<xf:group id="grpChart" style="position:relative; width:740px;display:none" class="" tagname="div"></xf:group>
+			<xf:group id="grpGrid" style="position:relative;width:100%;" class="over">
+				<w2:grid summary="최종 호가 수익율 목록" baseNode="BISCdtRnkCmpListDTO" readOnlyTabIgnore="true" autoFit="allColumn"
+					sortEvent="ondblclick" sortable="true" class="gridtable9" rowMouseOverColor="#EDF5EB" id="grdMain" focusMode="none" readOnly="true"
+					style="height:150px;" evenRowBackgroundColor="#fff" sendReader="true" repeatNode="BISCdtRnkCmpDTO" visibleRowNum="20">
+					<w2:caption class="hid">최종호가 수익율 목록</w2:caption>
+					<w2:header id="header1" style="">
+						<w2:row id="row1" style="">
+							<w2:column id="column46" inputType="text" scope="col" style="height:25px" value="구분" width="150"></w2:column>
+							<w2:column id="column47" inputType="text" scope="col" style="height:25px" value="평가사" width="70"></w2:column>
+							<w2:column id="column48" inputType="text" scope="col" style="height:25px" value="등급" width="40"></w2:column>
+							<w2:column id="column49" inputType="text" scope="col" style="height:25px" value="평정구분" width="50"></w2:column>
+							<w2:column id="column50" inputType="text" scope="col" style="height:25px" value="평정일" width="70"></w2:column>
+							<w2:column id="column1" style="height:25px" inputType="text" width="50" value="Outlook"></w2:column>
+							<w2:column id="column3" style="height:25px" inputType="text" width="50" value="Credit&lt;br&gt;Watch"></w2:column>
+							<w2:column id="column51" style="height:25px" inputType="text" width="50" value="결산기"></w2:column>
+							<w2:column id="column5" style="height:25px" inputType="text" width="50" value="요약&lt;br&gt;보고서"></w2:column>
+							<w2:column id="column54" inputType="text" style="height:25px" value="회사명" width="50"></w2:column>
+							<w2:column id="column55" inputType="text" style="height:25px" value="평가사코드" width="50"></w2:column>
+							<w2:column id="column56" inputType="text" style="height:25px" value="kR코드" width="50"></w2:column>
+						</w2:row>
+					</w2:header>
+					<w2:gBody id="gBody1" style="">
+						<w2:row id="row2" style="">
+							<w2:column id="itemNm" inputType="link" style="height:20px;" textAlign="center" width="150" dataType="text"
+								colMerge="true">
+							</w2:column>
+							<w2:column id="koreanShotNm" dataType="text" style="height:20px;" width="70" inputType="text"
+								textAlign="center">
+							</w2:column>
+							<w2:column id="creditEstRnkNm" dataType="text" style="height:20px;" width="40" inputType="text"
+								textAlign="center">
+							</w2:column>
+							<w2:column id="estimateGbNm" dataType="text" style="height:20px;" width="50" inputType="text"
+								textAlign="center">
+							</w2:column>
+							<w2:column id="estimateDay" dataType="date" style="height:20px;" width="70" inputType="text"
+								textAlign="center">
+							</w2:column>
+							<w2:column id="outlook" dataType="text" style="height:20px" width="50" inputType="text" textAlign="center">
+							</w2:column>
+							<w2:column id="creditWatch" dataType="text" style="height:20px" width="50" inputType="text"
+								textAlign="center">
+							</w2:column>
+							<w2:column id="settleMM" dataType="text" style="height:20px" width="50" inputType="text" textAlign="center">
+							</w2:column>
+							<w2:column id="fileNm" dataType="text" style="height:20px" width="50" inputType="text"
+								customFormatter="custFileDownImgCol" textAlign="center" imageClickFunction="">
+							</w2:column>
+							<w2:column hidden="true" id="companyNm" inputType="text" style="height:20px" width="50"></w2:column>
+							<w2:column hidden="true" id="val1" inputType="text" style="height:20px" width="50"></w2:column>
+							<w2:column hidden="true" id="val2" inputType="text" style="height:20px" width="50"></w2:column>
+						</w2:row>
+					</w2:gBody>
+					<script ev:event="oncellclick(row,col)" type="javascript">
+						<![CDATA[ 
+							if(col == 0) openPopItmIssInfo(row, "val2");
+						]]>
+					</script>					
+				</w2:grid>
+			</xf:group>
+
+
+
+			<w2:wframe id="wfrmFooter" style="position: relative ;width:100%;height:156px;background-color:#f1f1f1;display:none;"
+				scrolling="no" class="" src="" mode="sync">
+			</w2:wframe>
+
+		</xf:group>
+	</body>
+</html>
+

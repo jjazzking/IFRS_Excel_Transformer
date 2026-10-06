@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><root><message><proframeHeader>
+<pfmAppName>BIS-KOFIABOND</pfmAppName>
+<pfmSvcName>BISCdtRnkCmpSrchSO</pfmSvcName>
+<pfmFnName>getExistMaxDate</pfmFnName>
+<pfmGlobalNo>0fae398f0afe009c1a07fddb94363999</pfmGlobalNo>
+<pfmTrDate>20261006</pfmTrDate>
+<pfmTrTime>20261006142718671</pfmTrTime>
+<pfmClntIp>20.118.230.145</pfmClntIp>
+<pfmResponseDtal></pfmResponseDtal>
+</proframeHeader>
+<systemHeader>
+</systemHeader>
+<BISCdtRnkCmpListDTO>
+<dbio_total_count_>1</dbio_total_count_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_affected_count_>0</dbio_affected_count_>
+<BISCdtRnkCmpDTO>
+<itemNm />
+<companyNm />
+<koreanShotNm />
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay />
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>20261005</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1 />
+<val2 />
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+</BISCdtRnkCmpListDTO></message></root>
