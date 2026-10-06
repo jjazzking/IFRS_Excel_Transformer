@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><root><message><proframeHeader>
+<pfmAppName>BIS-KOFIABOND</pfmAppName>
+<pfmSvcName>BISIssCompPopSrchSO</pfmSvcName>
+<pfmFnName>listRnkAnnComp</pfmFnName>
+<pfmGlobalNo>0fb178790afe009d20a26deb2f1d9168</pfmGlobalNo>
+<pfmTrDate>20261006</pfmTrDate>
+<pfmTrTime>20261006143051385</pfmTrTime>
+<pfmClntIp>20.169.72.19</pfmClntIp>
+<pfmResponseDtal></pfmResponseDtal>
+</proframeHeader>
+<systemHeader>
+</systemHeader>
+<BISIssCompPopListDTO>
+<dbio_total_count_>1</dbio_total_count_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_affected_count_>0</dbio_affected_count_>
+<BISIssCompPopDTO>
+<corporateRegNo>1701110308595</corporateRegNo>
+<issueManNm>(주)삼성전자무비스비투비</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+</BISIssCompPopListDTO></message></root>

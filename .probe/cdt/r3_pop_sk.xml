@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?><root><message><proframeHeader>
+<pfmAppName>BIS-KOFIABOND</pfmAppName>
+<pfmSvcName>BISIssCompPopSrchSO</pfmSvcName>
+<pfmFnName>listRnkAnnComp</pfmFnName>
+<pfmGlobalNo>0fb181a00afe009c5412e6a6d2f022f7</pfmGlobalNo>
+<pfmTrDate>20261006</pfmTrDate>
+<pfmTrTime>20261006143053728</pfmTrTime>
+<pfmClntIp>20.169.72.19</pfmClntIp>
+<pfmResponseDtal></pfmResponseDtal>
+</proframeHeader>
+<systemHeader>
+</systemHeader>
+<BISIssCompPopListDTO>
+<dbio_total_count_>64</dbio_total_count_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_affected_count_>0</dbio_affected_count_>
+<BISIssCompPopDTO>
+<corporateRegNo>1341110045290</corporateRegNo>
+<issueManNm>(주)디에스케이</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1314110206047</corporateRegNo>
+<issueManNm>(주)에스케이씨</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1348110097792</corporateRegNo>
+<issueManNm>(주)에스케이씨에스</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1942110095118</corporateRegNo>
+<issueManNm>(주)에스케이엠</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1942110064973</corporateRegNo>
+<issueManNm>(주)에스케이이엠</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1601110324717</corporateRegNo>
+<issueManNm>(주)에스케이지씨</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1801110544014</corporateRegNo>
+<issueManNm>(주)에스케이케이스틸</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1701110201898</corporateRegNo>
+<issueManNm>(주)에스케이텍스</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1345110037710</corporateRegNo>
+<issueManNm>(주)엘에스케이아이로봇</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1751110015567</corporateRegNo>
+<issueManNm>(주)한국물류에스케이케이</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1942110019085</corporateRegNo>
+<issueManNm>디에스케이기계(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1756110025475</corporateRegNo>
+<issueManNm>에스케이 머티리얼즈(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101116480232</corporateRegNo>
+<issueManNm>에스케이넥실리스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1301110005727</corporateRegNo>
+<issueManNm>에스케이디스커버리(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101113001685</corporateRegNo>
+<issueManNm>에스케이디앤디(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101110577233</corporateRegNo>
+<issueManNm>에스케이렌터카(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101110311392</corporateRegNo>
+<issueManNm>에스케이마리타임(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>2301110134111</corporateRegNo>
+<issueManNm>에스케이머티리얼즈에어플러스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1311110523736</corporateRegNo>
+<issueManNm>에스케이바이오사이언스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101111466659</corporateRegNo>
+<issueManNm>에스케이브로드밴드(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101112007858</corporateRegNo>
+<issueManNm>에스케이쉴더스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1756110025475</corporateRegNo>
+<issueManNm>에스케이스페셜티(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1301111198836</corporateRegNo>
+<issueManNm>에스케이스피드메이트(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1753110001348</corporateRegNo>
+<issueManNm>에스케이실트론(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101110507678</corporateRegNo>
+<issueManNm>에스케이씨라이팅(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1347110014631</corporateRegNo>
+<issueManNm>에스케이씨솔믹스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1615110225312</corporateRegNo>
+<issueManNm>에스케이씨하이테크앤마케팅(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101117064217</corporateRegNo>
+<issueManNm>에스케이아이이테크놀로지(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>2301110227982</corporateRegNo>
+<issueManNm>에스케이어드밴스드(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118042361</corporateRegNo>
+<issueManNm>에스케이어스온(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>2301110134111</corporateRegNo>
+<issueManNm>에스케이에어플러스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101116852738</corporateRegNo>
+<issueManNm>에스케이에이씨피씨제4호기업인수목적(</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101114191815</corporateRegNo>
+<issueManNm>에스케이엔무브(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1347110014631</corporateRegNo>
+<issueManNm>에스케이엔펄스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1913110003485</corporateRegNo>
+<issueManNm>에스케이오션플랜트(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118042379</corporateRegNo>
+<issueManNm>에스케이온(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101117815446</corporateRegNo>
+<issueManNm>에스케이위탁관리부동산투자회사(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101111632979</corporateRegNo>
+<issueManNm>에스케이이엔에스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1201110419681</corporateRegNo>
+<issueManNm>에스케이이전선(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1311110729441</corporateRegNo>
+<issueManNm>에스케이이터닉스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101115125962</corporateRegNo>
+<issueManNm>에스케이인텔릭스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101115528471</corporateRegNo>
+<issueManNm>에스케이제1호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101115874072</corporateRegNo>
+<issueManNm>에스케이제3호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101117236783</corporateRegNo>
+<issueManNm>에스케이제5호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101117262936</corporateRegNo>
+<issueManNm>에스케이제6호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118617502</corporateRegNo>
+<issueManNm>에스케이증권제10호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118782032</corporateRegNo>
+<issueManNm>에스케이증권제11호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118794475</corporateRegNo>
+<issueManNm>에스케이증권제12호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118805545</corporateRegNo>
+<issueManNm>에스케이증권제13호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101110959003</corporateRegNo>
+<issueManNm>에스케이증권제14호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118327721</corporateRegNo>
+<issueManNm>에스케이증권제8호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101118590568</corporateRegNo>
+<issueManNm>에스케이증권제9호기업인수목적(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101114505975</corporateRegNo>
+<issueManNm>에스케이지오센트릭(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1311110501021</corporateRegNo>
+<issueManNm>에스케이케미칼(신설)(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1311110501021</corporateRegNo>
+<issueManNm>에스케이케미칼(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101111405897</corporateRegNo>
+<issueManNm>에스케이텔레시스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101111533599</corporateRegNo>
+<issueManNm>에스케이텔링크(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1311110401875</corporateRegNo>
+<issueManNm>에스케이플라즈마(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>2301110324803</corporateRegNo>
+<issueManNm>에스케이피아이씨글로벌(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1344110001387</corporateRegNo>
+<issueManNm>에스케이하이닉스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>2201110018664</corporateRegNo>
+<issueManNm>지에스케이건설(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1348110493354</corporateRegNo>
+<issueManNm>피에스케이(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1347110004377</corporateRegNo>
+<issueManNm>피에스케이홀딩스(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+<BISIssCompPopDTO>
+<corporateRegNo>1101114210459</corporateRegNo>
+<issueManNm>하나에스케이카드(주)</issueManNm>
+<processGb />
+<absGb />
+</BISIssCompPopDTO>
+</BISIssCompPopListDTO></message></root>
