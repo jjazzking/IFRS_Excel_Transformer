@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, FileSpreadsheet, Lock, PanelsTopLeft } from 'lucide-react';
 import { UsageGuideButton } from './UsageGuideButton';
-import { WorkspaceId, WorkspaceMeta, WORKSPACES } from '../workspaces/registry';
+import { VISIBLE_WORKSPACES, WorkspaceId, WorkspaceMeta } from '../workspaces/registry';
 
 interface HomeScreenProps {
   onOpen: (id: WorkspaceId) => void;
@@ -85,7 +85,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpen, badges }) => (
       <h2 className="text-sm font-semibold text-slate-500 mb-3">작업대 고르기</h2>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {WORKSPACES.map(ws => {
+        {VISIBLE_WORKSPACES.map(ws => {
           const accent = ACCENT[ws.accent];
           const ready = ws.status === 'ready';
           const badge = badges[ws.id];
