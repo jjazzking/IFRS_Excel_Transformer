@@ -5,9 +5,25 @@
  * 붙여넣는다. 찾는 대상만 다르다 (기준서 문단 / 이자율 / 환율 / 소송 사건).
  * 첫 화면은 이 목록을 카드로 늘어놓은 것이고, 카드를 누르면 그 작업대로 들어간다.
  */
-import { BookOpen, Gavel, LucideIcon, Percent, Landmark, ScrollText } from 'lucide-react';
+import {
+  BookOpen,
+  Gavel,
+  LucideIcon,
+  Percent,
+  Landmark,
+  ScrollText,
+  MapPin,
+  TrendingUp,
+} from 'lucide-react';
 
-export type WorkspaceId = 'standards' | 'rates' | 'fx' | 'minutes' | 'litigation';
+export type WorkspaceId =
+  | 'standards'
+  | 'rates'
+  | 'fx'
+  | 'minutes'
+  | 'litigation'
+  | 'landprice'
+  | 'stocks';
 
 export type WorkspaceStatus = 'ready' | 'preparing';
 
@@ -27,7 +43,7 @@ export interface WorkspaceMeta {
   /** 준비 중일 때, 무엇이 준비되면 열리는지 */
   blockedBy?: string;
   /** 카드 색 (tailwind 클래스 조각) */
-  accent: 'emerald' | 'sky' | 'amber' | 'violet' | 'rose';
+  accent: 'emerald' | 'sky' | 'amber' | 'violet' | 'rose' | 'teal' | 'indigo';
   /**
    * 사용자에게 보이지 않게 숨긴다. 코드는 그대로 두되, 첫 화면 카드에서 빠지고
    * 주소창으로 직접 들어와도(`#/minutes`) 첫 화면으로 돌려보낸다.
@@ -98,6 +114,32 @@ export const WORKSPACES: WorkspaceMeta[] = [
     status: 'preparing',
     blockedBy: '대법원 사건검색은 공개 API가 없어 입력 방식부터 정해야 함',
     accent: 'violet',
+  },
+  {
+    id: 'landprice',
+    name: '공시지가 찾기',
+    tagline: '엑셀에서 긁어온 주소로 개별공시지가를 한 번에 찾는다',
+    description:
+      '엑셀 파일을 올릴 필요 없이 조서의 주소 열을 그대로 복사해 붙여넣으면, 주소마다 개별공시지가를 한꺼번에 찾아 같은 순서로 다시 붙여넣을 수 있게 정리한다.',
+    leftPane: '엑셀에서 복사한 주소 붙여넣기',
+    rightPane: '주소별 공시지가 + 엑셀 미리보기',
+    icon: MapPin,
+    status: 'preparing',
+    blockedBy: '공시지가 조회 API(국토교통부 등)와 주소 → 필지 변환 방식부터 정해야 함',
+    accent: 'teal',
+  },
+  {
+    id: 'stocks',
+    name: '주가 찾기',
+    tagline: '상장주식 종가를 특정일·회계기간으로 찾는다',
+    description:
+      '상장주식 한 종목씩, 또는 여러 종목을 한 번에 넣어 특정일 종가나 회계기간의 일별 주가·평균을 찾아 붙여넣는다.',
+    leftPane: '종목(여러 개 가능) · 기준일 또는 기간',
+    rightPane: '종목별 주가 표 + 엑셀 미리보기',
+    icon: TrendingUp,
+    status: 'preparing',
+    blockedBy: '주가 데이터 출처(KRX 정보데이터시스템 등)와 수정주가 적용 여부부터 정해야 함',
+    accent: 'indigo',
   },
 ];
 

@@ -90,7 +90,7 @@
 - 엑셀: xlsx(SheetJS), 클립보드에 HTML 표 + TSV를 함께 넣어 서식 유지
 - 데이터 수집·가공: Python 스크립트 (scripts/)
 - 패키지 매니저: CI는 bun (bun install --frozen-lockfile), 로컬은 npm도 가능
-- 라우팅: 주소창 해시 (#/standards, #/fx, #/rates, #/minutes, #/litigation)
+- 라우팅: 주소창 해시 (#/standards, #/fx, #/rates, #/minutes, #/litigation, #/landprice, #/stocks)
 - vite base: './' (Pages 하위 경로에서도 상대경로로 동작)
 
 명령어

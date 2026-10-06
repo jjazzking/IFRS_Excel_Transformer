@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { CellShade, ClipboardExportResult, SheetTable, TableTheme } from '../types';
-import { getThemeStyles, numericTd, styleAttr, totalTd } from './tableTheme';
+import { getThemeStyles, numericTd, styleAttr, totalTd, withFill } from './tableTheme';
 
 /**
  * 여러 열짜리 표를 엑셀 조서에 붙일 수 있는 형태로 바꾼다.
@@ -34,8 +34,15 @@ export const SHADE_FILL: Record<CellShade, string> = {
   interpStrong: '#FFC000',
 };
 
-function shadeCss(shade: CellShade | null | undefined): string {
-  return shade ? ` background-color: ${SHADE_FILL[shade]}; mso-pattern: auto;` : '';
+/**
+ * 칸 서식에 음영을 덧칠한 `<td>` 여는 태그.
+ * 배경은 `withFill` 로 하나만 남기고, `bgcolor` 속성도 함께 달아 엑셀이 어느 쪽으로 읽든
+ * 색이 남게 한다.
+ */
+function shadedTdOpen(style: string, shade: CellShade | null | undefined): string {
+  if (!shade) return `<td style="${styleAttr(style)}">`;
+  const fill = SHADE_FILL[shade];
+  return `<td bgcolor="${fill}" style="${styleAttr(withFill(style, fill))}">`;
 }
 
 function escapeHtml(str: string): string {
@@ -79,7 +86,7 @@ export function generateSheetClipboard(
   }
   body += '<tr>';
   table.columns.forEach(c => {
-    body += `<td style="${styleAttr(`${styles.sectionTd} text-align: center;${shadeCss(c.shade)}`)}">${escapeHtml(c.label)}</td>`;
+    body += `${shadedTdOpen(`${styles.sectionTd} text-align: center;`, c.shade)}${escapeHtml(c.label)}</td>`;
   });
   body += '</tr>';
 
@@ -89,7 +96,7 @@ export function generateSheetClipboard(
       const col = table.columns[i];
       const isNum = typeof value === 'number';
       const style = row.emphasis === 'total' ? totalStyle : isNum ? numStyle : styles.colATd;
-      body += `<td style="${styleAttr(style + shadeCss(row.shades?.[i]))}">${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
+      body += `${shadedTdOpen(style, row.shades?.[i])}${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
     });
     body += '</tr>';
   });
