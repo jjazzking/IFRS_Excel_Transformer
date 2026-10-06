@@ -8,10 +8,6 @@ on:
   schedule:
     # 매 영업일 10:40 UTC = 19:40 KST. 이자율 받기(19:10) 뒤로 미룬다.
     - cron: '40 10 * * 1-5'
-  # 첫 수집 — 브랜치에서 3년치를 한 번 받는다. 받고 나면 이 push 실행은 뺀다.
-  push:
-    branches: [claude/intelligent-lovelace-mxxc4l]
-    paths: [scripts/fetch_kofia_ratings.py, .github/workflows/kofia-ratings.yml]
   workflow_dispatch:
     inputs:
       years:
