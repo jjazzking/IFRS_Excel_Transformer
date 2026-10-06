@@ -260,7 +260,7 @@ const RatesNavbar: React.FC<{ onBackHome: () => void; subtitle: string }> = ({ o
       <div className="min-w-0">
         <div className="flex items-center space-x-2">
           <button onClick={onBackHome} className="text-xs text-slate-400 hover:text-slate-200 transition cursor-pointer">
-            기준서 데스크
+            찾붙머신
           </button>
           <span className="text-slate-600 text-xs">/</span>
           <h1 className="font-bold text-lg text-slate-100 tracking-tight truncate">이자율 찾기</h1>

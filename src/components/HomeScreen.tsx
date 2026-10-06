@@ -62,8 +62,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpen, badges }) => (
             <FileSpreadsheet className="w-5.5 h-5.5 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-2xl tracking-tight">기준서 데스크</h1>
-            <p className="text-sm text-slate-400">조서를 만들 때 찾아야 하는 것들을 한 자리에</p>
+            <h1 className="font-bold text-2xl tracking-tight">찾붙머신</h1>
+            <p className="text-sm text-slate-400">찾고 붙이기 — 조서를 만들 때 찾아야 하는 것들을 한 자리에</p>
           </div>
         </div>
 

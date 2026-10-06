@@ -50,7 +50,7 @@ function createWindow() {
     height: 900,
     minWidth: 960,
     minHeight: 600,
-    title: '기준서 데스크',
+    title: '찾붙머신',
     backgroundColor: '#f8fafc',
     show: false,
     webPreferences: {

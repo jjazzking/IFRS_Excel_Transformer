@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""기준서 데스크를 연다. 설치할 것도, 받을 것도 없다.
+"""찾붙머신을 연다. 설치할 것도, 받을 것도 없다.
 
     python 실행.py
 
@@ -133,7 +133,7 @@ def main() -> int:
         return Handler(*args, directory=str(root), **kwargs)
 
     with Server((HOST, port), build) as httpd:
-        print("기준서 데스크")
+        print("찾붙머신")
         print("─" * 52)
         print(f"  주소   {url}")
         print(f"  화면   {root}")
