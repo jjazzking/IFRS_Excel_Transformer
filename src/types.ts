@@ -219,3 +219,50 @@ export interface RatesYearData extends RatesYearMeta {
   fetchedAt: string;
   rows: RatesDay[];
 }
+
+// ---------------------------------------------------------------------------
+// 신용등급 — 금융투자협회 신용등급 속보 (scripts/fetch_kofia_ratings.py)
+// ---------------------------------------------------------------------------
+
+/**
+ * 등급의 종류. 같은 회사라도 둘은 다를 수 있다.
+ * bond = 회사채 등 채권 한 건에 매긴 등급 (금투협 속보)
+ * icr  = 기업신용등급 — 회사 자체의 채무상환능력 (아직 받지 않는다. docs/ratings-plan.md)
+ */
+export type RatingKind = 'bond' | 'icr';
+
+export interface CompanyRating {
+  kind: RatingKind;
+  /** 평가사 코드 (A10001 …). 이름은 RatingsData.agencies */
+  agency: string;
+  grade: string;
+  /** 평정일 YYYY-MM-DD */
+  date: string;
+  outlook: string;
+  /** 상향검토 · 하향검토 · 미확정검토 */
+  watch: string;
+  /** 대표 등급을 준 종목의 회차 */
+  issue: string;
+  /** 그날 이 평가사가 등급을 준 종목 수 */
+  issues: number;
+  /** 대표 등급이 지급보증 종목의 등급 — 보증한 회사의 등급일 수 있다 */
+  guaranteed?: boolean;
+  /** 같은 날 다른 종목에 준 다른 등급 (후순위 · 보증 등) */
+  others?: { grade: string; issue: string; guaranteed?: boolean }[];
+}
+
+export interface RatedCompany {
+  name: string;
+  ratings: CompanyRating[];
+}
+
+export interface RatingsData {
+  source: string;
+  sourceUrl: string;
+  updatedAt: string;
+  /** 받아 둔 평정일 구간 */
+  from: string;
+  to: string;
+  agencies: Record<string, string>;
+  companies: RatedCompany[];
+}

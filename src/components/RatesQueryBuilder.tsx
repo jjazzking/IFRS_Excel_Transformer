@@ -4,6 +4,7 @@ import { RateRowMeta } from '../types';
 import { Chip, TierButton, toggle } from './TierControls';
 import { PURPOSES, PURPOSE_BY_VALUE, RatePurpose, quarterEnds, termLabel } from '../utils/ratesQuery';
 import { isIsoDate } from '../utils/dateRange';
+import { RatingLookup } from './RatingLookup';
 
 export interface RatesQueryState {
   purpose: RatePurpose | null;
@@ -13,6 +14,8 @@ export interface RatesQueryState {
   termIdx: number[];
   /** 보간할 잔존기간 (년) */
   customTerms: number[];
+  /** 신용등급 찾기로 행을 골랐을 때 조서 각주에 남기는 문장 */
+  ratingNote?: string;
 }
 
 interface RatesQueryBuilderProps {
@@ -86,12 +89,24 @@ export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onC
     title: guide?.rowAdvice ? `종류·등급 (행) — ${guide.rowAdvice}` : '종류·등급 (행, 여러 개 가능)',
     done: query.rowCodes.length > 0,
     body: (
-      <RowPicker
-        rows={rows}
-        picked={query.rowCodes}
-        suggest={guide?.suggestRow}
-        onChange={rowCodes => onChange({ rowCodes })}
-      />
+      <>
+        <RatingLookup
+          rows={rows}
+          pickedRows={query.rowCodes}
+          asOf={query.date ?? bounds.to}
+          note={query.ratingNote}
+          onPick={(code, ratingNote) =>
+            onChange({ rowCodes: query.rowCodes.includes(code) ? query.rowCodes : [...query.rowCodes, code], ratingNote })
+          }
+          onClearNote={() => onChange({ ratingNote: undefined })}
+        />
+        <RowPicker
+          rows={rows}
+          picked={query.rowCodes}
+          suggest={guide?.suggestRow}
+          onChange={rowCodes => onChange({ rowCodes })}
+        />
+      </>
     ),
   });
 
