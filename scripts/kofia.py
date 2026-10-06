@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+import datetime as dt
 import http.client
 import re
 import time
@@ -51,7 +52,7 @@ class YieldRow:
     values: list[float | None]
 
 
-def _call(svc: str, fn: str, dto_xml: str) -> ET.Element:
+def _call(svc: str, fn: str, dto_xml: str, screen_url: str = SCREEN_URL) -> ET.Element:
     body = (
         '<?xml version="1.0" encoding="utf-8"?><message><proframeHeader>'
         f"<pfmAppName>BIS-KOFIABOND</pfmAppName><pfmSvcName>{svc}</pfmSvcName><pfmFnName>{fn}</pfmFnName>"
@@ -63,7 +64,7 @@ def _call(svc: str, fn: str, dto_xml: str) -> ET.Element:
         headers={
             "User-Agent": UA,
             "Content-Type": "application/xml; charset=UTF-8",
-            "Referer": SCREEN_URL,
+            "Referer": screen_url,
             "Origin": "https://www.kofiabond.or.kr",
         },
     )
@@ -143,3 +144,66 @@ def _clean(s: str) -> str:
     """'**금융채 II(금융기관채)', '***보증' 처럼 화면 각주 표시로 붙은 별표를 뗀다. '-' 는 빈 칸."""
     s = re.sub(r"^\*+", "", s).strip()
     return "" if s == "-" else s
+
+
+# ---------------------------------------------------------------------------
+# 신용등급 속보 — 신용평가정보 › 신용등급 속보 (/xml/cdttest/BISCdtRnkHot.xml)
+# 조사한 내용은 docs/ratings-plan.md 에 있다.
+# ---------------------------------------------------------------------------
+
+RATING_SCREEN_URL = "https://www.kofiabond.or.kr/websquare/websquare.html?w2xPath=/xml/cdttest/BISCdtRnkHot.xml"
+
+# 평가사 코드 — 화면의 라디오 버튼과 같다
+AGENCIES = {
+    "A10001": "한국기업평가",
+    "A15001": "한국신용평가",
+    "A15002": "NICE신용평가",
+    "A15003": "서울신용평가",
+}
+
+# Credit Watch 코드 — 화면은 평가사마다 '상향검토' 나 '↑' 처럼 달리 적지만 뜻은 같다
+WATCH = {"10": "상향검토", "20": "하향검토", "30": "미확정검토"}
+
+
+@dataclass
+class RatingEvent:
+    date: str        # 평정일 YYYY-MM-DD
+    company: str     # 발행사명 (예: 삼성카드(주))
+    agency: str      # 평가사 코드 (A10001 …)
+    grade: str       # 등급 (예: AA-)
+    outlook: str     # 안정적 · 긍정적 · 부정적 · 유동적 · ''
+    watch: str       # 상향검토 · 하향검토 · 미확정검토 · ''
+    issue: str       # 회차 (예: '2918회 외')
+
+
+def fetch_rating_flash(start: dt.date, end: dt.date) -> list[RatingEvent]:
+    """
+    기간 안에 매겨진 채권(회사채 탭) 신용등급 전부. 기간은 평정일 기준이다.
+
+    등급이 빈 행은 버린다 — 증권사 ELB·DLB 처럼 등급 없이 공시만 된 종목이다.
+    한 달이 0.5MB 남짓이라 부르는 쪽에서 달 단위로 나눠 묻는다.
+    """
+    root = _call(
+        "BISCdtRnkHotSrchSO", "select",
+        "<BISCdtRnkHotDTO><schField>1</schField><creditEstCd></creditEstCd><companyNm></companyNm>"
+        f"<schData>1</schData><standardDt1>{start:%Y%m%d}</standardDt1><standardDt2>{end:%Y%m%d}</standardDt2>"
+        "</BISCdtRnkHotDTO>",
+        RATING_SCREEN_URL,
+    )
+    events: list[RatingEvent] = []
+    for e in root.iter("BISCdtRnkHotDTO"):
+        grade = _text(e, "creditEstRnkNm")
+        day = _text(e, "estimateDay")
+        company = _text(e, "companyNm")
+        if not grade or not company or not re.fullmatch(r"\d{8}", day):
+            continue
+        events.append(RatingEvent(
+            date=f"{day[:4]}-{day[4:6]}-{day[6:]}",
+            company=company,
+            agency=_text(e, "val1"),
+            grade=grade,
+            outlook=_text(e, "outlook"),
+            watch=WATCH.get(_text(e, "creditWatch"), ""),
+            issue=_text(e, "issueTimeDiff"),
+        ))
+    return events

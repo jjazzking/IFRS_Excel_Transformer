@@ -74,8 +74,9 @@ export default function RatesWorkspace({ onBackHome }: RatesWorkspaceProps) {
         citation: cite && guide && guide.refs.length > 0 ? citeRefs(guide.refs) : undefined,
         requestedDate: query.date ?? '',
         source: '금융투자협회 채권정보센터 채권시가평가수익률(평가사 평균)',
+        ratingNote: query.ratingNote,
       }),
-    [terms, rowsMeta, day, selection, onlyPicked, cite, guide, query.date]
+    [terms, rowsMeta, day, selection, onlyPicked, cite, guide, query.date, query.ratingNote]
   );
 
   const toggleRow = useCallback(
@@ -228,7 +229,7 @@ export default function RatesWorkspace({ onBackHome }: RatesWorkspaceProps) {
                   fileSuffix="이자율"
                   theme={theme}
                   onChangeTheme={setTheme}
-                  onClearAll={() => updateQuery({ rowCodes: [], termIdx: [], customTerms: [] })}
+                  onClearAll={() => updateQuery({ rowCodes: [], termIdx: [], customTerms: [], ratingNote: undefined })}
                   emptyHint="왼쪽에서 기준일을 고르면 금투협 표가 조서 모양 그대로 여기에 나타납니다. 고른 행·열은 노란 음영으로 칠해 붙여넣습니다."
                 />
               </div>

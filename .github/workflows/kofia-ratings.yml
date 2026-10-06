@@ -1,0 +1,62 @@
+# 금투협 신용등급 속보(채권) 받아 두기.
+#
+# 이자율과 같은 이유다 — 브라우저는 kofiabond 를 직접 부를 수 없다(CORS).
+# 여기서 받아 저장소에 커밋하고, 앱은 저장소 안의 JSON 만 읽는다.
+name: 신용등급 받기
+
+on:
+  schedule:
+    # 매 영업일 10:40 UTC = 19:40 KST. 이자율 받기(19:10) 뒤로 미룬다.
+    - cron: '40 10 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      years:
+        description: '최근 몇 년치를 받을지'
+        required: false
+        default: '3'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kofia-ratings
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 정기 실행은 최근 40일만 다시 받는다. 받은 기간은 통째로 새로 받은 것으로 바뀐다.
+      - name: 신용등급 받기
+        run: |
+          python3 scripts/fetch_kofia_ratings.py \
+            ${{ github.event_name == 'schedule' && '--days 40' || format('--years {0}', inputs.years || '3') }}
+
+      - name: 바뀐 것이 있으면 커밋
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A src/data/ratings
+          if git diff --cached --quiet -- src/data/ratings; then
+            echo "바뀐 신용등급 없음 — 커밋하지 않는다."
+            exit 0
+          fi
+          git commit -m "chore(ratings): 신용등급 자료 갱신 ($(date -u +%Y-%m-%d))"
+          branch='${{ github.ref_name }}'
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase -X theirs origin "$branch"
+            if git push origin "HEAD:$branch"; then
+              exit 0
+            fi
+            echo "푸시 거부 — ${attempt}번째, 잠시 뒤 다시 시도한다."
+            sleep $((attempt * 5))
+          done
+          echo "::error::다섯 번 시도했지만 푸시하지 못했다."
+          exit 1

@@ -292,6 +292,8 @@ export interface RatesTableOptions {
   requestedDate: string;
   source: string;
   fetchedAt?: string;
+  /** 신용등급 찾기로 고른 등급 — 각주에 그대로 적는다 */
+  ratingNote?: string;
 }
 
 /** 표의 열 하나 — 고시된 만기이거나 보간한 만기 */
@@ -402,6 +404,7 @@ export function buildRatesTable(
   if (interp.length > 0) {
     notes.push(`(보간) 열은 앞뒤 고시 만기의 수익률을 잔존기간으로 선형보간 (진한 음영)`);
   }
+  if (options.ratingNote) notes.push(options.ratingNote);
   if (options.citation) notes.push(`근거: ${options.citation}`);
 
   return {
