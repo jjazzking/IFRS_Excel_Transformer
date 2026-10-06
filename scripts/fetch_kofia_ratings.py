@@ -35,7 +35,7 @@ OUT_DIR = Path(__file__).resolve().parent.parent / "src" / "data" / "ratings"
 SOURCE = "금융투자협회 채권정보센터 — 신용등급 속보 (채권)"
 SOURCE_URL = "https://www.kofiabond.or.kr/"
 POLITE_DELAY_SEC = 0.8
-# 한 달 응답이 중간에 끊기면(_call 이 이미 몇 번 다시 묻는다) 그 달만 빼고 계속한다.
+# 하루치까지 나눠도 받히지 않으면 그 달만 빼고 계속한다.
 MAX_CONSECUTIVE_FAILURES = 4
 
 # 높은 등급이 앞. 같은 날 같은 평가사가 종목마다 다른 등급을 줬을 때(후순위 · 신종자본증권 등)
@@ -65,6 +65,25 @@ def month_windows(start: dt.date, end: dt.date):
         nxt = (d.replace(day=1) + dt.timedelta(days=32)).replace(day=1)
         yield d, min(nxt - dt.timedelta(days=1), end)
         d = nxt
+
+
+def fetch_split(start: dt.date, end: dt.date) -> list[RatingEvent]:
+    """
+    한 기간을 받는다. 응답이 끝내 끊기면 기간을 반으로 나눠 다시 묻는다 (하루까지).
+
+    정기평정이 몰리는 3~6월은 한 달 응답이 수 MB 라 통째로는 거의 받히지 않는다.
+    """
+    try:
+        return fetch_rating_flash(start, end)
+    except KofiaError:
+        if start >= end:
+            raise
+    mid = start + (end - start) // 2
+    print(f"    {start} ~ {end} 이 끊겨 나눠 받는다")
+    time.sleep(POLITE_DELAY_SEC)
+    first = fetch_split(start, mid)
+    time.sleep(POLITE_DELAY_SEC)
+    return first + fetch_split(mid + dt.timedelta(days=1), end)
 
 
 def load_json(path: Path) -> dict:
@@ -164,7 +183,7 @@ def main() -> int:
     consecutive = 0
     for w_start, w_end in month_windows(start, end):
         try:
-            events = fetch_rating_flash(w_start, w_end)
+            events = fetch_split(w_start, w_end)
             consecutive = 0
         except KofiaError as exc:
             failures.append(f"{w_start} ~ {w_end}: {exc}")
