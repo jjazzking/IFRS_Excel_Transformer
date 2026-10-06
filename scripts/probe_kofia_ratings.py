@@ -261,8 +261,47 @@ def stage3() -> None:
         print("   응답 앞부분:", r[:2500].replace("\n", " "))
 
 
+def stage5() -> None:
+    """3차 — 팝업에 processGb, 속보에 schData, 평정기간별은 한 주로 줄여서."""
+    print("\n### 5단계")
+    ref = "/xml/cdttest/BISRnkAnn.xml"
+    C, H = "BISCdtRnkCmpDTO", "BISCdtRnkHotDTO"
+    tries = [
+        ("BISIssCompPopSrchSO", "listRnkAnnComp", dto("BISIssCompPopDTO", issueManNm=COMPANY, processGb="1"), "pop_samsung"),
+        ("BISIssCompPopSrchSO", "listRnkAnnComp", dto("BISIssCompPopDTO", issueManNm="에스케이", processGb="1"), "pop_sk"),
+        ("BISCdtRnkHotSrchSO", "select",
+         dto(H, schField="1", creditEstCd="", companyNm="", schData="1", standardDt1="20260901", standardDt2="20260930"),
+         "hot_month_all"),
+        ("BISCdtRnkHotSrchSO", "select",
+         dto(H, schField="1", creditEstCd="", companyNm="", schData="2", standardDt1="20260901", standardDt2="20260930"),
+         "hot_month_change"),
+        ("BISCdtRnkHotSrchSO", "select",
+         dto(H, schField="1", creditEstCd="", companyNm="삼성", schData="1", standardDt1="20230101", standardDt2="20261005"),
+         "hot_samsung_3y"),
+        ("BISCdtRnkCmpSrchSO", "selectData",
+         dto(C, inquiryStd="1", schField="1", standardDt1="20260924", standardDt2="20260930", val10="3"), "pce_week"),
+    ]
+    for svc, fn, body, tag in tries:
+        r = None
+        for _ in range(3):  # 큰 응답은 중간에 끊기는 일이 잦다
+            r = call("BIS-KOFIABOND", svc, fn, body, ref)
+            if r:
+                break
+        time.sleep(POLITE_DELAY_SEC)
+        if r is None:
+            print(f"\n-- {tag}: 받지 못함")
+            continue
+        save(f"r3_{tag}.xml", r)
+        rows = len(re.findall(r"<BIS\w+DTO>", r))
+        total = re.search(r"<dbio_total_count_>(\d+)<", r)
+        print(f"\n-- {tag}: {svc}.{fn} {len(r)} chars, DTO {rows}, total {total.group(1) if total else '?'}")
+        print("   요청:", body)
+        body_start = r.find("<dbio_affected_count_>")
+        print("   응답:", r[body_start:body_start + 2500].replace("\n", " "))
+
+
 def main() -> int:
-    stage3()
+    stage5()
     print("\n끝.")
     return 0
 
