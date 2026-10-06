@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'path';
 import {defineConfig, Plugin} from 'vite';
+import {viteSingleFile} from 'vite-plugin-singlefile';
 
 // 번들에 합치지 않고 **파일 그대로** 두는 곁자료들. 셋 다 필요할 때만 받아 가고,
 // 받는 곳은 언제나 우리 origin 이다 — CDN 을 끼우지 않는다. 의사록을 연 페이지가
@@ -108,13 +109,38 @@ function sideAssetsPlugin(): Plugin {
   };
 }
 
-export default defineConfig(() => {
+/**
+ * `--mode single` — 앱 전체를 **HTML 파일 하나**로 묶는다 (`npm run build:single`).
+ * 서버 없이 파일을 더블클릭해서 연다. 자료(기준서·환율·금리·등급)도 모두 안에 들어간다.
+ *
+ * 숨겨 둔 의사록 작업대는 PDF·OCR 곁자료가 파일 하나에 담기지 않으므로 빈 화면으로
+ * 바꿔 끼운다. 의사록 코드는 건드리지 않는다 — 이 빌드에서만 빠진다.
+ */
+function stubMinutesPlugin(): Plugin {
+  const id = '\0minutes-stub';
+  return {
+    name: 'stub-minutes',
+    enforce: 'pre',
+    resolveId(source) {
+      return source === './workspaces/MinutesWorkspace' ? id : null;
+    },
+    load(loaded) {
+      return loaded === id ? 'export default function MinutesWorkspace() { return null; }' : null;
+    },
+  };
+}
+
+export default defineConfig(({mode}) => {
+  const single = mode === 'single';
   return {
     // 상대 경로로 자산을 참조한다.
     // 절대 경로(/assets/...)로 빌드하면 하위 경로(예: https://host/IFRS_Excel_Transformer/)에
     // 배포했을 때 JS/CSS가 404가 나면서 흰 화면만 보인다.
     base: './',
-    plugins: [react(), tailwindcss(), sideAssetsPlugin()],
+    plugins: single
+      ? [stubMinutesPlugin(), react(), tailwindcss(), viteSingleFile()]
+      : [react(), tailwindcss(), sideAssetsPlugin()],
+    build: single ? {outDir: 'dist-single'} : undefined,
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
