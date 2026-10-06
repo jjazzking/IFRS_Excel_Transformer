@@ -1,9 +1,0 @@
-
-<!DOCTYPE html>
-<html>
-<head>
-<title> NICE 신용평가 </title>
-<script type="text/javascript" >
-document.location="/main.do";
-</script>
-</head>

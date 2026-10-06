@@ -51,7 +51,34 @@
 `<issueManNm>에스케이</issueManNm><processGb>1</processGb>` → `corporateRegNo` · `issueManNm` 64곳.
 '삼성전자' 는 '(주)삼성전자무비스비투비' 한 곳만 나온다 — 비교공시에 남은 회사만 목록에 있다.
 
-## 수집 계획 (다음 단계)
+## 만든 것
+
+- 수집: `scripts/fetch_kofia_ratings.py` · `.github/workflows/kofia-ratings.yml` (매 영업일 최근 40일)
+  - `src/data/ratings/events-YYYY.json` 평정 한 건이 한 줄 · `latest.json` 회사 · 평가사별 최근 평정
+  - 대표 등급은 지급보증 · 신용공여 종목을 빼고 고른다. 같은 날 다른 종목의 다른 등급은 `others` 에 남긴다.
+  - 한계: 한국기업평가는 회차 칸에 보증 여부를 적지 않는 일이 있다 (예: 한국투자캐피탈 145 — 보증 AA- / 자체 A).
+    그날 종목 수가 많은 등급을 대표로 고르므로 보증 등급이 대표가 될 수 있다. 화면은 다른 등급을 경고로 함께 보여 준다.
+- 화면: 이자율 작업대 › 종류·등급(행) 단계의 *회사 신용등급 찾기* (`src/components/RatingLookup.tsx`)
+  - 등급마다 종류 배지 — **채권등급**(`kind: 'bond'`) / **기업신용등급**(`kind: 'icr'`, 아직 자료 없음)
+  - 등급의 회사채 공모 무보증 행 고르기, 조서 각주에 등급 · 종류 · 평가사 · 평정일
+  - 없으면 "공시된 신용등급 없음" 에서 멈춘다.
+
+## 기업신용등급(ICR) 보완 — 출처 조사 (2026-10-06)
+
+금투협은 채권 · CP · ABS 등급만 공시한다. ICR 은 신평사 3사 사이트에 있다.
+
+| 신평사 | robots.txt | ICR 이 보이는 화면 |
+| --- | --- | --- |
+| 한국신용평가 kisrating.com | `User-agent: *` `Disallow: /` (검색엔진만 허용) | 등급검색 `/ratingsSearch/corp_search.do` |
+| 한국기업평가 korearatings.com | 없음 (404) | 유효등급 List `MENU_ID=400`, 기업신용평가 `MENU_ID=870` |
+| NICE신용평가 nicerating.com | 없음 | 유효등급 리스트 `/disclosure/validRatingSearch.do`, `/datacenter/validRating.do` |
+
+- 한신평은 자동 수집을 막고 있다 — 받지 않는다.
+- robots.txt 가 없다고 수집이 허락된 것은 아니다. 한기평 · NICE 는 이용약관을 먼저 확인한다.
+- 다른 길: 사용자가 신평사 보고서를 보고 ICR 을 직접 적는 칸 (등급 · 평가사 · 평정일 · 근거),
+  OpenDART 사업보고서의 신용등급 내역 (API 키 필요, 서술형이라 뽑기 어렵다).
+
+## 처음 세운 수집 계획
 
 1. 속보를 최근 3년 · 달 단위로 받아 `src/data/ratings/` 에 저장 (이자율 · 환율과 같이 Actions 에서 받아 커밋).
 2. 회사 · 평가사마다 가장 최근 평정만 남긴 색인을 만든다. 정기 실행은 최근 한 달만 다시 받는다.
