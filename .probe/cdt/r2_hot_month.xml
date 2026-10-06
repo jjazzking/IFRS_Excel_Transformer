@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><root><message><proframeHeader>
+<pfmAppName>BIS-KOFIABOND</pfmAppName>
+<pfmSvcName>BISCdtRnkHotSrchSO</pfmSvcName>
+<pfmFnName>select</pfmFnName>
+<pfmGlobalNo>0fb089570afe009d534a0b355d0656e5</pfmGlobalNo>
+<pfmTrDate>20261006</pfmTrDate>
+<pfmTrTime>20261006142950167</pfmTrTime>
+<pfmClntIp>132.196.83.170</pfmClntIp>
+<pfmResponseType>S</pfmResponseType>
+<pfmResponseCode>COMS8000</pfmResponseCode>
+<pfmResponseTitle>Service Error</pfmResponseTitle>
+<pfmResponseBasc></pfmResponseBasc>
+<pfmResponseDtal></pfmResponseDtal>
+</proframeHeader>
+<systemHeader>
+</systemHeader>
+</message></root>

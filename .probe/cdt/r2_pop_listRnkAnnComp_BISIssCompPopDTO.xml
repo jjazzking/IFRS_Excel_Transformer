@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><root><message><proframeHeader>
+<pfmAppName>BIS-KOFIABOND</pfmAppName>
+<pfmSvcName>BISIssCompPopSrchSO</pfmSvcName>
+<pfmFnName>listRnkAnnComp</pfmFnName>
+<pfmGlobalNo>0faf70d40afe009c3cd922624a67fe92</pfmGlobalNo>
+<pfmTrDate>20261006</pfmTrDate>
+<pfmTrTime>20261006142838356</pfmTrTime>
+<pfmClntIp>132.196.83.170</pfmClntIp>
+<pfmResponseDtal></pfmResponseDtal>
+</proframeHeader>
+<systemHeader>
+</systemHeader>
+<BISIssCompPopListDTO>
+<dbio_total_count_>0</dbio_total_count_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_affected_count_>0</dbio_affected_count_>
+</BISIssCompPopListDTO></message></root>

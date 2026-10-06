@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?><root><message><proframeHeader>
+<pfmAppName>BIS-KOFIABOND</pfmAppName>
+<pfmSvcName>BISCdtRnkCmpSrchSO</pfmSvcName>
+<pfmFnName>selectData</pfmFnName>
+<pfmGlobalNo>0faf7fbb0afe009c7ba67ba7c49db3e0</pfmGlobalNo>
+<pfmTrDate>20261006</pfmTrDate>
+<pfmTrTime>20261006142842171</pfmTrTime>
+<pfmClntIp>132.196.83.170</pfmClntIp>
+<pfmResponseDtal></pfmResponseDtal>
+</proframeHeader>
+<systemHeader>
+</systemHeader>
+<BISCdtRnkCmpListDTO>
+<dbio_total_count_>16</dbio_total_count_>
+<dbio_fetch_seq_>0</dbio_fetch_seq_>
+<dbio_fetch_size_>0</dbio_fetch_size_>
+<dbio_affected_count_>0</dbio_affected_count_>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전기62</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국기업평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A10001</val1>
+<val2>KR6009154M87</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전기62</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15001</val1>
+<val2>KR6009154M87</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전기62</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>나이스신용평가</koreanShotNm>
+<creditEstRnkNm>AAA</creditEstRnkNm>
+<estimateGbNm>정기평정</estimateGbNm>
+<estimateDay>20040601</estimateDay>
+<outlook>안정적</outlook>
+<creditWatch />
+<fileNm>/biscredit/crdnice/2009/117489582398200055.pdf</fileNm>
+<settleMM>02</settleMM>
+<standardDt>20090426</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15002</val1>
+<val2>KR6009154M87</val2>
+<val3>삼성전자(주)</val3>
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전기62</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>서울신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15003</val1>
+<val2>KR6009154M87</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자168</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국기업평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A10001</val1>
+<val2>KR6005934M82</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자168</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국신용평가</koreanShotNm>
+<creditEstRnkNm>AAA</creditEstRnkNm>
+<estimateGbNm>정기평정</estimateGbNm>
+<estimateDay>20040525</estimateDay>
+<outlook>안정적</outlook>
+<creditWatch />
+<fileNm>/biscredit/crdkis/2009/rs20040531-6.pdf</fileNm>
+<settleMM>12</settleMM>
+<standardDt>20090423</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15001</val1>
+<val2>KR6005934M82</val2>
+<val3>삼성전자(주)</val3>
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자168</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>나이스신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15002</val1>
+<val2>KR6005934M82</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자168</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>서울신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15003</val1>
+<val2>KR6005934M82</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자157</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국기업평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A10001</val1>
+<val2>KR6005934J79</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자157</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국신용평가</koreanShotNm>
+<creditEstRnkNm>AAA</creditEstRnkNm>
+<estimateGbNm>정기평정</estimateGbNm>
+<estimateDay>20010518</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm>/biscredit/crdkis/2009/rs20010528-2.pdf</fileNm>
+<settleMM>12</settleMM>
+<standardDt>20090423</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15001</val1>
+<val2>KR6005934J79</val2>
+<val3>삼성전자(주)</val3>
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자157</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>나이스신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15002</val1>
+<val2>KR6005934J79</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자157</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>서울신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15003</val1>
+<val2>KR6005934J79</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자115-변동</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국기업평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A10001</val1>
+<val2>KR6005934E90</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자115-변동</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>한국신용평가</koreanShotNm>
+<creditEstRnkNm>AAA</creditEstRnkNm>
+<estimateGbNm>정기평정</estimateGbNm>
+<estimateDay>20010518</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm>/biscredit/crdkis/2009/rs20010528-2.pdf</fileNm>
+<settleMM>12</settleMM>
+<standardDt>20090423</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15001</val1>
+<val2>KR6005934E90</val2>
+<val3>삼성전자(주)</val3>
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자115-변동</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>나이스신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15002</val1>
+<val2>KR6005934E90</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+<BISCdtRnkCmpDTO>
+<itemNm>삼성전자115-변동</itemNm>
+<companyNm>삼성전자(주)</companyNm>
+<koreanShotNm>서울신용평가</koreanShotNm>
+<creditEstRnkNm />
+<estimateGbNm />
+<estimateDay>-</estimateDay>
+<outlook />
+<creditWatch />
+<fileNm />
+<settleMM />
+<standardDt>-</standardDt>
+<standardDt1 />
+<standardDt2 />
+<schField />
+<schData />
+<issueCompCd />
+<inquiryStd />
+<val1>A15003</val1>
+<val2>KR6005934E90</val2>
+<val3 />
+<val4 />
+<val5 />
+<val6 />
+<val7 />
+<val8 />
+<val9 />
+<val10 />
+</BISCdtRnkCmpDTO>
+</BISCdtRnkCmpListDTO></message></root>
