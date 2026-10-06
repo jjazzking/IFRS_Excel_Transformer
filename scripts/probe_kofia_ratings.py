@@ -203,9 +203,66 @@ def stage2(todo) -> None:
                 print("   응답 앞부분:", r[:1500].replace("\n", " "))
 
 
+def dto(name: str, **kv: str) -> str:
+    return f"<{name}>" + "".join(f"<{k}>{v}</{k}>" for k, v in kv.items()) + f"</{name}>"
+
+
+def stage3() -> None:
+    """2차 — 회사 찾기 팝업, 회사 한 곳의 비교공시, 평정기간별·발행기간별 전체 목록, 속보."""
+    print("\n### 3단계 — 회사 찾기 팝업")
+    pop = "/xml/Com/pop/BISRnkAnnIssCompPop.xml"
+    text = get(pop)
+    if text:
+        save("screen__" + flat(pop), text)
+        print("호출:", calls_in(text))
+        for line in re.findall(r'.*setValue\("BIS[^)]*\).*', text):
+            print("  ", line.strip())
+        for line in re.findall(r'.*callProFrame\w*\(.*', text):
+            print("  ", line.strip())
+
+    ref = "/xml/cdttest/BISRnkAnn.xml"
+    C = "BISCdtRnkCmpDTO"
+    tries = [
+        # 팝업 서비스는 화면을 보고 다시 부른다 — 우선 흔한 이름으로 한 번
+        ("BIS-KOFIABOND", "BISIssCompPopSO", "select", dto("BISIssCompPopDTO", issueManNm=COMPANY), "pop_guess"),
+        # 회사 한 곳 — 삼성전자 법인등록번호
+        ("BIS-KOFIABOND", "BISCdtRnkCmpSrchSO", "selectData",
+         dto(C, schData="1301110006246", inquiryStd="1", schField="1", val10="1"), "comp_samsung"),
+        # 평정기간별 — 한 달, 한 해
+        ("BIS-KOFIABOND", "BISCdtRnkCmpSrchSO", "selectData",
+         dto(C, inquiryStd="1", schField="1", standardDt1="20260901", standardDt2="20260930", val10="3"), "pce_month"),
+        ("BIS-KOFIABOND", "BISCdtRnkCmpSrchSO", "selectData",
+         dto(C, inquiryStd="1", schField="1", standardDt1="20251001", standardDt2="20260930", val10="3"), "pce_year"),
+        # 발행기간별 — 한 달
+        ("BIS-KOFIABOND", "BISCdtRnkCmpSrchSO", "selectData",
+         dto(C, inquiryStd="1", schField="1", standardDt1="20260901", standardDt2="20260930", val10="2"), "trm_month"),
+        # 속보 — 한 달, 회사채 탭(1)
+        ("BIS-KOFIABOND", "BISCdtRnkHotSrchSO", "select",
+         dto("BISCdtRnkHotDTO", schField="1", creditEstCd="", companyNm="", standardDt1="20260901", standardDt2="20260930"),
+         "hot_month"),
+    ]
+    # 팝업 화면에서 찾은 호출을 앞에 끼운다 — 이름이 무엇이든 회사명을 넣어 불러 본다.
+    if text:
+        names = sorted(set(re.findall(r'setValue\("(BIS\w+DTO)/(\w+)"', text)))
+        for app, svc, fn in calls_in(text):
+            for dname in sorted({n for n, _ in names}) or ["BISIssCompPopDTO"]:
+                kv = {k: COMPANY for n, k in names if n == dname and re.search(r"(?i)nm|name|data", k)}
+                tries.insert(0, (app, svc, fn, dto(dname, **kv), f"pop_{fn}_{dname}"))
+    print("\n### 4단계 — 불러 보기")
+    for app, svc, fn, body, tag in tries:
+        r = call(app, svc, fn, body, ref)
+        time.sleep(POLITE_DELAY_SEC)
+        if r is None:
+            continue
+        save(f"r2_{tag}.xml", r)
+        rows = len(re.findall(r"<BIS\w+DTO>", r))
+        print(f"\n-- {tag}: {svc}.{fn} {len(r)} chars, DTO {rows}")
+        print("   요청:", body)
+        print("   응답 앞부분:", r[:2500].replace("\n", " "))
+
+
 def main() -> int:
-    todo = stage1()
-    stage2(todo)
+    stage3()
     print("\n끝.")
     return 0
 
