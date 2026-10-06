@@ -300,8 +300,35 @@ def stage5() -> None:
         print("   응답:", r[body_start:body_start + 2500].replace("\n", " "))
 
 
+AGENCIES = {
+    "kis": "https://www.kisrating.com",
+    "kr": "https://www.korearatings.com",
+    "nice": "https://www.nicerating.com",
+}
+
+
+def stage6() -> None:
+    """4차 — 신평사 3사 사이트: robots.txt 와 기업신용등급(ICR) 화면이 있는지."""
+    print("\n### 6단계 — 신평사 사이트")
+    for key, base in AGENCIES.items():
+        for path in ("/robots.txt", "/", "/main.do", "/index.do"):
+            text = get(base + path)
+            if text is None:
+                print(f"-- {key}{path}: 받지 못함")
+                continue
+            save(f"agency_{key}_{flat(path) or 'root'}.txt", text)
+            print(f"\n-- {key}{path}: {len(text)} chars")
+            if path == "/robots.txt":
+                print(text[:1500])
+                continue
+            links = sorted(set(re.findall(r'href="([^"#]+)"[^>]*>\s*([^<]{0,40})', text)))
+            hits = [(h, t.strip()) for h, t in links if re.search(r"ICR|기업신용|기업평가|Issuer|등급|rating", h + t, re.I)]
+            for h, t in hits[:60]:
+                print("   ", h, "|", t)
+
+
 def main() -> int:
-    stage5()
+    stage6()
     print("\n끝.")
     return 0
 
