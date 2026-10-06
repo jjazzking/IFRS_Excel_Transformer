@@ -1,21 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, PanelRightClose, Table } from 'lucide-react';
 import { RatesQueryBuilder, RatesQueryState } from '../components/RatesQueryBuilder';
-import { RatesMatrix } from '../components/RatesMatrix';
 import { RatesGuidance } from '../components/RatesGuidance';
 import { SheetPreview } from '../components/SheetPreview';
 import { CollapsedRail, Splitter } from '../components/LayoutControls';
 import { useResizableLayout } from '../hooks/useResizableLayout';
 import { RatesDay, TableTheme } from '../types';
 import { RATES_BOUNDS, RATES_INDEX, RATES_READY, loadRatesOn } from '../data/ratesData';
-import { PURPOSE_BY_VALUE, buildRatesTable, citeRefs, rateColumns } from '../utils/ratesQuery';
+import { PURPOSE_BY_VALUE, buildRatesTable, citeRefs } from '../utils/ratesQuery';
 
 interface RatesWorkspaceProps {
   onBackHome: () => void;
 }
 
 export default function RatesWorkspace({ onBackHome }: RatesWorkspaceProps) {
-  // 환율 작업대와 같은 2존 — 왼쪽에서 찾고(위: 단계, 가운데: 안내, 아래: 금투협 표), 오른쪽에 조서 표.
+  // 환율 작업대와 같은 2존 — 왼쪽에서 찾고(위: 단계, 아래: 용도 안내), 오른쪽에 조서 표.
+  // 금투협 원래 표는 따로 보여 주지 않는다 — 오른쪽 조서 미리보기가 같은 표를 음영과 함께 보여 준다.
   const { containerRef, state: layout, dragging, startDrag, resetSide, toggleSide } =
     useResizableLayout({ storageKey: 'workpaper.layout.rates.v1', hasLeft: false });
 
@@ -64,9 +64,6 @@ export default function RatesWorkspace({ onBackHome }: RatesWorkspaceProps) {
     [query.rowCodes, query.termIdx, query.customTerms]
   );
 
-  // 왼쪽 표는 늘 전체를 보여 준다 — 고르지 않은 행·열도 보여야 비교하며 고를 수 있다.
-  const matrixColumns = useMemo(() => rateColumns(terms, selection, false), [terms, selection]);
-
   const table = useMemo(
     () =>
       buildRatesTable(terms, rowsMeta, day, selection, {
@@ -78,45 +75,6 @@ export default function RatesWorkspace({ onBackHome }: RatesWorkspaceProps) {
       }),
     [terms, rowsMeta, day, selection, onlyPicked, cite, guide, query.date, query.ratingNote]
   );
-
-  const toggleRow = useCallback(
-    (code: string) =>
-      setQuery(prev => ({
-        ...prev,
-        rowCodes: prev.rowCodes.includes(code) ? prev.rowCodes.filter(c => c !== code) : [...prev.rowCodes, code],
-      })),
-    []
-  );
-  const toggleTerm = useCallback(
-    (i: number) =>
-      setQuery(prev => ({
-        ...prev,
-        termIdx: prev.termIdx.includes(i) ? prev.termIdx.filter(x => x !== i) : [...prev.termIdx, i].sort((a, b) => a - b),
-      })),
-    []
-  );
-  // 칸을 누르면 그 행과 열을 함께 고른다. 이미 둘 다 골라져 있으면 둘 다 푼다.
-  const pickCell = useCallback((code: string, termIndex: number | undefined) => {
-    setQuery(prev => {
-      const hasRow = prev.rowCodes.includes(code);
-      const hasTerm = termIndex === undefined || prev.termIdx.includes(termIndex);
-      if (hasRow && hasTerm) {
-        return {
-          ...prev,
-          rowCodes: prev.rowCodes.filter(c => c !== code),
-          termIdx: termIndex === undefined ? prev.termIdx : prev.termIdx.filter(x => x !== termIndex),
-        };
-      }
-      return {
-        ...prev,
-        rowCodes: hasRow ? prev.rowCodes : [...prev.rowCodes, code],
-        termIdx:
-          termIndex === undefined || prev.termIdx.includes(termIndex)
-            ? prev.termIdx
-            : [...prev.termIdx, termIndex].sort((a, b) => a - b),
-      };
-    });
-  }, []);
 
   if (!RATES_READY || !RATES_BOUNDS) {
     return (
@@ -150,26 +108,6 @@ export default function RatesWorkspace({ onBackHome }: RatesWorkspaceProps) {
         <section className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
           <RatesQueryBuilder query={query} onChange={updateQuery} terms={terms} rows={rowsMeta} bounds={RATES_BOUNDS} />
           {guide && guide.refs.length > 0 && <RatesGuidance guide={guide} />}
-          <RatesMatrix
-            terms={terms}
-            rows={rowsMeta}
-            columns={matrixColumns}
-            day={day}
-            requestedDate={query.date}
-            pickedRows={query.rowCodes}
-            loading={loading}
-            suggest={guide?.suggestRow}
-            onToggleRow={toggleRow}
-            onToggleTerm={toggleTerm}
-            onPickCell={pickCell}
-            emptyHint={
-              query.purpose === null
-                ? '위에서 용도부터 고르세요. 용도마다 쓰는 이자율과 근거 문단을 함께 보여 줍니다.'
-                : query.date === null
-                  ? '기준일을 고르면 그날의 금투협 시가평가수익률 표가 여기에 나타납니다.'
-                  : '이 날짜 이전에 받아 둔 표가 없습니다. 자료 구간 안의 날짜를 고르세요.'
-            }
-          />
         </section>
 
         {layout.rightOpen ? (
@@ -230,7 +168,15 @@ export default function RatesWorkspace({ onBackHome }: RatesWorkspaceProps) {
                   theme={theme}
                   onChangeTheme={setTheme}
                   onClearAll={() => updateQuery({ rowCodes: [], termIdx: [], customTerms: [], ratingNote: undefined })}
-                  emptyHint="왼쪽에서 기준일을 고르면 금투협 표가 조서 모양 그대로 여기에 나타납니다. 고른 행·열은 노란 음영으로 칠해 붙여넣습니다."
+                  emptyHint={
+                    query.purpose === null
+                      ? '왼쪽에서 용도부터 고르세요. 용도마다 쓰는 이자율과 근거 문단을 함께 보여 줍니다.'
+                      : query.date === null
+                        ? '기준일을 고르면 그날의 금투협 시가평가수익률 표가 조서 모양 그대로 여기에 나타납니다. 고른 행·열은 노란 음영으로 칠해 붙여넣습니다.'
+                        : loading
+                          ? '표를 불러오는 중…'
+                          : '이 날짜 이전에 받아 둔 표가 없습니다. 자료 구간 안의 날짜를 고르세요.'
+                  }
                 />
               </div>
             </aside>

@@ -31,7 +31,6 @@ interface RatesQueryBuilderProps {
  *
  * 환율 작업대와 같은 규칙이다. 한 단계를 고르면 다음 단계가 열리고, 고른 단계 버튼을
  * 다시 누르면 취소된다 (아래 단계에 고른 것이 남아 있으면 취소하지 않는다).
- * 행과 열은 아래 표에서 머리글을 눌러 고를 수도 있다.
  */
 export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onChange, terms, rows, bounds }) => {
   const [blockedNote, setBlockedNote] = useState<string | null>(null);
@@ -128,7 +127,7 @@ export const RatesQueryBuilder: React.FC<RatesQueryBuilderProps> = ({ query, onC
   const visible = firstOpen === -1 ? steps : steps.slice(0, firstOpen + 1);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 shrink-0 max-h-[42%] overflow-auto">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 flex-1 min-h-0 overflow-auto">
       <ol className="space-y-3">
         {visible.map((s, i) => (
           <li key={s.key} className="flex gap-2.5">
