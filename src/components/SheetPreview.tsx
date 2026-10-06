@@ -17,10 +17,12 @@ interface SheetPreviewProps {
   fileSuffix?: string;
 }
 
-/** 음영 미리보기 색 — `SHADE_FILL` 과 같은 노랑 두 단계. 서식(테마)의 칸 배경보다 앞서야 해서 ! 를 붙인다 */
+/** 음영 미리보기 색 — `SHADE_FILL` 과 같은 색. 서식(테마)의 칸 배경보다 앞서야 해서 ! 를 붙인다 */
 const SHADE_PREVIEW_CLASS: Record<CellShade, string> = {
   soft: 'bg-[#FFF2CC]!',
   strong: 'bg-[#FFD966]!',
+  interp: 'bg-[#FFE699]!',
+  interpStrong: 'bg-[#FFC000]!',
 };
 
 const THEMES: { value: TableTheme; label: string }[] = [

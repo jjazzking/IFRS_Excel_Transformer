@@ -114,8 +114,10 @@ export interface SheetColumn {
 /**
  * 칸 음영. 조서에서 "이 칸을 썼다"를 표시하는 노란 형광펜이다.
  * soft = 고른 행 또는 열, strong = 둘이 겹치는 칸 (실제로 쓰는 값).
+ * interp · interpStrong = 보간 열에서 같은 두 단계. 고시값이 아니라 계산한 값임을
+ * 한눈에 알 수 있게 한 단계 더 진하게 칠한다.
  */
-export type CellShade = 'soft' | 'strong';
+export type CellShade = 'soft' | 'strong' | 'interp' | 'interpStrong';
 
 export interface SheetRow {
   cells: (string | number | null)[];
