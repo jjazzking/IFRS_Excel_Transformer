@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Check, ChevronRight, Plus, X } from 'lucide-react';
-import { Chip, TierButton, toggle } from './TierControls';
+import { Chip, StepReset, TierButton, toggle } from './TierControls';
 import { FxCurrencyMeta } from '../types';
 import {
   FX_BASES,
@@ -39,6 +39,7 @@ interface FxQueryBuilderProps {
  *
  * 한 단계를 고르면 다음 단계가 열린다. 앞 단계는 그대로 남아 있어 언제든 바꿀 수 있고,
  * 바꾸면 그 뒤 단계 중 의미가 달라지는 것만 비운다 (통화는 유지한다).
+ * 단계마다 제목 옆 '초기화'로 그 단계를 비울 수 있다 — 아래 단계를 먼저 풀 필요가 없다.
  */
 export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
   query,
@@ -49,29 +50,16 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
 }) => {
   const { kind, basis } = query;
 
-  // 고른 단계 버튼을 한 번 더 누르면 취소한다. 단, 그 아래 단계에 고른 것이 남아 있으면
-  // 취소하지 않는다 — 한 번 잘못 눌러 아래 단계까지 통째로 날아가면 다시 고르기 번거롭다.
-  // 통화는 처음부터 골라 져 있고 유형을 바꿔도 이어지므로 '아래 단계'로 치지 않는다.
-  const [blockedNote, setBlockedNote] = useState<string | null>(null);
-  const noteTimer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(noteTimer.current), []);
-  const showBlocked = (step: string) => {
-    setBlockedNote(step);
-    window.clearTimeout(noteTimer.current);
-    noteTimer.current = window.setTimeout(() => setBlockedNote(null), 2500);
-  };
-
-  const kindHasChildren =
-    basis !== null || query.spotDates.length > 0 || query.dailyPreset !== null;
-  const basisHasChildren = query.periodIds.length > 0;
-
   // 단계마다 '골랐는가'. 다음 단계는 앞 단계가 모두 골라졌을 때만 연다.
-  const steps: { key: string; title: string; done: boolean; body: React.ReactNode }[] = [];
+  // reset 은 그 단계에서 고른 것이 있을 때만 둔다. 그 단계에 딸린 값(유형의 기준·시점,
+  // 기준의 시점)은 함께 비우고, 유형과 상관없이 이어지는 값(거래일·기간·통화)은 남긴다.
+  const steps: { key: string; title: string; done: boolean; reset?: () => void; body: React.ReactNode }[] = [];
 
   steps.push({
     key: 'kind',
     title: '찾는 자료',
     done: kind !== null,
+    reset: kind !== null ? () => onChange({ kind: null, basis: null, periodIds: [] }) : undefined,
     body: (
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-1.5">
         {FX_KINDS.map(k => (
@@ -81,13 +69,8 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
             active={kind === k.value}
             label={k.label}
             hint={k.hint}
-            locked={kind === k.value && kindHasChildren}
             onClick={() => {
-              if (kind === k.value) {
-                if (kindHasChildren) showBlocked('kind');
-                else onChange({ kind: null });
-                return;
-              }
+              if (kind === k.value) return;
               onChange({
                 kind: k.value,
                 basis: null,
@@ -107,6 +90,7 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
       key: 'basis',
       title: kind === 'closing' ? '기준 시점' : '평균 기간',
       done: basis !== null,
+      reset: basis !== null ? () => onChange({ basis: null, periodIds: [] }) : undefined,
       body: (
         <div className="flex flex-wrap gap-1.5">
           {FX_BASES[kind].map(b => (
@@ -116,14 +100,8 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
               active={basis === b.value}
               label={b.label}
               hint={b.hint}
-              locked={basis === b.value && basisHasChildren}
               onClick={() => {
-                if (basis === b.value) {
-                  if (basisHasChildren) showBlocked('basis');
-                  else onChange({ basis: null });
-                  return;
-                }
-                onChange({ basis: b.value, periodIds: [] });
+                if (basis !== b.value) onChange({ basis: b.value, periodIds: [] });
               }}
             />
           ))}
@@ -134,6 +112,7 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
       key: 'period',
       title: '시점 (여러 개 고르면 비교표)',
       done: query.periodIds.length > 0,
+      reset: query.periodIds.length > 0 ? () => onChange({ periodIds: [] }) : undefined,
       body: (
         <PeriodPicker
           periods={periods}
@@ -147,6 +126,7 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
       key: 'spot',
       title: '거래일',
       done: query.spotDates.length > 0,
+      reset: query.spotDates.length > 0 ? () => onChange({ spotDates: [] }) : undefined,
       body: (
         <SpotDatePicker
           dates={query.spotDates}
@@ -160,6 +140,7 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
       key: 'range',
       title: '기간',
       done: query.dailyPreset !== null,
+      reset: query.dailyPreset !== null ? () => onChange({ dailyPreset: null }) : undefined,
       body: (
         <DailyRangePicker
           preset={query.dailyPreset}
@@ -176,6 +157,7 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
       key: 'currency',
       title: kind === 'daily' ? '통화 (하나)' : '통화 (여러 개 가능)',
       done: query.codes.length > 0,
+      reset: query.codes.length > 0 ? () => onChange({ codes: [] }) : undefined,
       body: (
         <CurrencyPicker
           currencies={currencies}
@@ -207,13 +189,9 @@ export const FxQueryBuilder: React.FC<FxQueryBuilderProps> = ({
               <p className="text-[11px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
                 {s.title}
                 {!s.done && <ChevronRight className="w-3 h-3 text-emerald-500" />}
+                {s.reset && <StepReset id={`btn-fx-reset-${s.key}`} onClick={s.reset} />}
               </p>
               {s.body}
-              {blockedNote === s.key && (
-                <p role="status" className="mt-1 text-[10px] text-amber-600">
-                  아래 단계에서 고른 것을 먼저 해제해야 취소됩니다.
-                </p>
-              )}
             </div>
           </li>
         ))}
@@ -257,14 +235,7 @@ const PeriodPicker: React.FC<{
           </div>
         </div>
       ))}
-      {picked.length > 0 && (
-        <button
-          onClick={() => onChange([])}
-          className="text-[10px] text-slate-400 hover:text-slate-700 cursor-pointer"
-        >
-          {picked.length}개 선택 · 모두 해제
-        </button>
-      )}
+      {picked.length > 0 && <p className="text-[10px] text-slate-400">{picked.length}개 선택</p>}
     </div>
   );
 };
@@ -352,9 +323,6 @@ const SpotDatePicker: React.FC<{
               </button>
             </span>
           ))}
-          <button onClick={() => onChange([])} className="text-[10px] text-slate-400 hover:text-slate-700 cursor-pointer">
-            모두 지우기
-          </button>
         </div>
       )}
       <p className="text-[10px] text-slate-400">
