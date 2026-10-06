@@ -34,8 +34,19 @@ export const SHADE_FILL: Record<CellShade, string> = {
   interpStrong: '#FFC000',
 };
 
-function shadeCss(shade: CellShade | null | undefined): string {
-  return shade ? ` background-color: ${SHADE_FILL[shade]}; mso-pattern: auto;` : '';
+/**
+ * 칸 서식에 음영을 덧칠한 `<td>` 여는 태그.
+ *
+ * 서식(테마)에도 `background-color` 가 이미 들어 있다. 브라우저는 뒤에 적힌 값을 쓰지만
+ * 엑셀은 앞의 것을 쓰는 경우가 있어, 음영을 칠할 칸은 테마의 배경을 지우고 하나만 남긴다.
+ * 적는 법도 엑셀이 스스로 복사할 때 쓰는 모양(`background` + `mso-pattern:black none`)을
+ * 따르고, `bgcolor` 속성도 함께 달아 어느 쪽으로 읽든 색이 남게 한다.
+ */
+function shadedTdOpen(style: string, shade: CellShade | null | undefined): string {
+  if (!shade) return `<td style="${styleAttr(style)}">`;
+  const fill = SHADE_FILL[shade];
+  const css = `${style.replace(/background(-color)?\s*:[^;]*;?/g, '')} background: ${fill}; mso-pattern: black none;`;
+  return `<td bgcolor="${fill}" style="${styleAttr(css)}">`;
 }
 
 function escapeHtml(str: string): string {
@@ -79,7 +90,7 @@ export function generateSheetClipboard(
   }
   body += '<tr>';
   table.columns.forEach(c => {
-    body += `<td style="${styleAttr(`${styles.sectionTd} text-align: center;${shadeCss(c.shade)}`)}">${escapeHtml(c.label)}</td>`;
+    body += `${shadedTdOpen(`${styles.sectionTd} text-align: center;`, c.shade)}${escapeHtml(c.label)}</td>`;
   });
   body += '</tr>';
 
@@ -89,7 +100,7 @@ export function generateSheetClipboard(
       const col = table.columns[i];
       const isNum = typeof value === 'number';
       const style = row.emphasis === 'total' ? totalStyle : isNum ? numStyle : styles.colATd;
-      body += `<td style="${styleAttr(style + shadeCss(row.shades?.[i]))}">${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
+      body += `${shadedTdOpen(style, row.shades?.[i])}${escapeHtml(cellText(value, col?.digits)) || '&nbsp;'}</td>`;
     });
     body += '</tr>';
   });
