@@ -101,9 +101,20 @@ export function numericTd(theme: TableThemeStyles): string {
     .concat(' font-family: Consolas, "맑은 고딕", monospace;');
 }
 
+/**
+ * 칸 서식의 배경색을 바꾼다.
+ *
+ * 서식에는 이미 `background-color` 가 들어 있다. 뒤에 하나 더 적으면 브라우저는 뒤의 값을
+ * 쓰지만 엑셀은 앞의 것(흰색·회색)을 쓰는 경우가 있어, 기존 배경을 지우고 하나만 남긴다.
+ * 적는 법은 엑셀이 스스로 복사할 때 쓰는 모양(`background` + `mso-pattern:black none`)을 따른다.
+ */
+export function withFill(css: string, fill: string): string {
+  return `${css.replace(/background(-color)?\s*:[^;]*;?/g, '')} background: ${fill}; mso-pattern: black none;`;
+}
+
 /** 합계·평균처럼 눈에 띄어야 하는 행 */
 export function totalTd(theme: TableThemeStyles): string {
-  return `${numericTd(theme)} font-weight: bold; background-color: #F2F2F2;`;
+  return withFill(`${numericTd(theme)} font-weight: bold;`, '#F2F2F2');
 }
 
 export function getThemePreviewClasses(theme: TableTheme): TablePreviewClasses {

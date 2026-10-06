@@ -96,7 +96,7 @@
 - 데스크톱: Electron(Windows portable exe), 파이썬 표준 라이브러리 로컬 서버(desktop/실행.py)
 - 데이터 수집·가공: Python 스크립트 (scripts/)
 - 패키지 매니저: CI는 bun (bun install --frozen-lockfile), 로컬은 npm도 가능
-- 라우팅: 주소창 해시 (#/standards, #/fx, #/rates, #/minutes, #/litigation)
+- 라우팅: 주소창 해시 (#/standards, #/fx, #/rates, #/minutes, #/litigation, #/landprice, #/stocks)
 - vite base: './' (Pages·로컬 꾸러미 모두에서 상대경로로 동작)
 
 명령어
