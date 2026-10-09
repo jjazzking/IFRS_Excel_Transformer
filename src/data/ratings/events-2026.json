@@ -1,8 +1,8 @@
 {
  "year": 2026,
  "source": "금융투자협회 채권정보센터 — 신용등급 속보 (채권)",
- "fetchedAt": "2026-10-08T17:35:29+00:00",
- "count": 60446,
+ "fetchedAt": "2026-10-09T17:10:25+00:00",
+ "count": 60447,
  "events": [
   {"date":"2026-01-02","company":"(주)아이엠증권","agency":"A15001","grade":"A+","outlook":"안정적","watch":"","issue":"374(미발행)"},
   {"date":"2026-01-02","company":"(주)아이엠증권","agency":"A15001","grade":"A+","outlook":"안정적","watch":"","issue":"73(DLB)(미발행)"},
@@ -59846,7 +59846,7 @@
   {"date":"2026-09-10","company":"대신증권(주)","agency":"A15001","grade":"AA-","outlook":"안정적","watch":"","issue":"191"},
   {"date":"2026-09-10","company":"대신증권(주)","agency":"A15001","grade":"AA-","outlook":"안정적","watch":"","issue":"498(DLB)"},
   {"date":"2026-09-10","company":"미래에셋캐피탈(주)","agency":"A10001","grade":"AA-","outlook":"안정적","watch":"","issue":"138"},
-  {"date":"2026-09-10","company":"미래에셋캐피탈(주)","agency":"A15001","grade":"AA-","outlook":"안정적","watch":"","issue":"138"},
+  {"date":"2026-09-10","company":"미래에셋캐피탈(주)","agency":"A15001","grade":"AA-","outlook":"안정적","watch":"","issue":"138(미발행)"},
   {"date":"2026-09-10","company":"미래에셋캐피탈(주)","agency":"A15002","grade":"AA-","outlook":"안정적","watch":"","issue":"제138회 외"},
   {"date":"2026-09-10","company":"수산업협동조합중앙회","agency":"A15002","grade":"AAA","outlook":"안정적","watch":"","issue":"수산금융채권(중앙회) 제28회 외"},
   {"date":"2026-09-10","company":"수산업협동조합중앙회","agency":"A15002","grade":"AAA","outlook":"안정적","watch":"","issue":"수산금융채권(중앙회)28-09이표2"},
@@ -60449,6 +60449,7 @@
   {"date":"2026-10-07","company":"엘에스증권(주)","agency":"A15002","grade":"A","outlook":"안정적","watch":"","issue":"제1-1회"},
   {"date":"2026-10-07","company":"엘에스증권(주)","agency":"A15002","grade":"A","outlook":"안정적","watch":"","issue":"제1-2회"},
   {"date":"2026-10-08","company":"(주)BNK투자증권","agency":"A15002","grade":"A+","outlook":"안정적","watch":"","issue":"제309호 외 기타파생결합사채"},
-  {"date":"2026-10-08","company":"(주)BNK투자증권","agency":"A15002","grade":"A+","outlook":"안정적","watch":"","issue":"제491호 외 주가연계파생결합사"}
+  {"date":"2026-10-08","company":"(주)BNK투자증권","agency":"A15002","grade":"A+","outlook":"안정적","watch":"","issue":"제491호 외 주가연계파생결합사"},
+  {"date":"2026-10-08","company":"미래에셋캐피탈(주)","agency":"A15002","grade":"AA-","outlook":"안정적","watch":"","issue":"제138회 외"}
  ]
 }
