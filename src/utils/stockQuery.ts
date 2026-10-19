@@ -49,14 +49,16 @@ export const STOCK_PURPOSES: StockPurposeGuide[] = [
   {
     value: 'eps',
     label: 'EPS 주석',
-    hint: '회계기간 평균시장가격',
+    hint: '상장주식수 변동 · 평균시장가격',
     summary:
-      '희석주당이익에서 옵션·주식매입권은 행사된 것으로 보고, 그 대가로 회계기간 평균시장가격에 보통주를 발행한 것으로 본다. 평균시장가격이 행사가격보다 높을 때만 희석효과가 있다.',
+      '기본주당이익은 가중평균유통보통주식수로 나눈다 — 상장주식수 변동표로 회사 계산의 증자·전환 내역을 대사한다. 희석주당이익에서 옵션·주식매입권은 행사된 것으로 보고 회계기간 평균시장가격에 보통주를 발행한 것으로 본다.',
     cautions: [
-      '주·월 단위 단순평균도 쓸 수 있다 (A4) — 월별 평균 행을 함께 보여 준다.',
-      '보통 종가를 쓰되, 변동폭이 크면 고가·저가 평균이 더 대표성 있을 수 있다 (A5). 고른 방법은 계속 적용한다.',
+      '상장주식수는 상장일 기준이다. 가중평균의 기산일은 대가를 받을 권리가 생긴 날(보통 납입일)이라 며칠~몇 주 어긋난다 (문단 21).',
+      '자기주식은 빠지지 않는다 — 유통주식수 = 발행주식수 − 자기주식. 차이가 자기주식으로 설명되는지 본다.',
+      '무상증자·주식분할은 기초로 소급해 조정해야 하는데 (문단 26·64), 상장주식수는 그날 숫자 그대로다.',
+      '평균시장가격: 주·월 단위 단순평균도 쓸 수 있고 (A4), 변동폭이 크면 고가·저가 평균이 더 대표성 있을 수 있다 (A5).',
     ],
-    refs: [{ standardId: 'k-ifrs-1033', short: '제1033호', numbers: ['45', '46', '47', 'A4', 'A5'] }],
+    refs: [{ standardId: 'k-ifrs-1033', short: '제1033호', numbers: ['19', '20', '21', '26', '64', '45', '46', 'A4', 'A5'] }],
   },
   {
     value: 'impairment',
@@ -96,6 +98,8 @@ export interface StockParams {
   /** EPS — 회계기간 */
   from: string;
   to: string;
+  /** EPS — 상장주식수 변동(기본 EPS) / 평균시장가격(희석 EPS) */
+  epsView: 'shares' | 'price';
   /** EPS — 종가 / (고가+저가)/2 */
   epsPrice: 'close' | 'hilo';
   /** 기준주가 — 거래대금÷거래량 / 종가×거래량 가중 */
@@ -173,6 +177,63 @@ function matrix(entries: StockEntry[], firstLabel: string, rows: { label: string
   };
 }
 
+export interface ShareSegment {
+  start: string;
+  shares: number;
+  days: number;
+}
+
+const dayCount = (from: string, to: string) =>
+  Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000) + 1;
+
+/**
+ * 기간을 상장주식수가 같은 구간으로 나눈다. 거래가 없는 날은 직전 거래일 주식수가 이어진 것으로,
+ * 기초가 휴장일이면 기간 첫 거래일 주식수로 본다. 일수는 달력 일수.
+ */
+export function shareSegments(quotes: Quote[], from: string, to: string): ShareSegment[] {
+  const inRange = quotes.filter(q => q.date >= from && q.date <= to);
+  if (inRange.length === 0) return [];
+  const starts = [{ start: from, shares: inRange[0].shares }];
+  for (const q of inRange) {
+    if (q.shares !== starts[starts.length - 1].shares) starts.push({ start: q.date, shares: q.shares });
+  }
+  return starts.map((s, i) => ({
+    ...s,
+    days: dayCount(s.start, i + 1 < starts.length ? shiftDays(starts[i + 1].start, -1) : to),
+  }));
+}
+
+/** 종목마다 기초 → 변동일들 → 일수 가중평균. 회사의 가중평균유통보통주식수 계산과 대사하는 표 */
+function sharesTable(entries: StockEntry[], from: string, to: string): SheetTable {
+  const ok = [...new Map(entries.filter(e => e.quotes.length > 0).map(e => [e.res.code, e])).values()];
+  const rows: SheetRow[] = ok.flatMap(e => {
+    const segs = shareSegments(e.quotes, from, to);
+    const total = segs.reduce((a, s) => a + s.days, 0);
+    const weighted = segs.reduce((a, s) => a + s.shares * s.days, 0) / total;
+    return [
+      ...segs.map<SheetRow>((s, i) => ({
+        cells: [e.res.name ?? '', e.res.code ?? '', s.start, s.shares, i === 0 ? null : s.shares - segs[i - 1].shares, s.days, i === 0 ? '기초' : '상장주식수 변동'],
+        shades: i === 0 ? undefined : [null, null, 'soft', 'soft', 'soft', null, null],
+      })),
+      { cells: [e.res.name ?? '', e.res.code ?? '', '가중평균', weighted, null, total, '일수 가중'], emphasis: 'total' as const },
+    ];
+  });
+  return {
+    title: `${from} ~ ${to} 상장주식수 변동 (가중평균유통보통주식수 대사용)`,
+    columns: [
+      { key: 'name', label: '종목명', width: 16 },
+      { key: 'code', label: '종목코드', width: 9 },
+      { key: 'date', label: '적용 시작일', width: 12 },
+      { key: 'shares', label: '상장주식수', numeric: true, digits: 0, width: 16 },
+      { key: 'diff', label: '증감', numeric: true, digits: 0, width: 14 },
+      { key: 'days', label: '일수', numeric: true, digits: 0, width: 7 },
+      { key: 'note', label: '비고', width: 14 },
+    ],
+    rows,
+    footnote: `${FOOTNOTE} · 상장일 기준, 자기주식 미차감, 무상증자·분할 소급조정 전`,
+  };
+}
+
 const dailyPrice = (q: Quote, how: StockParams['epsPrice']) => (how === 'hilo' ? (q.high + q.low) / 2 : q.close);
 
 /** 거래량 가중평균 — 거래가 한 번도 없으면 null */
@@ -212,6 +273,7 @@ export function buildStockTable(purpose: StockPurpose, entries: StockEntry[], p:
     }
 
     case 'eps': {
+      if (p.epsView === 'shares') return sharesTable(entries, p.from, p.to);
       const inRange = (e: StockEntry) => e.quotes.filter(q => q.date >= p.from && q.date <= p.to);
       const months = [...new Set(entries.flatMap(e => inRange(e).map(q => q.date.slice(0, 7))))].sort();
       const avg = (e: StockEntry, month?: string) =>

@@ -52,6 +52,7 @@ export default function StocksWorkspace({ onBackHome }: StocksWorkspaceProps) {
     years: 3,
     from: `${lastYear}-01-01`,
     to: `${lastYear}-12-31`,
+    epsView: 'shares',
     epsPrice: 'close',
     weighting: 'value',
   });
@@ -320,13 +321,23 @@ const ParamsPicker: React.FC<{
         ~
         <input id="stocks-to" aria-label="종료일" type="date" value={params.to} onChange={e => onChange({ to: e.target.value })} className={dateInput} />
         <Toggle
-          value={params.epsPrice}
+          value={params.epsView}
           options={[
-            ['close', '종가 평균'],
-            ['hilo', '(고가+저가)/2 평균'],
+            ['shares', '상장주식수 변동 (기본 EPS)'],
+            ['price', '평균시장가격 (희석 EPS)'],
           ]}
-          onChange={epsPrice => onChange({ epsPrice })}
+          onChange={epsView => onChange({ epsView })}
         />
+        {params.epsView === 'price' && (
+          <Toggle
+            value={params.epsPrice}
+            options={[
+              ['close', '종가 평균'],
+              ['hilo', '(고가+저가)/2 평균'],
+            ]}
+            onChange={epsPrice => onChange({ epsPrice })}
+          />
+        )}
       </>
     ) : (
       <>
