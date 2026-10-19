@@ -37,6 +37,10 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          # 공시지가 작업대 API 키. 배포 도메인에 묶인 키라 빌드 결과에 드러나도 되지만 저장소에는 두지 않는다.
+          VITE_JUSO_KEY: ${{ secrets.JUSO_KEY }}
+          VITE_VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
 
       - uses: actions/configure-pages@v5
 

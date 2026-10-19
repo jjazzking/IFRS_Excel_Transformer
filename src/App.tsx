@@ -3,6 +3,7 @@ import { HomeScreen } from './components/HomeScreen';
 import StandardsWorkspace from './workspaces/StandardsWorkspace';
 import FxWorkspace from './workspaces/FxWorkspace';
 import RatesWorkspace from './workspaces/RatesWorkspace';
+import LandPriceWorkspace from './workspaces/LandPriceWorkspace';
 
 // 의사록 작업대만 따로 떼어 둔다. pdf.js 가 500kB 가까이 되는데, 기준서·환율만
 // 쓰는 사람이 그걸 받을 이유가 없다. `#/minutes` 로 들어갈 때만 받는다.
@@ -46,6 +47,9 @@ export default function App() {
   }
   if (route === 'rates') {
     return <RatesWorkspace onBackHome={() => go('home')} />;
+  }
+  if (route === 'landprice') {
+    return <LandPriceWorkspace onBackHome={() => go('home')} />;
   }
   if (route === 'minutes') {
     return (
