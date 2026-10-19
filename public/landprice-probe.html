@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공시지가 API 실험</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; }
+  input { width: 100%; padding: 6px; margin: 2px 0 10px; box-sizing: border-box; }
+  pre { background: #f4f4f4; padding: 8px; white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow: auto; }
+  .ok { color: #08752e; } .fail { color: #b3261e; }
+</style>
+</head>
+<body>
+<h1>공시지가 API 실험</h1>
+<p>배포된 사이트(jjazzking.github.io)에서 열어야 한다. 키는 도메인에 묶여 있어 다른 곳에선 거절된다. 결과 화면을 통째로 복사해 Claude 에게 붙여넣으면 된다.</p>
+<label>도로명주소 승인키<input id="jusoKey"></label>
+<label>V-World 인증키<input id="vworldKey"></label>
+<label>주소<input id="addr" value="서울특별시 중구 세종대로 110"></label>
+<label>기준연도<input id="year" value="2025"></label>
+<button id="run">실행</button>
+<div id="out"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const out = $('out');
+
+function report(title, ok, detail) {
+  const h = document.createElement('h3');
+  h.className = ok ? 'ok' : 'fail';
+  h.textContent = (ok ? '성공 ' : '실패 ') + title;
+  const pre = document.createElement('pre');
+  pre.textContent = typeof detail === 'string' ? detail : JSON.stringify(detail, null, 2);
+  out.append(h, pre);
+}
+
+// 보통 fetch: 성공하면 그 API 는 CORS 를 허용한다.
+async function viaFetch(url) {
+  const res = await fetch(url);
+  return JSON.parse(await res.text());
+}
+
+// JSONP: CORS 가 막혀도 서버가 callback 을 지원하면 된다.
+function viaJsonp(url, param = 'callback') {
+  return new Promise((resolve, reject) => {
+    const name = 'cb' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    const timer = setTimeout(() => done(reject, new Error('10초 안에 응답 없음')), 10000);
+    function done(fn, v) { clearTimeout(timer); delete window[name]; s.remove(); fn(v); }
+    window[name] = (data) => done(resolve, data);
+    s.onerror = () => done(reject, new Error('스크립트 로드 실패'));
+    s.src = url + '&' + param + '=' + name;
+    document.body.append(s);
+  });
+}
+
+async function probe(title, fn) {
+  try { const data = await fn(); report(title, true, data); return data; }
+  catch (e) { report(title, false, String(e)); return null; }
+}
+
+const pad4 = (v) => String(v).padStart(4, '0');
+// PNU = 법정동코드 10 + 산여부(1 일반, 2 산) + 본번 4 + 부번 4
+const toPnu = (j) => j.admCd + (j.mtYn === '1' ? '2' : '1') + pad4(j.lnbrMnnm) + pad4(j.lnbrSlno);
+
+$('run').onclick = async () => {
+  out.textContent = '';
+  const jusoKey = $('jusoKey').value.trim();
+  const vworldKey = $('vworldKey').value.trim();
+  const year = $('year').value.trim();
+  const q = new URLSearchParams({ confmKey: jusoKey, currentPage: 1, countPerPage: 5, keyword: $('addr').value, resultType: 'json' });
+
+  const a = await probe('① 주소 API (fetch)', () => viaFetch('https://business.juso.go.kr/addrlink/addrLinkApi.do?' + q));
+  const b = await probe('① 주소 API (JSONP)', () => viaJsonp('https://business.juso.go.kr/addrlink/addrLinkApiJsonp.do?' + q));
+  const juso = (a || b)?.results?.juso?.[0];
+  if (!juso) return report('PNU 만들기', false, '주소 결과가 없어 다음 단계를 건너뜀');
+  const pnu = toPnu(juso);
+  report('PNU 만들기', true, { pnu, roadAddr: juso.roadAddr, jibunAddr: juso.jibunAddr });
+
+  const domain = location.hostname;
+  const ned = 'https://api.vworld.kr/ned/data/getIndvdLandPriceAttr?' + new URLSearchParams({ key: vworldKey, domain, pnu, stdrYear: year, format: 'json', numOfRows: 10, pageNo: 1 });
+  await probe('② 개별공시지가 국가중점 API (fetch)', () => viaFetch(ned));
+  await probe('② 개별공시지가 국가중점 API (JSONP)', () => viaJsonp(ned));
+
+  const data2d = 'https://api.vworld.kr/req/data?' + new URLSearchParams({ service: 'data', request: 'GetFeature', data: 'LP_PA_CBND_BUBUN', key: vworldKey, domain, attrFilter: 'pnu:=:' + pnu, geometry: 'false', format: 'json' });
+  await probe('③ 연속지적도 2D데이터 API (fetch)', () => viaFetch(data2d));
+  await probe('③ 연속지적도 2D데이터 API (JSONP)', () => viaJsonp(data2d));
+};
+</script>
+</body>
+</html>
