@@ -114,6 +114,8 @@ export const WORKSPACES: WorkspaceMeta[] = [
     status: 'preparing',
     blockedBy: '대법원 사건검색은 공개 API가 없어 입력 방식부터 정해야 함',
     accent: 'violet',
+    // 보류 — 자동 조회 불가(CAPTCHA·공개 API 없음). 붙여넣기 파싱 방식으로 다시 열지는 저장소 주인이 정한다.
+    hidden: true,
   },
   {
     id: 'landprice',
