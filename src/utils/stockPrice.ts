@@ -71,9 +71,12 @@ async function fetchItems(input: string, from: string, to: string): Promise<Item
       'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo?' + q
     );
     const text = await res.text();
-    // 키 오류 등은 JSON 이 아니라 XML 로 온다
-    if (!text.trim().startsWith('{')) throw new Error(text.match(/<returnAuthMsg>([^<]*)/)?.[1] ?? '조회 실패');
-    const body = JSON.parse(text).response?.body;
+    // 키 오류 등은 XML 로, 또는 JSON 이라도 response 대신 OpenAPI_ServiceResponse 로 온다
+    if (!text.trim().startsWith('{')) throw new Error(text.match(/<returnAuthMsg>([^<]*)/)?.[1] ?? `조회 실패 (${res.status})`);
+    const json = JSON.parse(text);
+    const fault = json.OpenAPI_ServiceResponse?.cmmMsgHeader;
+    if (fault) throw new Error(fault.returnAuthMsg || fault.errMsg);
+    const body = json.response?.body;
     const got: Item[] = [body?.items?.item ?? []].flat();
     items.push(...got);
     if (got.length === 0 || items.length >= Number(body?.totalCount ?? 0)) return items;
