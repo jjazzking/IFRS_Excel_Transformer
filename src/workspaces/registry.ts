@@ -124,8 +124,7 @@ export const WORKSPACES: WorkspaceMeta[] = [
     leftPane: '엑셀에서 복사한 주소 붙여넣기',
     rightPane: '주소별 공시지가 + 엑셀 미리보기',
     icon: MapPin,
-    status: 'preparing',
-    blockedBy: '공시지가 조회 API(국토교통부 등)와 주소 → 필지 변환 방식부터 정해야 함',
+    status: 'ready',
     accent: 'teal',
   },
   {
