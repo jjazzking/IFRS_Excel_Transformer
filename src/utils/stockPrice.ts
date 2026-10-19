@@ -68,7 +68,7 @@ async function fetchItems(input: string, from: string, to: string): Promise<Item
       ...(isCode(input) ? { likeSrtnCd: input.toUpperCase() } : { itmsNm: input }),
     });
     const res = await fetch(
-      'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo?' + q
+      'https://apis.data.go.kr/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2?' + q
     );
     const text = await res.text();
     // 키 오류 등은 XML 로, 또는 JSON 이라도 response 대신 OpenAPI_ServiceResponse 로 온다
