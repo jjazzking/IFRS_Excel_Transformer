@@ -10,6 +10,7 @@ import {
   buildLandPriceTable,
   defaultYear,
   lookupAll,
+  parsePastedAddresses,
 } from '../utils/landPrice';
 
 interface LandPriceWorkspaceProps {
@@ -35,8 +36,7 @@ export default function LandPriceWorkspace({ onBackHome }: LandPriceWorkspacePro
   const [running, setRunning] = useState(false);
   const [theme, setTheme] = useState<TableTheme>('audit_gray');
 
-  // 엑셀 열을 복사하면 줄 끝에 빈 줄이 하나 붙는다. 중간 빈 줄은 순서를 지키려고 남긴다.
-  const inputs = useMemo(() => text.replace(/\s+$/, '').split(/\r?\n/), [text]);
+  const inputs = useMemo(() => parsePastedAddresses(text), [text]);
   const done = useMemo(() => rows.filter((r): r is LandPriceRow => r !== null), [rows]);
   const table = useMemo(() => buildLandPriceTable(done, year), [done, year]);
 
@@ -59,7 +59,7 @@ export default function LandPriceWorkspace({ onBackHome }: LandPriceWorkspacePro
       <main ref={containerRef} className="flex-1 min-h-0 flex p-3">
         <section className="flex-1 min-w-0 min-h-0 flex flex-col gap-2 bg-white rounded-xl border border-slate-200 shadow-sm p-3">
           <label htmlFor="landprice-input" className="text-xs font-semibold text-slate-700">
-            조서의 주소 열을 복사해 붙여넣으세요 (한 줄에 주소 하나)
+            조서에서 주소가 든 범위를 그대로 복사해 붙여넣으세요 (다른 열이 섞여도 주소 칸만 골라 씁니다)
           </label>
           <textarea
             id="landprice-input"
@@ -88,7 +88,7 @@ export default function LandPriceWorkspace({ onBackHome }: LandPriceWorkspacePro
               className="flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-40 cursor-pointer disabled:cursor-default"
             >
               <Search className="w-3.5 h-3.5" />
-              {running ? `찾는 중… ${done.length}/${rows.length}` : `${inputs.length}건 찾기`}
+              {running ? `찾는 중… ${done.length}/${rows.length}` : `${inputs.filter(Boolean).length}건 찾기`}
             </button>
             <span className="text-[11px] text-slate-500">
               {Object.entries(counts)
