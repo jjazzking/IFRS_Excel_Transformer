@@ -41,6 +41,8 @@ jobs:
           # 공시지가 작업대 API 키. 배포 도메인에 묶인 키라 빌드 결과에 드러나도 되지만 저장소에는 두지 않는다.
           VITE_JUSO_KEY: ${{ secrets.JUSO_KEY }}
           VITE_VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
+          # 주가 찾기 — 공공데이터포털 금융위원회 주식시세정보 키
+          VITE_STOCK_KEY: ${{ secrets.STOCK_KEY }}
 
       - uses: actions/configure-pages@v5
 
