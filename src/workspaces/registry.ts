@@ -138,8 +138,7 @@ export const WORKSPACES: WorkspaceMeta[] = [
     leftPane: '종목(여러 개 가능) · 기준일 또는 기간',
     rightPane: '종목별 주가 표 + 엑셀 미리보기',
     icon: TrendingUp,
-    status: 'preparing',
-    blockedBy: '주가 데이터 출처(KRX 정보데이터시스템 등)와 수정주가 적용 여부부터 정해야 함',
+    status: 'ready',
     accent: 'indigo',
   },
 ];
