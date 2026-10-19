@@ -132,10 +132,10 @@ export const WORKSPACES: WorkspaceMeta[] = [
   {
     id: 'stocks',
     name: '주가 찾기',
-    tagline: '상장주식 종가를 특정일·회계기간으로 찾는다',
+    tagline: '용도에 맞춰 상장주식 주가를 찾는다',
     description:
-      '상장주식 한 종목씩, 또는 여러 종목을 한 번에 넣어 특정일 종가나 회계기간의 일별 주가·평균을 찾아 붙여넣는다.',
-    leftPane: '종목(여러 개 가능) · 기준일 또는 기간',
+      '기말 공정가치·주식보상·EPS 주석·손상징후·기준주가 용도별로, 엑셀에서 복사한 회사 이름 열 그대로 주가를 찾아 붙여넣는다.',
+    leftPane: '용도 · 기준일 또는 기간 · 회사 이름 붙여넣기',
     rightPane: '종목별 주가 표 + 엑셀 미리보기',
     icon: TrendingUp,
     status: 'ready',

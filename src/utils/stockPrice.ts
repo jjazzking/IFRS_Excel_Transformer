@@ -1,29 +1,30 @@
 /**
- * 국내 상장주식 일별 종가 — 금융위원회 주식시세정보 (공공데이터포털).
+ * 국내 상장주식 일별 시세 — 금융위원회 주식시세정보 V2 (공공데이터포털). docs/stocks-plan.md
  *
- * 브라우저에서 바로 부른다. 값은 그날 거래소에 찍힌 실제 종가이고 수정주가가 아니다.
- * 기말 공정가치 평가에 쓰는 값이 이것이다.
+ * 브라우저에서 바로 부른다. 값은 그날 거래소에 찍힌 실제 가격이고 수정주가가 아니다.
  */
-import { SheetTable } from '../types';
+import { parsePastedRows } from './pasteRows';
 
 // 저장소에 두지 않고 배포 워크플로우가 Secrets(STOCK_KEY)에서 빌드에 넣는다.
 const STOCK_KEY = import.meta.env?.VITE_STOCK_KEY ?? '';
 export const STOCK_READY = Boolean(STOCK_KEY);
 
+const ENDPOINT = 'https://apis.data.go.kr/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2';
+
 export interface Quote {
   /** 'YYYY-MM-DD' */
   date: string;
   close: number;
-}
-
-export interface StockSeries {
-  input: string;
-  code?: string;
-  name?: string;
-  market?: string;
-  /** 날짜 오름차순 */
-  quotes: Quote[];
-  error?: string;
+  high: number;
+  low: number;
+  /** 거래량 (주) */
+  volume: number;
+  /** 거래대금 (원) */
+  value: number;
+  /** 상장주식수 */
+  shares: number;
+  /** 시가총액 (원) */
+  marketCap: number;
 }
 
 interface Item {
@@ -32,6 +33,12 @@ interface Item {
   itmsNm: string;
   mrktCtg: string;
   clpr: string;
+  hipr: string;
+  lopr: string;
+  trqu: string;
+  trPrc: string;
+  lstgStCnt: string;
+  mrktTotAmt: string;
 }
 
 const compact = (iso: string) => iso.replace(/-/g, '');
@@ -46,15 +53,7 @@ export function shiftDays(iso: string, days: number): string {
 /** 6자리 종목코드(영문 섞인 신형 코드 포함)면 코드로, 아니면 종목명으로 찾는다 */
 const isCode = (s: string) => /^[0-9A-Z]{6}$/i.test(s);
 
-/** 종목 칸을 줄·탭·쉼표로 나눈다. 엑셀에서 열을 복사해 붙여도, 쉼표로 이어 써도 된다 */
-export function parseStockInputs(text: string): string[] {
-  return text
-    .split(/[\r\n\t,]+/)
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-
-async function fetchItems(input: string, from: string, to: string): Promise<Item[]> {
+async function fetchItems(filter: Record<string, string>, from: string, to: string): Promise<Item[]> {
   const items: Item[] = [];
   for (let page = 1; ; page++) {
     const q = new URLSearchParams({
@@ -65,11 +64,9 @@ async function fetchItems(input: string, from: string, to: string): Promise<Item
       beginBasDt: compact(from),
       // endBasDt 는 '미만' 이라 하루 뒤로 잡는다
       endBasDt: compact(shiftDays(to, 1)),
-      ...(isCode(input) ? { likeSrtnCd: input.toUpperCase() } : { itmsNm: input }),
+      ...filter,
     });
-    const res = await fetch(
-      'https://apis.data.go.kr/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2?' + q
-    );
+    const res = await fetch(`${ENDPOINT}?${q}`);
     const text = await res.text();
     // 키 오류 등은 XML 로, 또는 JSON 이라도 response 대신 OpenAPI_ServiceResponse 로 온다
     if (!text.trim().startsWith('{')) throw new Error(text.match(/<returnAuthMsg>([^<]*)/)?.[1] ?? `조회 실패 (${res.status})`);
@@ -83,92 +80,112 @@ async function fetchItems(input: string, from: string, to: string): Promise<Item
   }
 }
 
-export async function fetchSeries(input: string, from: string, to: string): Promise<StockSeries> {
+// ---------------------------------------------------------------------------
+// 종목 확인 — 조서의 회사 이름을 종목코드로
+// ---------------------------------------------------------------------------
+
+export type ResolveStatus = 'ok' | 'renamed' | 'partial' | 'multiple' | 'notFound' | 'error' | 'blank';
+
+export interface Resolution {
+  input: string;
+  status: ResolveStatus;
+  /** 실제로 찾은 이름 (정리한 검색어 또는 API 의 종목명) */
+  query?: string;
+  code?: string;
+  name?: string;
+  market?: string;
+  /** 후보가 여럿일 때 나머지 */
+  others?: string[];
+  message?: string;
+}
+
+/** 조서의 회사 이름에 붙는 법인 표기·주식 종류를 떼어 검색어로 만든다 */
+export function cleanCompanyName(raw: string): string {
+  return raw
+    .replace(/\(\s*주\s*\)|㈜|주식회사|\(\s*유\s*\)|보통주$/g, ' ')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+/** 엑셀에서 회사 이름 열을 복사해 붙인 것을 행마다 이름 하나로. 여러 열이면 첫 번째로 채워진 칸 */
+export function parseStockInputs(text: string): string[] {
+  return parsePastedRows(text).map(cells => cells.find(Boolean) ?? '');
+}
+
+/** 최근 2주 시세에서 종목을 찾는다 — 2주 넘게 거래가 없으면 상장폐지·이름 변경을 의심한다 */
+const RECENT_DAYS = 14;
+
+const distinct = (items: Item[]) => [...new Map(items.map(i => [i.srtnCd, i])).values()];
+
+export async function resolveStock(input: string, today: string): Promise<Resolution> {
+  if (!input) return { input, status: 'blank' };
+  const from = shiftDays(today, -RECENT_DAYS);
+  const pick = (i: Item) => ({ code: i.srtnCd, name: i.itmsNm, market: i.mrktCtg });
   try {
-    const items = await fetchItems(input, from, to);
-    if (items.length === 0) return { input, quotes: [], error: '종목 또는 그 기간 시세 없음' };
-    // likeSrtnCd 는 앞자리 일치라 다른 코드가 섞일 수 있다 — 입력과 같은 코드(이름이면 첫 종목)만 남긴다
-    const code = isCode(input) ? input.toUpperCase() : items[0].srtnCd;
-    const mine = items.filter(i => i.srtnCd === code);
-    if (mine.length === 0) return { input, quotes: [], error: '종목 또는 그 기간 시세 없음' };
+    if (isCode(input)) {
+      const hit = distinct(await fetchItems({ likeSrtnCd: input.toUpperCase() }, from, today)).find(
+        i => i.srtnCd === input.toUpperCase()
+      );
+      return hit
+        ? { input, status: 'ok', query: input.toUpperCase(), ...pick(hit) }
+        : { input, status: 'notFound', message: `최근 ${RECENT_DAYS}일 거래 없는 코드` };
+    }
+    const query = cleanCompanyName(input);
+    const exact = distinct(await fetchItems({ itmsNm: query }, from, today));
+    if (exact.length > 0) {
+      return { input, status: query === input.trim() ? 'ok' : 'renamed', query, ...pick(exact[0]) };
+    }
+    const like = distinct(await fetchItems({ likeItmsNm: query }, from, today));
+    if (like.length === 0) {
+      return { input, status: 'notFound', query, message: '종목을 찾지 못함 (상장폐지·이름 변경?)' };
+    }
+    // 이름이 짧은 것부터 — '삼성' 이면 '삼성전자' 보다 '삼성물산' 같은 긴 이름이 뒤로 간다
+    like.sort((a, b) => a.itmsNm.length - b.itmsNm.length);
     return {
       input,
-      code,
-      name: mine[0].itmsNm,
-      market: mine[0].mrktCtg,
-      quotes: mine
-        .map(i => ({ date: toIso(i.basDt), close: Number(i.clpr) }))
-        .sort((a, b) => a.date.localeCompare(b.date)),
+      status: like.length === 1 ? 'partial' : 'multiple',
+      query,
+      ...pick(like[0]),
+      others: like.slice(1, 6).map(i => `${i.itmsNm}(${i.srtnCd})`),
+      message: like.length === 1 ? '이름 일부만 일치 — 확인 필요' : `후보 ${like.length}개 — 확인 필요`,
     };
   } catch (e) {
-    return { input, quotes: [], error: e instanceof Error ? e.message : String(e) };
+    return { input, status: 'error', message: e instanceof Error ? e.message : String(e) };
   }
 }
 
-/** 입력 순서를 지킨 채 5건씩 나눠 부른다 */
-export async function fetchAll(
-  inputs: string[],
-  from: string,
-  to: string,
-  onProgress: (series: (StockSeries | null)[]) => void
-): Promise<StockSeries[]> {
-  const out: (StockSeries | null)[] = inputs.map(() => null);
-  for (let i = 0; i < inputs.length; i += 5) {
-    const chunk = await Promise.all(inputs.slice(i, i + 5).map(s => fetchSeries(s, from, to)));
-    chunk.forEach((s, k) => (out[i + k] = s));
+// ---------------------------------------------------------------------------
+// 시세
+// ---------------------------------------------------------------------------
+
+export async function fetchQuotes(code: string, from: string, to: string): Promise<Quote[]> {
+  const items = await fetchItems({ likeSrtnCd: code }, from, to);
+  return items
+    .filter(i => i.srtnCd === code)
+    .map(i => ({
+      date: toIso(i.basDt),
+      close: Number(i.clpr),
+      high: Number(i.hipr),
+      low: Number(i.lopr),
+      volume: Number(i.trqu),
+      value: Number(i.trPrc),
+      shares: Number(i.lstgStCnt),
+      marketCap: Number(i.mrktTotAmt),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** 입력 순서를 지킨 채 5건씩 나눠 부른다 — 한꺼번에 수십 건을 쏘지 않게 */
+export async function inChunks<T, R>(
+  list: T[],
+  fn: (item: T) => Promise<R>,
+  onProgress: (done: (R | null)[]) => void
+): Promise<R[]> {
+  const out: (R | null)[] = list.map(() => null);
+  for (let i = 0; i < list.length; i += 5) {
+    const chunk = await Promise.all(list.slice(i, i + 5).map(fn));
+    chunk.forEach((r, k) => (out[i + k] = r));
     onProgress([...out]);
   }
-  return out as StockSeries[];
-}
-
-/** 특정일이 휴장일이면 직전 거래일 종가를 쓴다. 2주 앞까지 거슬러 받아 둔다 */
-export const SPOT_LOOKBACK_DAYS = 14;
-
-export function closeOn(series: StockSeries, date: string): Quote | undefined {
-  return series.quotes.filter(q => q.date <= date).pop();
-}
-
-const FOOTNOTE = '출처: 금융위원회 주식시세정보 (공공데이터포털) · 실제 종가(수정주가 아님)';
-
-export function buildSpotTable(list: StockSeries[], date: string): SheetTable {
-  return {
-    columns: [
-      { key: 'name', label: '종목명', width: 18 },
-      { key: 'code', label: '종목코드', width: 10 },
-      { key: 'market', label: '시장', width: 8 },
-      { key: 'date', label: '기준일', width: 12 },
-      { key: 'close', label: '종가(원)', numeric: true, digits: 0, width: 14 },
-      { key: 'note', label: '비고', width: 28 },
-    ],
-    rows: list.map(s => {
-      const q = closeOn(s, date);
-      const note = s.error ?? (!q ? `${date} 이전 시세 없음` : q.date !== date ? '휴장일 — 직전 거래일 종가' : '');
-      return {
-        cells: [s.name ?? s.input, s.code ?? '', s.market ?? '', q?.date ?? '', q?.close ?? null, note],
-        shades: note ? [null, null, null, 'soft', 'soft', 'soft'] : undefined,
-      };
-    }),
-    footnote: FOOTNOTE,
-  };
-}
-
-/** 날짜를 행, 종목을 열로. 맨 아래에 기간 단순평균 행 */
-export function buildPeriodTable(list: StockSeries[]): SheetTable {
-  const ok = list.filter(s => s.quotes.length > 0);
-  const dates = [...new Set(ok.flatMap(s => s.quotes.map(q => q.date)))].sort();
-  const byDate = ok.map(s => new Map(s.quotes.map(q => [q.date, q.close])));
-  const average = (s: StockSeries) => s.quotes.reduce((a, q) => a + q.close, 0) / s.quotes.length;
-  return {
-    columns: [
-      { key: 'date', label: '일자', width: 12 },
-      ...ok.map(s => ({ key: s.code!, label: `${s.name}(${s.code})`, numeric: true, digits: 0, width: 16 })),
-    ],
-    rows: dates.length
-      ? [
-          ...dates.map(d => ({ cells: [d, ...byDate.map(m => m.get(d) ?? null)] })),
-          { cells: ['평균', ...ok.map(average)], emphasis: 'total' as const },
-        ]
-      : [],
-    footnote: `${FOOTNOTE} · 평균은 거래일 종가의 단순평균(원 미만 반올림 표시)`,
-  };
+  return out as R[];
 }
