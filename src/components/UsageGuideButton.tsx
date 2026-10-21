@@ -4,7 +4,9 @@ import { ExternalLink, Info, X } from 'lucide-react';
 /** 원데이터를 어디서 받았는지. 조서화 전에 사용자가 직접 확인하러 갈 곳이다. */
 const DATA_SOURCES: { label: string; source: string; url: string }[] = [
   { label: '환율', source: '서울외국환중개', url: 'http://www.smbs.biz/ExRate/StdExRate.jsp' },
-  { label: '이자율', source: '금융투자협회 채권정보센터', url: 'https://www.kofiabond.or.kr' },
+  { label: '이자율·신용등급', source: '금융투자협회 채권정보센터', url: 'https://www.kofiabond.or.kr' },
+  { label: '주가', source: '금융위원회 주식시세정보 (공공데이터포털)', url: 'https://www.data.go.kr' },
+  { label: '공시지가', source: '국토교통부 개별공시지가 (V-World)', url: 'https://www.vworld.kr' },
   { label: '기준서', source: '회계기준원', url: 'https://www.kasb.or.kr' },
 ];
 
@@ -80,7 +82,7 @@ export const UsageGuideButton: React.FC = () => {
                   <ul className="mt-2 rounded-lg border border-slate-200 divide-y divide-slate-200">
                     {DATA_SOURCES.map(d => (
                       <li key={d.label} className="flex items-center gap-3 px-3 py-2">
-                        <span className="w-14 shrink-0 text-xs font-semibold text-slate-500">{d.label}</span>
+                        <span className="w-24 shrink-0 text-xs font-semibold text-slate-500">{d.label}</span>
                         <a
                           href={d.url}
                           target="_blank"
@@ -99,6 +101,16 @@ export const UsageGuideButton: React.FC = () => {
                 <span className="font-semibold text-slate-500 shrink-0">3)</span>
                 <p className="font-medium text-rose-700">
                   조서화 전 반드시 직접 원데이터 소스에 접근하여 내용이 맞는지 체크하시기 바랍니다.
+                </p>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-semibold text-slate-500 shrink-0">4)</span>
+                <p>
+                  기타 문의사항은{' '}
+                  <a href="mailto:jungwoohyun@kr.kpmg.com" className="text-sky-700 hover:underline">
+                    jungwoohyun@kr.kpmg.com
+                  </a>
+                  으로 부탁드립니다.
                 </p>
               </li>
             </ol>
