@@ -2,6 +2,9 @@ import React from 'react';
 import { ArrowLeft, BookOpen, Code2, PencilLine, Upload, RotateCcw } from 'lucide-react';
 import { UsageGuideButton } from './UsageGuideButton';
 
+/** 기준서 수정 모드 버튼 — 저장소 주인이 다시 켜라고 할 때까지 숨긴다. */
+const SHOW_EDIT_MODE = false;
+
 interface NavbarProps {
   /** 첫 화면(작업대 고르기)으로 돌아간다 */
   onBackHome: () => void;
@@ -61,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             기준서 <span className="text-emerald-300 font-semibold mx-1">{standardCount}개</span> ({totalParagraphs}개 문단)
           </div>
 
-          <button
+          {SHOW_EDIT_MODE && <button
             id="btn-edit-mode"
             onClick={onToggleEditMode}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
@@ -73,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <PencilLine className={`w-3.5 h-3.5 ${editMode ? 'text-amber-900' : 'text-amber-400'}`} />
             <span>{editMode ? '수정 모드 켜짐' : '수정 모드'}</span>
-          </button>
+          </button>}
 
           <button
             id="btn-import-db"
