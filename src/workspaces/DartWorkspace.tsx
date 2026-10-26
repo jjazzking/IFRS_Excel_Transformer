@@ -19,6 +19,46 @@ interface DartWorkspaceProps {
   onBackHome: () => void;
 }
 
+/** 기다리는 일의 종류. 종류마다 걸린 시간을 기억해 다음 예상 시간으로 쓴다. */
+type LoadKind = 'corps' | 'reports' | 'document' | 'toc' | 'section';
+
+const LOAD_LABEL: Record<LoadKind, string> = {
+  corps: '회사 목록을 받는 중',
+  reports: '공시 목록을 받는 중',
+  document: '공시 원문을 받는 중',
+  toc: '첨부 목차를 받는 중',
+  section: '본문을 받는 중',
+};
+
+// 처음 쓰는 브라우저의 예상 시간 (ms). 실제로 걸린 시간을 반씩 섞어 고쳐 나간다.
+const DEFAULT_ESTIMATE: Record<LoadKind, number> = { corps: 8000, reports: 1500, document: 4000, toc: 1500, section: 2000 };
+const ESTIMATE_KEY = 'workpaper.dart.estimate.v1';
+
+function readEstimates(): Record<LoadKind, number> {
+  try {
+    return { ...DEFAULT_ESTIMATE, ...JSON.parse(localStorage.getItem(ESTIMATE_KEY) ?? '{}') };
+  } catch {
+    return DEFAULT_ESTIMATE;
+  }
+}
+
+function recordDuration(kind: LoadKind, ms: number) {
+  // 캐시에서 바로 나온 것은 넣지 않는다 — 넣으면 처음 받을 때의 예상이 너무 짧아진다.
+  if (ms < 300) return;
+  try {
+    const e = readEstimates();
+    e[kind] = Math.round((e[kind] + ms) / 2);
+    localStorage.setItem(ESTIMATE_KEY, JSON.stringify(e));
+  } catch {
+    // 저장 못 하는 브라우저면 기본 예상을 계속 쓴다.
+  }
+}
+
+interface Loading {
+  kind: LoadKind;
+  started: number;
+}
+
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const ymd = (d: string) => `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6, 8)}`;
 
@@ -31,7 +71,8 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
   const [files, setFiles] = useState<DartFile[] | null>(null);
   const [fileIdx, setFileIdx] = useState(0);
   const [node, setNode] = useState<TocNode | null>(null);
-  const [loading, setLoading] = useState('');
+  const [loading, setLoading] = useState<Loading | null>(null);
+  const [corpsStarted] = useState(() => Date.now());
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   // DART 사이트에서 받은 첨부 목차·본문은 그 자리에서 채우므로, 다시 그리라고 알리는 데 쓴다.
@@ -43,8 +84,14 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
   const hits = useMemo(() => (corps ? searchCorps(corps, query) : []), [corps, query]);
 
   useEffect(() => {
-    loadCorps().then(setCorps, e => setError(`회사 목록을 받지 못했습니다 — ${message(e)}`));
-  }, []);
+    loadCorps().then(
+      cs => {
+        recordDuration('corps', Date.now() - corpsStarted);
+        setCorps(cs);
+      },
+      e => setError(`회사 목록을 받지 못했습니다 — ${message(e)}`)
+    );
+  }, [corpsStarted]);
 
   useEffect(() => {
     const el = bodyRef.current;
@@ -53,17 +100,19 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     el.scrollTop = 0;
   }, [node, version]);
 
-  const run = async <T,>(label: string, job: () => Promise<T>, done: (v: T) => void) => {
+  const run = async <T,>(kind: LoadKind, job: () => Promise<T>, done: (v: T) => void) => {
     const id = ++latest.current;
-    setLoading(label);
+    const started = Date.now();
+    setLoading({ kind, started });
     setError('');
     try {
       const v = await job();
+      recordDuration(kind, Date.now() - started);
       if (id === latest.current) done(v);
     } catch (e) {
       if (id === latest.current) setError(message(e));
     } finally {
-      if (id === latest.current) setLoading('');
+      if (id === latest.current) setLoading(null);
     }
   };
 
@@ -73,7 +122,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     setReport(null);
     setFiles(null);
     setNode(null);
-    run('공시 목록을 받는 중…', () => loadReports(c.code), setReports);
+    run('reports', () => loadReports(c.code), setReports);
   };
 
   const pickReport = (r: Report) => {
@@ -81,7 +130,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     setFiles(null);
     setNode(null);
     run(
-      '공시 원문을 받는 중…',
+      'document',
       async () => {
         const [zip, web] = await Promise.all([
           loadDocument(r.rcept_no),
@@ -107,7 +156,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     const f = fs[i];
     if (!f?.web || f.toc.length > 0) return pickNode(f?.toc[0] ?? null);
     setNode(null);
-    run('첨부 목차를 받는 중…', () => loadWebToc(f), toc => {
+    run('toc', () => loadWebToc(f), toc => {
       f.toc = toc;
       pickNode(toc[0] ?? null);
     });
@@ -116,7 +165,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
   const pickNode = (n: TocNode | null) => {
     setNode(n);
     if (!n?.src || n.els.length > 0) return;
-    run('본문을 받는 중…', () => loadWebSection(n), () => setVersion(v => v + 1));
+    run('section', () => loadWebSection(n), () => setVersion(v => v + 1));
   };
 
   // HTML 로 담아야 엑셀에 붙여넣을 때 표의 칸·병합이 그대로 산다.
@@ -157,6 +206,14 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
               className="w-full rounded-md border border-slate-300 py-1 pl-7 pr-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </label>
+          {!corps && !error && (
+            <div className="space-y-1">
+              <LoadingRing kind="corps" started={corpsStarted} />
+              <p className="text-[10px] text-slate-400 leading-snug">
+                처음 한 번만 회사 목록(약 10만 곳)을 받느라 느립니다. 다음부터는 바로 열립니다.
+              </p>
+            </div>
+          )}
 
           {query.trim() && corps && (
             <ul className="max-h-60 overflow-auto rounded-md border border-slate-200 divide-y divide-slate-100 shrink-0">
@@ -232,7 +289,10 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
                 ))}
               </select>
             )}
-            {loading && <span className="text-[11px] text-slate-500">{loading}</span>}
+            {loading && <LoadingRing kind={loading.kind} started={loading.started} />}
+            {loading?.kind === 'document' && (
+              <span className="text-[10px] text-slate-400">처음 여는 보고서만 느립니다 — 한 번 연 보고서는 바로 열립니다</span>
+            )}
             <div className="ml-auto flex items-center gap-2 shrink-0">
               {report && (
                 <a
@@ -271,6 +331,51 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     </div>
   );
 }
+
+/**
+ * 기다리는 동안 도는 동그라미. 예상 시간에 90% 까지 차고, 넘기면 99% 쪽으로 천천히 다가간다
+ * (끝나기 전에 100% 가 되어 멈춰 보이지 않게).
+ */
+const LoadingRing: React.FC<Loading> = ({ kind, started }) => {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(t);
+  }, []);
+  const estimate = useMemo(() => readEstimates()[kind], [kind]);
+  const elapsed = now - started;
+  const t = elapsed / estimate;
+  const progress = t < 1 ? 0.9 * t : 0.9 + 0.09 * (1 - Math.exp(1 - t));
+  const left = Math.ceil((estimate - elapsed) / 1000);
+  const R = 7;
+  const C = 2 * Math.PI * R;
+  return (
+    <span
+      role="progressbar"
+      aria-label={LOAD_LABEL[kind]}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(progress * 100)}
+      className="flex items-center gap-1.5 text-[11px] text-slate-500 shrink-0"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" className="-rotate-90">
+        <circle cx="9" cy="9" r={R} fill="none" stroke="#e2e8f0" strokeWidth="2.5" />
+        <circle
+          cx="9"
+          cy="9"
+          r={R}
+          fill="none"
+          stroke="#059669"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeDasharray={C}
+          strokeDashoffset={C * (1 - progress)}
+        />
+      </svg>
+      {LOAD_LABEL[kind]} · {left > 0 ? `약 ${left}초` : '거의 다 됐습니다…'}
+    </span>
+  );
+};
 
 const TocItem: React.FC<{
   node: TocNode;
