@@ -13,6 +13,7 @@ import {
   Landmark,
   ScrollText,
   MapPin,
+  FileSearch,
   TrendingUp,
 } from 'lucide-react';
 
@@ -23,7 +24,8 @@ export type WorkspaceId =
   | 'minutes'
   | 'litigation'
   | 'landprice'
-  | 'stocks';
+  | 'stocks'
+  | 'dart';
 
 export type WorkspaceStatus = 'ready' | 'preparing';
 
@@ -140,6 +142,18 @@ export const WORKSPACES: WorkspaceMeta[] = [
     icon: TrendingUp,
     status: 'ready',
     accent: 'indigo',
+  },
+  {
+    id: 'dart',
+    name: '주석 찾기',
+    tagline: '회사 공시 원문에서 주석을 찾아 그대로 붙여넣는다',
+    description:
+      'DART 공시 원문(사업·반기·분기보고서, 감사보고서)을 DART 화면처럼 목차와 본문으로 열고, 주석을 번호별로 골라 표 모양 그대로 엑셀에 붙여넣는다.',
+    leftPane: '회사 검색 · 공시 목록',
+    rightPane: 'DART 원문 목차 · 본문',
+    icon: FileSearch,
+    status: 'ready',
+    accent: 'violet',
   },
 ];
 
