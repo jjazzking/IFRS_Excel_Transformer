@@ -71,23 +71,42 @@ export function decodeXml(bytes: Uint8Array): string {
 const unescape = (s: string) =>
   s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'");
 
+// DART 가 회사 목록·원문을 만들어 보내는 데 수 초씩 걸려서, 한 번 받은 것은 브라우저 캐시에 둔다.
+const CACHE = 'dart-v1';
+
+async function cacheGet(key: string, maxDays: number): Promise<Response | undefined> {
+  try {
+    const hit = await (await caches.open(CACHE)).match(`/${key}`);
+    if (hit && Date.now() - Number(hit.headers.get('x-saved')) < maxDays * 864e5) return hit;
+  } catch {
+    // 캐시를 못 쓰는 브라우저(사생활 보호 창 등)면 매번 받는다.
+  }
+}
+
+async function cachePut(key: string, body: Blob): Promise<void> {
+  try {
+    await (await caches.open(CACHE)).put(`/${key}`, new Response(body, { headers: { 'x-saved': String(Date.now()) } }));
+  } catch {
+    // 위와 같다 — 담지 못해도 화면은 그대로 쓴다.
+  }
+}
+
 let corpsPromise: Promise<Corp[]> | null = null;
 
-/**
- * 전체 회사 목록 (상장·비상장 약 10만 곳). 처음 한 번 받아 두고 이 탭이 열려 있는 동안 쓴다.
- * shortcut: 탭을 새로 열 때마다 다시 받는다 (수 MB) — 느리다는 말이 나오면 IndexedDB 에 담는다.
- */
+/** 전체 회사 목록 (상장·비상장 약 10만 곳). 새로 생긴 회사가 보이도록 7일마다 다시 받는다. */
 export function loadCorps(): Promise<Corp[]> {
-  corpsPromise ??= getBytes('corpCode.xml', {})
-    .then(bytes => {
-      const xml = decodeXml(unzip(bytes)[0].bytes);
-      return xml.split('<list>').slice(1).map(chunk => ({
-        code: chunk.match(/<corp_code>([^<]*)/)?.[1] ?? '',
-        name: unescape(chunk.match(/<corp_name>([^<]*)/)?.[1] ?? '').trim(),
-        stock: (chunk.match(/<stock_code>([^<]*)/)?.[1] ?? '').trim(),
-      }));
-    })
-    .catch(e => {
+  corpsPromise ??= (async () => {
+    const hit = await cacheGet('corps', 7);
+    if (hit) return (await hit.json()) as Corp[];
+    const xml = decodeXml(unzip(await getBytes('corpCode.xml', {}))[0].bytes);
+    const corps = xml.split('<list>').slice(1).map(chunk => ({
+      code: chunk.match(/<corp_code>([^<]*)/)?.[1] ?? '',
+      name: unescape(chunk.match(/<corp_name>([^<]*)/)?.[1] ?? '').trim(),
+      stock: (chunk.match(/<stock_code>([^<]*)/)?.[1] ?? '').trim(),
+    }));
+    await cachePut('corps', new Blob([JSON.stringify(corps)]));
+    return corps;
+  })().catch(e => {
       corpsPromise = null; // 실패는 기억하지 않는다 — 다음에 다시 시도
       throw e;
     });
@@ -133,7 +152,12 @@ export async function loadReports(corpCode: string): Promise<Report[]> {
 
 /** 공시 원문 ZIP 을 받아 본문과 첨부를 각각 목차로 읽는다. 본문이 맨 앞. */
 export async function loadDocument(rceptNo: string): Promise<DartFile[]> {
-  const files = unzip(await getBytes('document.xml', { rcept_no: rceptNo }));
+  // 한 번 낸 공시 원문은 바뀌지 않으므로(정정은 새 접수번호) 기한 없이 둔다.
+  const key = `doc-${rceptNo}`;
+  const hit = await cacheGet(key, Infinity);
+  const bytes = hit ? new Uint8Array(await hit.arrayBuffer()) : await getBytes('document.xml', { rcept_no: rceptNo });
+  const files = unzip(bytes); // DART 오류 응답이면 여기서 던져 캐시에 담기지 않는다
+  if (!hit) await cachePut(key, new Blob([bytes]));
   return files
     .sort((a, b) => a.name.length - b.name.length || a.name.localeCompare(b.name))
     .map(f => parseDartXml(f.name, decodeXml(f.bytes)));
