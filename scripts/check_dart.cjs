@@ -31,8 +31,10 @@ const ATT_TEXT = '<?xml version="1.0" encoding="euc-kr"?><DOCUMENT><DOCUMENT-NAM
   const b = await chromium.launch();
   const DOC = zip({ '20260310000001.xml': Buffer.from(MAIN), '20260310000001_00760.xml': require('child_process').execFileSync('iconv', ['-f', 'utf-8', '-t', 'euc-kr'], { input: ATT_TEXT }) }); const ctx = await b.newContext({ permissions: ['clipboard-read','clipboard-write'] }); const p = await ctx.newPage();
   const errs = []; p.on('pageerror', e => errs.push(String(e))); p.on('dialog', d => { errs.push('dialog!'); d.dismiss(); });
+  const calls = {};
   await p.route('https://dart-proxy.neojw990223.workers.dev/**', r => {
     const u = new URL(r.request().url()); const h = { 'access-control-allow-origin': '*' };
+    const api = u.pathname.split('/').pop(); calls[api] = (calls[api] ?? 0) + 1;
     if (u.pathname.endsWith('corpCode.xml')) return r.fulfill({ body: CORP, headers: h });
     if (u.pathname.endsWith('list.json')) return r.fulfill({ headers: h, contentType: 'application/json', body: JSON.stringify(u.searchParams.get('pblntf_ty')==='A'
       ? { status:'000', list:[{rcept_no:'20260310000001',report_nm:'사업보고서 (2025.12)  ',rcept_dt:'20260310',flr_nm:'삼성전자'}]} : {status:'013',message:'조회된 데이타가 없습니다.'}) });
@@ -58,6 +60,14 @@ const ATT_TEXT = '<?xml version="1.0" encoding="euc-kr"?><DOCUMENT><DOCUMENT-NAM
   await p.selectOption('select', '1');
   const att = await p.locator('main div.overflow-auto.px-6').innerHTML(); console.log('att', att);
   assert(att.includes('적정') && !att.includes('<script'));
+  // 다시 열면 회사 목록·원문은 브라우저 캐시에서 — DART 를 다시 부르지 않는다.
+  await p.reload();
+  await p.fill('#dart-corp-search', '삼성전자');
+  await p.locator('ul li button').first().click();
+  await p.getByText('사업보고서 (2025.12)').click();
+  await p.getByRole('button', { name: '3. 연결재무제표 주석' }).waitFor();
+  console.log('calls', calls);
+  assert.strictEqual(calls['corpCode.xml'], 1); assert.strictEqual(calls['document.xml'], 1);
   console.log('errors', errs); assert(errs.length === 0);
   await b.close(); console.log('OK');
 })().catch(e => { console.error(e); process.exit(1); });
