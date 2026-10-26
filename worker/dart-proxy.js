@@ -9,9 +9,7 @@
  *       Edit code 에 이 파일을 붙여넣고 Deploy.
  *       Settings → Variables and Secrets 에 Secret `DART_KEY` (OpenDART 인증키) 추가.
  *
- * 시험: /hello                                → "hello" (회사 망에서 열리는지)
- *       /api/list.json?corp_code=00126380&bgn_de=20260101
- *                                             → status "000" 인 JSON (DART 가 받아 주는지)
+ * 시험: /hello → "hello". /api/... 는 찾붙머신 화면에서 부를 때만 열린다 (주소창에서는 forbidden).
  */
 
 // 찾붙머신 배포 주소와 로컬 개발 서버만 받는다.
@@ -25,14 +23,14 @@ export default {
     const url = new URL(req.url);
     const origin = req.headers.get('Origin');
 
-    // shortcut: Origin 이 없는 요청(주소창 직접 입력·curl)은 통과시킨다 — 회사 PC 에서 주소창으로
-    // 시험하려고. 남이 키 한도를 쓰기 시작하면 여기서 막거나 비밀 토큰을 요구한다.
-    if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    if (url.pathname === '/hello') return new Response('hello');
+
+    // 주소가 사이트 JS 에 드러나므로 찾붙머신 화면에서 온 요청만 받는다.
+    // shortcut: Origin 은 curl 로 꾸밀 수 있다 — 남이 키 한도를 쓰기 시작하면 비밀 토큰을 요구한다.
+    if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
       return new Response('forbidden', { status: 403 });
     }
-    const cors = origin ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {};
-
-    if (url.pathname === '/hello') return new Response('hello', { headers: cors });
+    const cors = { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' };
 
     const api = url.pathname.replace(/^\/api\//, '');
     if (!url.pathname.startsWith('/api/') || !ALLOWED_APIS.has(api)) {
