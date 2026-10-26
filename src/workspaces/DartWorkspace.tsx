@@ -8,6 +8,9 @@ import {
   loadCorps,
   loadDocument,
   loadReports,
+  loadWebAttachments,
+  loadWebSection,
+  loadWebToc,
   renderDart,
   searchCorps,
 } from '../utils/dart';
@@ -31,6 +34,8 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
   const [loading, setLoading] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  // DART 사이트에서 받은 첨부 목차·본문은 그 자리에서 채우므로, 다시 그리라고 알리는 데 쓴다.
+  const [version, setVersion] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   // 회사·보고서를 빠르게 바꿔 누르면 늦게 온 옛 응답이 새 화면을 덮지 않게 한다.
   const latest = useRef(0);
@@ -46,7 +51,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     if (!el) return;
     el.replaceChildren(node ? renderDart(node.els) : '');
     el.scrollTop = 0;
-  }, [node]);
+  }, [node, version]);
 
   const run = async <T,>(label: string, job: () => Promise<T>, done: (v: T) => void) => {
     const id = ++latest.current;
@@ -75,16 +80,43 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     setReport(r);
     setFiles(null);
     setNode(null);
-    run('공시 원문을 받는 중…', () => loadDocument(r.rcept_no), fs => {
-      setFiles(fs);
-      setFileIdx(0);
-      setNode(fs[0]?.toc[0] ?? null);
+    run(
+      '공시 원문을 받는 중…',
+      async () => {
+        const [zip, web] = await Promise.all([
+          loadDocument(r.rcept_no),
+          loadWebAttachments(r.rcept_no).catch((e: unknown) => message(e)),
+        ]);
+        // 사업보고서는 원문 ZIP 에 감사보고서가 들어 있다. 분·반기 검토보고서와 정정 공시의 첨부는
+        // ZIP 에 빠지므로 그때만 DART 사이트의 첨부 목록을 단다.
+        if (zip.length > 1) return { fs: zip, warn: '' };
+        return typeof web === 'string' ? { fs: zip, warn: `첨부 목록을 받지 못했습니다 — ${web}` } : { fs: [...zip, ...web], warn: '' };
+      },
+      ({ fs, warn }) => {
+        setFiles(fs);
+        setError(warn);
+        // 주로 보는 것은 감사·검토보고서라 있으면 그것부터 연다.
+        const audit = fs.findIndex(f => /감사보고서|검토보고서/.test(f.title));
+        openFile(fs, Math.max(audit, 0));
+      }
+    );
+  };
+
+  const openFile = (fs: DartFile[], i: number) => {
+    setFileIdx(i);
+    const f = fs[i];
+    if (!f?.web || f.toc.length > 0) return pickNode(f?.toc[0] ?? null);
+    setNode(null);
+    run('첨부 목차를 받는 중…', () => loadWebToc(f), toc => {
+      f.toc = toc;
+      pickNode(toc[0] ?? null);
     });
   };
 
-  const pickFile = (i: number) => {
-    setFileIdx(i);
-    setNode(files?.[i]?.toc[0] ?? null);
+  const pickNode = (n: TocNode | null) => {
+    setNode(n);
+    if (!n?.src || n.els.length > 0) return;
+    run('본문을 받는 중…', () => loadWebSection(n), () => setVersion(v => v + 1));
   };
 
   // HTML 로 담아야 엑셀에 붙여넣을 때 표의 칸·병합이 그대로 산다.
@@ -189,7 +221,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
             {files && files.length > 1 && (
               <select
                 value={fileIdx}
-                onChange={e => pickFile(Number(e.target.value))}
+                onChange={e => openFile(files, Number(e.target.value))}
                 className="rounded border border-slate-300 px-1 py-0.5 text-xs"
                 aria-label="본문·첨부 고르기"
               >
@@ -227,7 +259,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
 
           <div className="flex-1 min-h-0 flex">
             <nav className="w-64 shrink-0 overflow-auto border-r border-slate-200 bg-slate-50 py-2 text-xs">
-              {file?.toc.map(n => <TocItem key={n.id} node={n} depth={0} selected={node} onSelect={setNode} />)}
+              {file?.toc.map(n => <TocItem key={n.id} node={n} depth={0} selected={node} onSelect={pickNode} />)}
             </nav>
             <div
               ref={bodyRef}

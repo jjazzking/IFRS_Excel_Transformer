@@ -29,13 +29,17 @@ export interface TocNode {
   title: string;
   els: Element[];
   children: TocNode[];
+  /** DART 사이트에서 읽는 첨부의 목차면 본문 조각(viewer.do) 주소 — 처음 누를 때 받아 `els` 를 채운다. */
+  src?: string;
 }
 
-/** ZIP 안의 XML 하나 — 본문 또는 첨부(감사보고서 등). */
+/** 문서 하나 — 원문 ZIP 안의 XML(본문·첨부), 또는 DART 사이트에서 읽는 첨부. */
 export interface DartFile {
   name: string;
   title: string;
   toc: TocNode[];
+  /** DART 사이트에서 읽는 첨부면 그 문서 번호 — 처음 고를 때 목차를 받는다. */
+  web?: { rcpNo: string; dcmNo: string };
 }
 
 async function getBytes(api: string, params: Record<string, string>): Promise<Uint8Array> {
@@ -57,14 +61,15 @@ function unzip(bytes: Uint8Array): { name: string; bytes: Uint8Array }[] {
   );
 }
 
-/** XML 선언의 encoding 대로 읽는다. 옛 공시는 EUC-KR 이다. */
+/**
+ * UTF-8 로 읽어 보고, 깨지면 EUC-KR(CP949) 로 읽는다. 옛 공시(2022년 초 이전)는 EUC-KR 인데
+ * XML 선언의 encoding 이 실제와 다른 경우가 있어 선언은 믿지 않는다.
+ */
 export function decodeXml(bytes: Uint8Array): string {
-  const head = new TextDecoder('latin1').decode(bytes.subarray(0, 200));
-  const enc = head.match(/encoding=["']([\w-]+)/i)?.[1] ?? 'utf-8';
   try {
-    return new TextDecoder(enc).decode(bytes);
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch {
-    return new TextDecoder().decode(bytes);
+    return new TextDecoder('euc-kr').decode(bytes);
   }
 }
 
@@ -188,27 +193,8 @@ export function parseDartXml(name: string, xml: string): DartFile {
       id: `${name}#${seq++}`,
       title,
       els: [el],
-      children: subs.length > 0 ? subs.map(section) : /주석/.test(title) ? splitNotes(el) : [],
+      children: subs.length > 0 ? subs.map(section) : /주석/.test(title) ? splitNotes(el, `${name}#${seq++}`) : [],
     };
-  };
-
-  // 주석 절은 대개 절 하나에 주석 전부가 문단으로 들어 있다. "1. 일반사항" 처럼 번호가
-  // 1, 2, 3… 차례로 이어지는 문단을 주석 머리로 보고 그 사이를 주석 하나로 묶는다.
-  // shortcut: 번호가 건너뛰거나 표 안에 머리를 둔 보고서는 나뉘지 않는다 — 그런 회사가 나오면 규칙을 늘린다.
-  const splitNotes = (el: Element): TocNode[] => {
-    const notes: TocNode[] = [];
-    let next = 1;
-    for (const child of el.children) {
-      if (child.tagName === 'DTITLE') continue;
-      const text = child.textContent?.trim() ?? '';
-      const m = child.tagName === 'P' && text.match(/^(\d{1,3})\s*\.\s*(\S.*)$/s);
-      if (m && Number(m[1]) === next) {
-        next++;
-        notes.push({ id: `${name}#${seq++}`, title: `${m[1]}. ${m[2].split('\n')[0].trim()}`.slice(0, 60), els: [], children: [] });
-      }
-      notes.at(-1)?.els.push(child);
-    }
-    return notes.length > 1 ? notes : [];
   };
 
   const cover = doc.getElementsByTagName('COVER')[0];
@@ -220,6 +206,102 @@ export function parseDartXml(name: string, xml: string): DartFile {
     title: doc.getElementsByTagName('DOCUMENT-NAME')[0]?.textContent?.trim() || name,
     toc,
   };
+}
+
+/**
+ * 주석 절은 대개 절 하나에 주석 전부가 문단으로 들어 있다. "1. 일반사항" 처럼 번호가
+ * 1, 2, 3… 차례로 이어지는 문단을 주석 머리로 보고 그 사이를 주석 하나로 묶는다.
+ * shortcut: 번호가 건너뛰거나 표 안에 머리를 둔 보고서는 나뉘지 않는다 — 그런 회사가 나오면 규칙을 늘린다.
+ */
+function splitNotes(el: Element, idPrefix: string): TocNode[] {
+  // DART 사이트 본문 조각은 문단들을 감싸개 하나로 싼다 — 문단이 보일 때까지 들어간다.
+  while (el.children.length === 1 && !/^(P|TABLE)$/.test(el.children[0].tagName)) el = el.children[0];
+  const notes: TocNode[] = [];
+  let next = 1;
+  for (const child of el.children) {
+    if (child.tagName === 'DTITLE') continue;
+    const text = child.textContent?.trim() ?? '';
+    const m = child.tagName === 'P' && text.match(/^(\d{1,3})\s*\.\s*(\S.*)$/s);
+    if (m && Number(m[1]) === next) {
+      next++;
+      notes.push({ id: `${idPrefix}.${m[1]}`, title: `${m[1]}. ${m[2].split('\n')[0].trim()}`.slice(0, 60), els: [], children: [] });
+    }
+    notes.at(-1)?.els.push(child);
+  }
+  return notes.length > 1 ? notes : [];
+}
+
+async function getPage(page: 'main.do' | 'viewer.do', params: string): Promise<string> {
+  const res = await fetch(`${PROXY}/web/${page}?${params}`);
+  if (!res.ok) throw new Error(`DART 화면을 받지 못했습니다 (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  return res.text();
+}
+
+/**
+ * DART 보고서 화면의 '첨부' 선택 상자. 분·반기 검토보고서처럼 원문 ZIP 에 빠지는 첨부도 여기에는 있다.
+ * 표지 날짜("2026.08.14")는 떼고 이름만 남긴다.
+ */
+export async function loadWebAttachments(rceptNo: string): Promise<DartFile[]> {
+  const html = await getPage('main.do', `rcpNo=${rceptNo}`);
+  const select = html.match(/<select id="att"[\s\S]*?<\/select>/)?.[0] ?? '';
+  return [...select.matchAll(/<option value="rcpNo=(\d+)&(?:amp;)?dcmNo=(\d+)"[^>]*>([\s\S]*?)<\/option>/g)].map(m => ({
+    name: `web-${m[2]}`,
+    title: m[3].replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').replace(/^\s*\d{4}\.\d{2}\.\d{2}\s*/, '').trim(),
+    toc: [],
+    web: { rcpNo: m[1], dcmNo: m[2] },
+  }));
+}
+
+/**
+ * 첨부 화면의 목차. DART 는 목차를 `var node1 = {}; node1['text'] = "…";` 같은 스크립트로 싣는다.
+ * 숫자가 깊이다 (node1 = 맨 위, node2 = 그 아래).
+ */
+export function parseWebToc(html: string, dcmNo: string): TocNode[] {
+  const start = html.indexOf('function makeToc');
+  const script = html.slice(start, html.indexOf('.jstree(', start));
+  const roots: TocNode[] = [];
+  const last: (TocNode & { props: Record<string, string> })[] = [];
+  for (const m of script.matchAll(/var node(\d+) = \{\};|node(\d+)\['(\w+)'\] *= *"((?:[^"\\]|\\.)*)"/g)) {
+    if (m[1]) {
+      const depth = Number(m[1]);
+      const node = { id: '', title: '', els: [], children: [], props: {} };
+      (depth === 1 ? roots : (last[depth - 2]?.children ?? roots)).push(node);
+      last[depth - 1] = node;
+    } else {
+      const node = last[Number(m[2]) - 1];
+      if (node) node.props[m[3]] = m[4].replace(/\\(.)/g, '$1');
+    }
+  }
+  const finish = (n: TocNode & { props?: Record<string, string> }): TocNode => {
+    const p = n.props ?? {};
+    return {
+      id: `web-${dcmNo}#${p.id}`,
+      title: (p.text ?? '').replace(/\s+/g, ' ').trim() || '(제목 없음)',
+      els: [],
+      children: n.children.map(finish),
+      src: new URLSearchParams({
+        rcpNo: p.rcpNo ?? '',
+        dcmNo: p.dcmNo ?? dcmNo,
+        eleId: p.eleId ?? '',
+        offset: p.offset ?? '',
+        length: p.length ?? '',
+        dtd: p.dtd ?? 'dart4.xsd',
+      }).toString(),
+    };
+  };
+  return roots.map(finish);
+}
+
+export async function loadWebToc(file: DartFile): Promise<TocNode[]> {
+  const { rcpNo, dcmNo } = file.web!;
+  return parseWebToc(await getPage('main.do', `rcpNo=${rcpNo}&dcmNo=${dcmNo}`), dcmNo);
+}
+
+/** 첨부 목차 한 줄의 본문 조각을 받아 `els` 를 채운다. 주석이면 번호별로 나눠 아래에 단다. */
+export async function loadWebSection(node: TocNode): Promise<void> {
+  const doc = new DOMParser().parseFromString(await getPage('viewer.do', node.src!), 'text/html');
+  node.els = [doc.body];
+  if (node.children.length === 0 && /주석/.test(node.title)) node.children = splitNotes(doc.body, node.id);
 }
 
 // 엑셀에 붙여넣어도 테두리·정렬이 남도록 모양은 모두 인라인 스타일로 단다.
@@ -284,11 +366,18 @@ function convert(node: Node): Node[] {
       }
       return [c];
     }
+    case 'SCRIPT':
+    case 'STYLE':
+    case 'HEAD':
+    case 'TITLE':
+    case 'NOSCRIPT':
+      return [];
     case 'DIMAGE':
     case 'DIMG':
+    case 'IMG':
       return [Object.assign(document.createElement('span'), { textContent: '[이미지]', style: 'color:#94a3b8' })];
     default:
       // 장·절·표 묶음 같은 감싸개는 안의 내용만 꺼낸다. 덩어리 태그면 줄을 나눠 준다.
-      return /^(SECTION-\d|TABLE-GROUP|LIBRARY|COVER|BODY|DOCUMENT)$/.test(tag) ? [make('div')] : kids();
+      return /^(SECTION-\d|TABLE-GROUP|LIBRARY|COVER|BODY|DOCUMENT|DIV)$/.test(tag) ? [make('div')] : kids();
   }
 }

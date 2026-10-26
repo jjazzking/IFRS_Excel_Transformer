@@ -18,6 +18,13 @@ const ALLOWED_ORIGINS = ['https://jjazzking.github.io', 'http://localhost:3000']
 // 쓸 API 만 연다 — 키로 아무 API 나 부르지 못하게.
 const ALLOWED_APIS = new Set(['corpCode.xml', 'company.json', 'list.json', 'document.xml']);
 
+// OpenDART 원문 ZIP 에 빠지는 첨부(분·반기 검토보고서, 정정 공시의 첨부)는 DART 사이트 화면에서 읽는다.
+// 키가 필요 없는 공개 화면이고, 보고서 화면(목차·첨부 목록)과 본문 조각 두 곳만 연다.
+const WEB_PAGES = {
+  'main.do': 'https://dart.fss.or.kr/dsaf001/main.do',
+  'viewer.do': 'https://dart.fss.or.kr/report/viewer.do',
+};
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -32,20 +39,24 @@ export default {
     }
     const cors = { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' };
 
-    const api = url.pathname.replace(/^\/api\//, '');
-    if (!url.pathname.startsWith('/api/') || !ALLOWED_APIS.has(api)) {
+    const query = new URLSearchParams(url.search);
+    let target;
+    const [, kind, name] = url.pathname.match(/^\/(api|web)\/([\w.]+)$/) ?? [];
+    if (kind === 'api' && ALLOWED_APIS.has(name)) {
+      if (!env.DART_KEY) return new Response('DART_KEY 가 설정되지 않았습니다', { status: 500, headers: cors });
+      query.set('crtfc_key', env.DART_KEY);
+      target = `https://opendart.fss.or.kr/api/${name}?${query}`;
+    } else if (kind === 'web' && Object.hasOwn(WEB_PAGES, name)) {
+      target = `${WEB_PAGES[name]}?${query}`;
+    } else {
       return new Response('not found', { status: 404, headers: cors });
     }
-    if (!env.DART_KEY) return new Response('DART_KEY 가 설정되지 않았습니다', { status: 500, headers: cors });
-
-    const query = new URLSearchParams(url.search);
-    query.set('crtfc_key', env.DART_KEY);
 
     let res;
     try {
       // Worker 의 fetch 는 User-Agent 를 안 붙이는데, DART 는 그런 요청을 error1.html 로 돌려보낸다.
       // 리다이렉트는 따라가지 않는다 — error1.html 이 자기 자신으로 끝없이 돌려보낸다.
-      res = await fetch(`https://opendart.fss.or.kr/api/${api}?${query}`, {
+      res = await fetch(target, {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
         redirect: 'manual',
       });
