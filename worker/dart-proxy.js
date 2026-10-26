@@ -45,9 +45,19 @@ export default {
 
     let res;
     try {
-      res = await fetch(`https://opendart.fss.or.kr/api/${api}?${query}`);
+      // Worker 의 fetch 는 User-Agent 를 안 붙이는데, DART 는 그런 요청을 error1.html 로 돌려보낸다.
+      // 리다이렉트는 따라가지 않는다 — error1.html 이 자기 자신으로 끝없이 돌려보낸다.
+      res = await fetch(`https://opendart.fss.or.kr/api/${api}?${query}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        redirect: 'manual',
+      });
     } catch (e) {
-      return new Response(`DART 접속 실패: ${e}`, { status: 502, headers: cors });
+      // 오류 문구에 요청 주소(=키)가 들어 있으므로 그대로 내보내지 않는다.
+      return new Response(`DART 접속 실패: ${e.name}`, { status: 502, headers: cors });
+    }
+    if (res.status >= 300 && res.status < 400) {
+      const to = (res.headers.get('Location') ?? '').replace(/crtfc_key=[^&]*/, 'crtfc_key=***');
+      return new Response(`DART 가 요청을 돌려보냄 (${res.status} → ${to})`, { status: 502, headers: cors });
     }
     return new Response(res.body, {
       status: res.status,
