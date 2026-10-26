@@ -25,8 +25,8 @@ const MAIN = `<?xml version="1.0" encoding="utf-8"?>
 <TBODY><TR><TE>현금</TE><TE ALIGN="RIGHT">1,234</TE></TR><TR><TU COLSPAN="2">합계 <SPAN>(5)</SPAN></TU></TR></TBODY></TABLE></TABLE-GROUP>
 <P>5. 건너뛴 번호</P><P>3. 현금및현금성자산</P><P>내용<IMAGE><IMG>a.jpg</IMG></IMAGE></P>
 </SECTION-2></SECTION-1></BODY></DOCUMENT>`;
-// 첨부는 옛 공시처럼 EUC-KR 로 — 브라우저 TextDecoder 로 인코딩한다.
-const ATT_TEXT = '<?xml version="1.0" encoding="euc-kr"?><DOCUMENT><DOCUMENT-NAME>감사보고서</DOCUMENT-NAME><BODY><SECTION-1><TITLE>독립된 감사인의 감사보고서</TITLE><P>적정</P><P><script>alert(1)</script>x</P></SECTION-1></BODY></DOCUMENT>';
+// 첨부는 옛 공시처럼 EUC-KR 로 담되, 선언은 utf-8 이라고 잘못 적어 둔다 (실제 옛 공시에서 글자가 깨졌던 경우).
+const ATT_TEXT = '<?xml version="1.0" encoding="utf-8"?><DOCUMENT><DOCUMENT-NAME>감사보고서</DOCUMENT-NAME><BODY><SECTION-1><TITLE>독립된 감사인의 감사보고서</TITLE><P>적정</P><P><script>alert(1)</script>x</P></SECTION-1></BODY></DOCUMENT>';
 (async () => {
   const b = await chromium.launch();
   const DOC = zip({ '20260310000001.xml': Buffer.from(MAIN), '20260310000001_00760.xml': require('child_process').execFileSync('iconv', ['-f', 'utf-8', '-t', 'euc-kr'], { input: ATT_TEXT }) }); const ctx = await b.newContext({ permissions: ['clipboard-read','clipboard-write'] }); const p = await ctx.newPage();

@@ -57,14 +57,15 @@ function unzip(bytes: Uint8Array): { name: string; bytes: Uint8Array }[] {
   );
 }
 
-/** XML 선언의 encoding 대로 읽는다. 옛 공시는 EUC-KR 이다. */
+/**
+ * UTF-8 로 읽어 보고, 깨지면 EUC-KR(CP949) 로 읽는다. 옛 공시(2022년 초 이전)는 EUC-KR 인데
+ * XML 선언의 encoding 이 실제와 다른 경우가 있어 선언은 믿지 않는다.
+ */
 export function decodeXml(bytes: Uint8Array): string {
-  const head = new TextDecoder('latin1').decode(bytes.subarray(0, 200));
-  const enc = head.match(/encoding=["']([\w-]+)/i)?.[1] ?? 'utf-8';
   try {
-    return new TextDecoder(enc).decode(bytes);
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch {
-    return new TextDecoder().decode(bytes);
+    return new TextDecoder('euc-kr').decode(bytes);
   }
 }
 
