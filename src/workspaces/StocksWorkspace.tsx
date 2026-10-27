@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, PanelRightClose, Search, Table } from 'lucide-react';
 import { SheetPreview } from '../components/SheetPreview';
 import { CollapsedRail, Splitter } from '../components/LayoutControls';
+import { LoadingRing } from '../components/LoadingRing';
 import { RatesGuidance } from '../components/RatesGuidance';
 import { StepReset, TierButton } from '../components/TierControls';
 import { useResizableLayout } from '../hooks/useResizableLayout';
@@ -63,12 +64,15 @@ export default function StocksWorkspace({ onBackHome }: StocksWorkspaceProps) {
   // 종목 확인 — 이름마다 한 번만 묻고 기억한다. 붙여넣고 잠깐 멈추면 확인을 시작한다.
   const cache = useRef(new Map<string, Resolution>());
   const [, setResolvedTick] = useState(0);
+  // 지금 확인 중인 이름들과 시작한 때 — 게이지가 이 묶음만 센다.
+  const [resolving, setResolving] = useState({ names: [] as string[], started: 0 });
   useEffect(() => {
     if (!STOCK_READY) return;
     const missing = [...new Set(inputs.filter(i => i && !cache.current.has(i)))];
     if (missing.length === 0) return;
     const timer = window.setTimeout(() => {
       const today = todayIso();
+      setResolving({ names: missing, started: Date.now() });
       inChunks(
         missing,
         async name => {
@@ -90,6 +94,7 @@ export default function StocksWorkspace({ onBackHome }: StocksWorkspaceProps) {
   // 표는 조회했을 때의 조건으로 만든다 — 조회 뒤 날짜만 바꿔도 표가 거짓말하지 않게
   const [asked, setAsked] = useState<{ purpose: StockPurpose; params: StockParams } | null>(null);
   const [running, setRunning] = useState(false);
+  const [runStarted, setRunStarted] = useState(0);
   const [theme, setTheme] = useState<TableTheme>('audit_gray');
 
   const done = useMemo(() => entries.filter((e): e is StockEntry => e !== null), [entries]);
@@ -108,6 +113,7 @@ export default function StocksWorkspace({ onBackHome }: StocksWorkspaceProps) {
   const run = async () => {
     if (!purpose) return;
     setRunning(true);
+    setRunStarted(Date.now());
     setAsked({ purpose, params });
     const [from, to] = windowOf(purpose, params);
     const list = resolutions as Resolution[];
@@ -214,7 +220,17 @@ export default function StocksWorkspace({ onBackHome }: StocksWorkspaceProps) {
                 <Search className="w-3.5 h-3.5" />
                 {running ? `찾는 중… ${done.length}/${entries.length}` : `${found}종목 찾기`}
               </button>
-              {pending && <span className="text-[11px] text-slate-500">종목 확인 중…</span>}
+              {running && (
+                <LoadingRing label="주가를 받는 중" started={runStarted} done={done.length} total={entries.length} />
+              )}
+              {resolving.names.some(n => !cache.current.has(n)) && (
+                <LoadingRing
+                  label="종목 확인 중"
+                  started={resolving.started}
+                  done={resolving.names.filter(n => cache.current.has(n)).length}
+                  total={resolving.names.length}
+                />
+              )}
               {!STOCK_READY && (
                 <span className="text-[11px] text-rose-600">
                   API 키가 빌드에 들어가지 않았습니다. 저장소 Secrets 에 STOCK_KEY 를 넣고 다시 배포하세요.
