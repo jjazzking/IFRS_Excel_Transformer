@@ -220,16 +220,33 @@ function splitNotes(el: Element, idPrefix: string): TocNode[] {
   let next = 1;
   for (const child of el.children) {
     if (child.tagName === 'DTITLE') continue;
-    const text = child.textContent?.trim() ?? '';
-    const m = child.tagName === 'P' && text.match(/^(\d{1,3})\s*\.\s*(\S.*)$/s);
-    if (m && Number(m[1]) === next) {
-      next++;
-      notes.push({ id: `${idPrefix}.${m[1]}`, title: `${m[1]}. ${m[2].split('\n')[0].trim()}`.slice(0, 60), els: [], children: [] });
+    const m = child.tagName === 'P' && firstLine(child).match(/^(\d{1,3})\s*\.\s*(\S.*)$/);
+    const n = m ? Number(m[1]) : 0;
+    // 번호를 건너뛰는 회사가 있다 (진로발효 반기: 3 → 5). 굵은 제목이면 몇 번 건너뛰어도 받는다 —
+    // 본문 속 "4. …" 같은 목록을 주석 머리로 잘못 잡지 않게, 차례가 아니면 굵은 글씨만.
+    if (m && (n === next || (n > next && n <= next + 3 && isBold(child)))) {
+      next = n + 1;
+      notes.push({ id: `${idPrefix}.${n}`, title: `${n}. ${m[2]}`.slice(0, 60), els: [], children: [] });
     }
     notes.at(-1)?.els.push(child);
   }
   return notes.length > 1 ? notes : [];
 }
+
+/** 첫 줄바꿈 전까지의 글자. 주석 머리와 본문이 한 문단에 `<BR>` 로만 나뉜 회사가 있다. */
+function firstLine(el: Element): string {
+  let text = '';
+  const walk = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (n.nodeType === Node.TEXT_NODE) text += n.textContent;
+    else if ((n as Element).tagName === 'BR' && text.trim()) break;
+  }
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+const isBold = (el: Element) =>
+  [el, el.querySelector(':scope > span')].some(e => /bold/i.test(e?.getAttribute('style') ?? '')) ||
+  el.querySelector(':scope > b') !== null;
 
 async function getPage(page: 'main.do' | 'viewer.do', params: string): Promise<string> {
   const res = await fetch(`${PROXY}/web/${page}?${params}`);

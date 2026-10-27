@@ -34,7 +34,9 @@ ${node(2, 4, '주석', 4)}\n\t\t\tnode1['children'].push(node2);\n\t\ttreeData.p
 \t\t반기연결검토보고서
 \t</option>
 </select></html>`;
-// 본문 조각(viewer.do) — 감싸개 안에 주석 문단들이 있고, 스크립트는 화면에 나오면 안 된다.
+// 본문 조각(viewer.do) — 검토보고서 첫 화면은 꾸민 것(스크립트는 화면에 나오면 안 된다),
+// 주석은 실제 진로발효 2026 반기검토보고서 주석 원본 (번호 4 를 건너뛰고, 머리와 본문이 한 문단인 회사).
+const VIEWER_NOTES = require('fs').readFileSync(require('path').join(__dirname, 'fixtures/dart_viewer_jinro_notes.html'), 'utf8');
 const VIEWER_DO = '<html><head><title>x</title><script>var leak = 1;</script></head><body><div class="xforms">' +
   '<p>1. 일반사항</p><p>회사는 설립되었습니다.</p><p>2. 회계정책</p><table border="1"><tr><td>현금</td><td>100</td></tr></table></div></body></html>';
 const HALF = '<?xml version="1.0" encoding="utf-8"?><DOCUMENT><DOCUMENT-NAME>반기보고서</DOCUMENT-NAME><BODY><SECTION-1><TITLE>I. 회사의 개요</TITLE><P>본문</P></SECTION-1></BODY></DOCUMENT>';
@@ -77,7 +79,7 @@ const ATT_TEXT = '<?xml version="1.0" encoding="utf-8"?><DOCUMENT><DOCUMENT-NAME
           {rcept_no:'20260814001968',report_nm:'반기보고서 (2026.06)',rcept_dt:'20260814',flr_nm:'삼성전자'}]} : {status:'013',message:'조회된 데이타가 없습니다.'}) });
     if (u.pathname.endsWith('document.xml')) return r.fulfill({ body: u.searchParams.get('rcept_no') === '20260814001968' ? HALF_DOC : DOC, headers: h });
     if (u.pathname === '/web/main.do') return r.fulfill({ body: MAIN_DO, headers: h, contentType: 'text/html; charset=utf-8' });
-    if (u.pathname === '/web/viewer.do') return r.fulfill({ body: VIEWER_DO, headers: h, contentType: 'text/html; charset=utf-8' });
+    if (u.pathname === '/web/viewer.do') return r.fulfill({ body: u.searchParams.get('eleId') === '4' ? VIEWER_NOTES : VIEWER_DO, headers: h, contentType: 'text/html; charset=utf-8' });
   });
   await p.goto('http://localhost:3000/#/dart');
   await p.fill('#dart-corp-search', '삼성 전자');
@@ -109,10 +111,17 @@ const ATT_TEXT = '<?xml version="1.0" encoding="utf-8"?><DOCUMENT><DOCUMENT-NAME
   assert.deepStrictEqual(opts, ['본문 — 반기보고서', '첨부 — 반기검토보고서', '첨부 — 반기연결검토보고서']);
   assert.strictEqual(await p.locator('select').inputValue(), '1');
   await p.getByRole('button', { name: '주석', exact: true }).click();
-  await p.getByRole('button', { name: '2. 회계정책' }).waitFor();
-  await p.getByRole('button', { name: '2. 회계정책' }).click();
-  const half = await p.locator('main div.overflow-auto.px-6').innerHTML(); console.log('half note2', half);
-  assert(half.includes('현금') && !half.includes('일반사항') && !half.includes('leak'));
+  await p.getByRole('button', { name: '35. 현금흐름표' }).waitFor();
+  const notes = (await p.locator('nav button').allInnerTexts()).filter(t => /^\d+\. /.test(t));
+  console.log('jinro notes', notes.length, JSON.stringify(notes));
+  assert.strictEqual(notes.length, 34); // 1~35 중 4 가 없다
+  assert.deepStrictEqual(notes.slice(0, 4), ['1. 회사의 개요', '2. 재무제표 작성기준', '3. 중요한 회계정책', '5. 현금 및 현금성자산']);
+  assert(notes.includes('20. 기타포괄손익누계액') && notes.includes('21. 이익잉여금') && notes.includes('28. 기타손실'));
+  await p.getByRole('button', { name: '3. 중요한 회계정책' }).click();
+  const half = await p.locator('main div.overflow-auto.px-6').innerText();
+  assert(half.startsWith('3. 중요한 회계정책') && half.includes('제1118호') && !half.includes('현금 및 현금성자산'));
+  await p.getByRole('button', { name: '검 토 보 고 서' }).click();
+  assert(!(await p.locator('main div.overflow-auto.px-6').innerHTML()).includes('leak'));
   assert.strictEqual(calls['viewer.do'], 2); // 첫 화면(검토보고서) + 주석 — 나눈 주석을 누를 때는 다시 받지 않는다
 
   // 다시 열면 회사 목록·원문은 브라우저 캐시에서 — DART 를 다시 부르지 않는다.
