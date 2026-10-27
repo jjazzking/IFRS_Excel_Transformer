@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowLeft, PanelRightClose, Search, Table } from 'lucide-react';
+import { LoadingRing } from '../components/LoadingRing';
 import { SheetPreview } from '../components/SheetPreview';
 import { CollapsedRail, Splitter } from '../components/LayoutControls';
 import { useResizableLayout } from '../hooks/useResizableLayout';
@@ -34,6 +35,7 @@ export default function LandPriceWorkspace({ onBackHome }: LandPriceWorkspacePro
   const [year, setYear] = useState(defaultYear);
   const [rows, setRows] = useState<(LandPriceRow | null)[]>([]);
   const [running, setRunning] = useState(false);
+  const [runStarted, setRunStarted] = useState(0);
   const [theme, setTheme] = useState<TableTheme>('audit_gray');
 
   const inputs = useMemo(() => parsePastedAddresses(text), [text]);
@@ -42,6 +44,7 @@ export default function LandPriceWorkspace({ onBackHome }: LandPriceWorkspacePro
 
   const run = async () => {
     setRunning(true);
+    setRunStarted(Date.now());
     setRows(inputs.map(() => null));
     await lookupAll(inputs, year, setRows);
     setRunning(false);
@@ -90,6 +93,7 @@ export default function LandPriceWorkspace({ onBackHome }: LandPriceWorkspacePro
               <Search className="w-3.5 h-3.5" />
               {running ? `찾는 중… ${done.length}/${rows.length}` : `${inputs.filter(Boolean).length}건 찾기`}
             </button>
+            {running && <LoadingRing label="공시지가를 찾는 중" started={runStarted} done={done.length} total={rows.length} />}
             <span className="text-[11px] text-slate-500">
               {Object.entries(counts)
                 .map(([k, n]) => `${STATUS_LABEL[k as LandPriceRow['status']]} ${n}`)

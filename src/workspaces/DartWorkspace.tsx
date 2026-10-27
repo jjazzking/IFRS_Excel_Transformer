@@ -14,6 +14,7 @@ import {
   renderDart,
   searchCorps,
 } from '../utils/dart';
+import { LoadingRing } from '../components/LoadingRing';
 
 interface DartWorkspaceProps {
   onBackHome: () => void;
@@ -57,6 +58,7 @@ function recordDuration(kind: LoadKind, ms: number) {
 interface Loading {
   kind: LoadKind;
   started: number;
+  estimate: number;
 }
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -103,7 +105,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
   const run = async <T,>(kind: LoadKind, job: () => Promise<T>, done: (v: T) => void) => {
     const id = ++latest.current;
     const started = Date.now();
-    setLoading({ kind, started });
+    setLoading({ kind, started, estimate: readEstimates()[kind] });
     setError('');
     try {
       const v = await job();
@@ -208,7 +210,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
           </label>
           {!corps && !error && (
             <div className="space-y-1">
-              <LoadingRing kind="corps" started={corpsStarted} />
+              <LoadingRing label={LOAD_LABEL.corps} started={corpsStarted} estimate={readEstimates().corps} />
               <p className="text-[10px] text-slate-400 leading-snug">
                 처음 한 번만 회사 목록(약 10만 곳)을 받느라 느립니다. 다음부터는 바로 열립니다.
               </p>
@@ -289,7 +291,9 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
                 ))}
               </select>
             )}
-            {loading && <LoadingRing kind={loading.kind} started={loading.started} />}
+            {loading && (
+              <LoadingRing label={LOAD_LABEL[loading.kind]} started={loading.started} estimate={loading.estimate} />
+            )}
             {loading?.kind === 'document' && (
               <span className="text-[10px] text-slate-400">처음 여는 보고서만 느립니다 — 한 번 연 보고서는 바로 열립니다</span>
             )}
@@ -331,51 +335,6 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
     </div>
   );
 }
-
-/**
- * 기다리는 동안 도는 동그라미. 예상 시간에 90% 까지 차고, 넘기면 99% 쪽으로 천천히 다가간다
- * (끝나기 전에 100% 가 되어 멈춰 보이지 않게).
- */
-const LoadingRing: React.FC<Loading> = ({ kind, started }) => {
-  const [now, setNow] = useState(Date.now);
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 100);
-    return () => clearInterval(t);
-  }, []);
-  const estimate = useMemo(() => readEstimates()[kind], [kind]);
-  const elapsed = now - started;
-  const t = elapsed / estimate;
-  const progress = t < 1 ? 0.9 * t : 0.9 + 0.09 * (1 - Math.exp(1 - t));
-  const left = Math.ceil((estimate - elapsed) / 1000);
-  const R = 7;
-  const C = 2 * Math.PI * R;
-  return (
-    <span
-      role="progressbar"
-      aria-label={LOAD_LABEL[kind]}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(progress * 100)}
-      className="flex items-center gap-1.5 text-[11px] text-slate-500 shrink-0"
-    >
-      <svg width="18" height="18" viewBox="0 0 18 18" className="-rotate-90">
-        <circle cx="9" cy="9" r={R} fill="none" stroke="#e2e8f0" strokeWidth="2.5" />
-        <circle
-          cx="9"
-          cy="9"
-          r={R}
-          fill="none"
-          stroke="#059669"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeDasharray={C}
-          strokeDashoffset={C * (1 - progress)}
-        />
-      </svg>
-      {LOAD_LABEL[kind]} · {left > 0 ? `약 ${left}초` : '거의 다 됐습니다…'}
-    </span>
-  );
-};
 
 const TocItem: React.FC<{
   node: TocNode;
