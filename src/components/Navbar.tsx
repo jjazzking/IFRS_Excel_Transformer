@@ -4,6 +4,8 @@ import { UsageGuideButton } from './UsageGuideButton';
 
 /** 기준서 수정 모드 버튼 — 저장소 주인이 다시 켜라고 할 때까지 숨긴다. */
 const SHOW_EDIT_MODE = false;
+/** 사내 DB 가져오기 버튼 — 쓰지 않아 숨긴다. */
+const SHOW_IMPORT_DB = false;
 
 interface NavbarProps {
   /** 첫 화면(작업대 고르기)으로 돌아간다 */
@@ -78,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>{editMode ? '수정 모드 켜짐' : '수정 모드'}</span>
           </button>}
 
-          <button
+          {SHOW_IMPORT_DB && <button
             id="btn-import-db"
             onClick={onOpenImport}
             className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
@@ -86,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Upload className="w-3.5 h-3.5 text-blue-400" />
             <span className="hidden sm:inline">사내 DB 가져오기</span>
-          </button>
+          </button>}
 
           <button
             id="btn-vba-guide"
