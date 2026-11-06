@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, Copy, ExternalLink, Search } from 'lucide-react';
+import { ArrowLeft, Building2, Check, Copy, ExternalLink, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
 import {
   Corp,
   DartFile,
@@ -15,6 +15,7 @@ import {
   searchCorps,
 } from '../utils/dart';
 import { LoadingRing } from '../components/LoadingRing';
+import { CollapsedRail } from '../components/LayoutControls';
 
 interface DartWorkspaceProps {
   onBackHome: () => void;
@@ -67,6 +68,8 @@ const ymd = (d: string) => `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6, 8)}`;
 export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
   const [corps, setCorps] = useState<Corp[] | null>(null);
   const [query, setQuery] = useState('');
+  const [sideOpen, setSideOpen] = useState(true);
+  const [tocOpen, setTocOpen] = useState(true);
   const [corp, setCorp] = useState<Corp | null>(null);
   const [reports, setReports] = useState<Report[] | null>(null);
   const [report, setReport] = useState<Report | null>(null);
@@ -196,86 +199,106 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
 
       <main className="flex-1 min-h-0 flex gap-3 p-3">
         {/* 왼쪽 — 회사 검색 · 공시 목록 */}
-        <section className="w-72 shrink-0 min-h-0 flex flex-col gap-2 bg-white rounded-xl border border-slate-200 shadow-sm p-3">
-          <label className="relative block">
-            <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              id="dart-corp-search"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder={corps ? '회사 이름 또는 종목코드' : '회사 목록을 받는 중…'}
-              disabled={!corps}
-              className="w-full rounded-md border border-slate-300 py-1 pl-7 pr-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            />
-          </label>
-          {!corps && !error && (
-            <div className="space-y-1">
-              <LoadingRing label={LOAD_LABEL.corps} started={corpsStarted} estimate={readEstimates().corps} />
-              <p className="text-[10px] text-slate-400 leading-snug">
-                처음 한 번만 회사 목록(약 10만 곳)을 받느라 느립니다. 다음부터는 바로 열립니다.
+        {sideOpen ? (
+          <section className="w-72 shrink-0 min-h-0 flex flex-col gap-2 bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+            <div className="flex items-center gap-1">
+              <label className="relative block flex-1">
+                <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="dart-corp-search"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder={corps ? '회사 이름 또는 종목코드' : '회사 목록을 받는 중…'}
+                  disabled={!corps}
+                  className="w-full rounded-md border border-slate-300 py-1 pl-7 pr-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </label>
+              <button
+                onClick={() => setSideOpen(false)}
+                className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                title="회사 · 공시 패널 접기"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            </div>
+            {!corps && !error && (
+              <div className="space-y-1">
+                <LoadingRing label={LOAD_LABEL.corps} started={corpsStarted} estimate={readEstimates().corps} />
+                <p className="text-[10px] text-slate-400 leading-snug">
+                  처음 한 번만 회사 목록(약 10만 곳)을 받느라 느립니다. 다음부터는 바로 열립니다.
+                </p>
+              </div>
+            )}
+
+            {query.trim() && corps && (
+              <ul className="max-h-60 overflow-auto rounded-md border border-slate-200 divide-y divide-slate-100 shrink-0">
+                {hits.length === 0 && <li className="px-2 py-1.5 text-[11px] text-slate-500">찾는 회사가 없습니다.</li>}
+                {hits.map(c => (
+                  <li key={c.code}>
+                    <button
+                      onClick={() => {
+                        pickCorp(c);
+                        setQuery('');
+                      }}
+                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-emerald-50 cursor-pointer flex items-center gap-2"
+                    >
+                      <span className="truncate">{c.name}</span>
+                      <span className="ml-auto shrink-0 text-[10px] text-slate-400">{c.stock || '비상장'}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {corp && (
+              <div className="text-xs font-semibold text-slate-700 pt-1">
+                {corp.name}
+                <span className="ml-1 font-normal text-slate-400">{corp.stock || '비상장'}</span>
+              </div>
+            )}
+
+            {reports && (
+              <ul className="flex-1 min-h-0 overflow-auto divide-y divide-slate-100">
+                {reports.length === 0 && <li className="py-2 text-[11px] text-slate-500">정기공시·감사보고서가 없습니다.</li>}
+                {reports.map(r => (
+                  <li key={r.rcept_no}>
+                    <button
+                      onClick={() => pickReport(r)}
+                      className={`w-full text-left px-1.5 py-1.5 rounded cursor-pointer ${
+                        report?.rcept_no === r.rcept_no ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="text-xs truncate">{r.report_nm.trim()}</div>
+                      <div className="text-[10px] text-slate-400">
+                        {ymd(r.rcept_dt)} · {r.flr_nm}
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {!corp && (
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                회사를 고르면 사업·반기·분기보고서와 감사보고서가 나옵니다. 보고서를 누르면 오른쪽에 DART
+                화면처럼 목차와 본문이 뜨고, 주석 절은 주석 번호별로 나뉩니다.
               </p>
-            </div>
-          )}
-
-          {query.trim() && corps && (
-            <ul className="max-h-60 overflow-auto rounded-md border border-slate-200 divide-y divide-slate-100 shrink-0">
-              {hits.length === 0 && <li className="px-2 py-1.5 text-[11px] text-slate-500">찾는 회사가 없습니다.</li>}
-              {hits.map(c => (
-                <li key={c.code}>
-                  <button
-                    onClick={() => {
-                      pickCorp(c);
-                      setQuery('');
-                    }}
-                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-emerald-50 cursor-pointer flex items-center gap-2"
-                  >
-                    <span className="truncate">{c.name}</span>
-                    <span className="ml-auto shrink-0 text-[10px] text-slate-400">{c.stock || '비상장'}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {corp && (
-            <div className="text-xs font-semibold text-slate-700 pt-1">
-              {corp.name}
-              <span className="ml-1 font-normal text-slate-400">{corp.stock || '비상장'}</span>
-            </div>
-          )}
-
-          {reports && (
-            <ul className="flex-1 min-h-0 overflow-auto divide-y divide-slate-100">
-              {reports.length === 0 && <li className="py-2 text-[11px] text-slate-500">정기공시·감사보고서가 없습니다.</li>}
-              {reports.map(r => (
-                <li key={r.rcept_no}>
-                  <button
-                    onClick={() => pickReport(r)}
-                    className={`w-full text-left px-1.5 py-1.5 rounded cursor-pointer ${
-                      report?.rcept_no === r.rcept_no ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="text-xs truncate">{r.report_nm.trim()}</div>
-                    <div className="text-[10px] text-slate-400">
-                      {ymd(r.rcept_dt)} · {r.flr_nm}
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {!corp && (
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              회사를 고르면 사업·반기·분기보고서와 감사보고서가 나옵니다. 보고서를 누르면 오른쪽에 DART
-              화면처럼 목차와 본문이 뜨고, 주석 절은 주석 번호별로 나뉩니다.
-            </p>
-          )}
-        </section>
+            )}
+          </section>
+        ) : (
+          <CollapsedRail icon={<Building2 className="w-4 h-4" />} label="회사 · 공시" onClick={() => setSideOpen(true)} />
+        )}
 
         {/* 오른쪽 — DART 뷰어 */}
         <section className="flex-1 min-w-0 min-h-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="shrink-0 border-b border-slate-200 px-3 py-2 flex items-center gap-2">
+            <button
+              onClick={() => setTocOpen(o => !o)}
+              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              title={tocOpen ? '목차 접기' : '목차 펼치기'}
+            >
+              {tocOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+            </button>
             <span className="text-xs font-semibold truncate">{report ? report.report_nm.trim() : '공시 원문'}</span>
             {files && files.length > 1 && (
               <select
@@ -322,7 +345,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
           {error && <p className="shrink-0 px-3 py-2 text-[11px] text-rose-600 bg-rose-50">{error}</p>}
 
           <div className="flex-1 min-h-0 flex">
-            <nav className="w-64 shrink-0 overflow-auto border-r border-slate-200 bg-slate-50 py-2 text-xs">
+            <nav className={`${tocOpen ? 'w-64' : 'hidden'} shrink-0 overflow-auto border-r border-slate-200 bg-slate-50 py-2 text-xs`}>
               {file?.toc.map(n => <TocItem key={n.id} node={n} depth={0} selected={node} onSelect={pickNode} />)}
             </nav>
             <div
