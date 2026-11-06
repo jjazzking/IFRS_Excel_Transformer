@@ -16,6 +16,7 @@ import {
 } from '../utils/dart';
 import { LoadingRing } from '../components/LoadingRing';
 import { CollapsedRail } from '../components/LayoutControls';
+import { UsageGuideButton } from '../components/UsageGuideButton';
 
 interface DartWorkspaceProps {
   onBackHome: () => void;
@@ -403,6 +404,9 @@ const DartNavbar: React.FC<{ onBackHome: () => void }> = ({ onBackHome }) => (
           <h1 className="font-bold text-lg text-slate-100 tracking-tight truncate">주석 찾기</h1>
         </div>
         <p className="text-xs text-slate-400 truncate">금융감독원 전자공시(OpenDART) 원문</p>
+      </div>
+      <div className="ml-auto">
+        <UsageGuideButton />
       </div>
     </div>
   </header>
