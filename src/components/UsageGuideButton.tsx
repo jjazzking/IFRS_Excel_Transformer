@@ -8,6 +8,7 @@ const DATA_SOURCES: { label: string; source: string; url: string }[] = [
   { label: '주가', source: '금융위원회 주식시세정보 (공공데이터포털)', url: 'https://www.data.go.kr' },
   { label: '공시지가', source: '국토교통부 개별공시지가 (V-World)', url: 'https://www.vworld.kr' },
   { label: '기준서', source: '회계기준원', url: 'https://www.kasb.or.kr' },
+  { label: '공시 원문', source: '금융감독원 전자공시 (OpenDART)', url: 'https://opendart.fss.or.kr' },
 ];
 
 /**
