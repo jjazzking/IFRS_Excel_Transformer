@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Building2, Check, Copy, ExternalLink, PanelLeftClose, Search } from 'lucide-react';
+import { ArrowLeft, Building2, Check, Copy, ExternalLink, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
 import {
   Corp,
   DartFile,
@@ -69,6 +69,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
   const [corps, setCorps] = useState<Corp[] | null>(null);
   const [query, setQuery] = useState('');
   const [sideOpen, setSideOpen] = useState(true);
+  const [tocOpen, setTocOpen] = useState(true);
   const [corp, setCorp] = useState<Corp | null>(null);
   const [reports, setReports] = useState<Report[] | null>(null);
   const [report, setReport] = useState<Report | null>(null);
@@ -291,6 +292,13 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
         {/* 오른쪽 — DART 뷰어 */}
         <section className="flex-1 min-w-0 min-h-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="shrink-0 border-b border-slate-200 px-3 py-2 flex items-center gap-2">
+            <button
+              onClick={() => setTocOpen(o => !o)}
+              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              title={tocOpen ? '목차 접기' : '목차 펼치기'}
+            >
+              {tocOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+            </button>
             <span className="text-xs font-semibold truncate">{report ? report.report_nm.trim() : '공시 원문'}</span>
             {files && files.length > 1 && (
               <select
@@ -337,7 +345,7 @@ export default function DartWorkspace({ onBackHome }: DartWorkspaceProps) {
           {error && <p className="shrink-0 px-3 py-2 text-[11px] text-rose-600 bg-rose-50">{error}</p>}
 
           <div className="flex-1 min-h-0 flex">
-            <nav className="w-64 shrink-0 overflow-auto border-r border-slate-200 bg-slate-50 py-2 text-xs">
+            <nav className={`${tocOpen ? 'w-64' : 'hidden'} shrink-0 overflow-auto border-r border-slate-200 bg-slate-50 py-2 text-xs`}>
               {file?.toc.map(n => <TocItem key={n.id} node={n} depth={0} selected={node} onSelect={pickNode} />)}
             </nav>
             <div
