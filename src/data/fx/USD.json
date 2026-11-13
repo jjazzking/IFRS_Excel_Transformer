@@ -4,10 +4,10 @@
  "unit": 1,
  "source": "서울외국환중개 (www.smbs.biz)",
  "sourceUrl": "http://www.smbs.biz/ExRate/StdExRate.jsp",
- "fetchedAt": "2026-11-12T17:40:39+00:00",
+ "fetchedAt": "2026-11-13T17:18:16+00:00",
  "from": "2016-10-04",
- "to": "2026-11-12",
- "count": 2490,
+ "to": "2026-11-13",
+ "count": 2491,
  "rows": [
   {"date": "2016-10-04", "rate": 1102.0, "change": 5.7, "open": 1103.0, "high": 1108.7, "low": 1102.2},
   {"date": "2016-10-05", "rate": 1105.1, "change": 3.1, "open": 1117.0, "high": 1117.0, "low": 1111.5},
@@ -2498,6 +2498,7 @@
   {"date": "2026-11-09", "rate": 1357.9, "change": 15.9, "open": 1363.0, "high": 1363.0, "low": 1340.0, "close1530": 1347.1, "close0600": 1340.0, "volume": 15269.0},
   {"date": "2026-11-10", "rate": 1355.7, "change": -2.2, "open": 1341.5, "high": 1347.7, "low": 1334.6, "close1530": 1337.5, "close0600": 1344.5, "volume": 17612.0},
   {"date": "2026-11-11", "rate": 1343.3, "change": -12.4, "open": 1343.5, "high": 1343.5, "low": 1331.4, "close1530": 1333.6, "close0600": 1337.5, "volume": 12665.0},
-  {"date": "2026-11-12", "rate": 1336.7, "change": -6.6, "open": 0.0, "high": 0.0, "low": 0.0, "close1530": 0.0, "close0600": 0.0, "volume": 0.0}
+  {"date": "2026-11-12", "rate": 1336.7, "change": -6.6, "open": 1336.6, "high": 1337.3, "low": 1327.7, "close1530": 1330.7, "close0600": 1335.5, "volume": 14972.0},
+  {"date": "2026-11-13", "rate": 1332.4, "change": -4.3, "open": 0.0, "high": 0.0, "low": 0.0, "close1530": 0.0, "close0600": 0.0, "volume": 0.0}
  ]
 }
