@@ -226,11 +226,23 @@ function splitNotes(el: Element, idPrefix: string): TocNode[] {
     // 본문 속 "4. …" 같은 목록을 주석 머리로 잘못 잡지 않게, 차례가 아니면 굵은 글씨만.
     if (m && (n === next || (n > next && n <= next + 3 && isBold(child)))) {
       next = n + 1;
-      notes.push({ id: `${idPrefix}.${n}`, title: `${n}. ${m[2]}`.slice(0, 60), els: [], children: [] });
+      notes.push({ id: `${idPrefix}.${n}`, title: `${n}. ${noteTitle(m[2])}`.slice(0, 60), els: [], children: [] });
     }
     notes.at(-1)?.els.push(child);
   }
   return notes.length > 1 ? notes : [];
+}
+
+/**
+ * 원문 ZIP 은 머리 뒤 줄바꿈이 빠져 본문 첫머리가 붙어 온다 (가비아 감사보고서: "1. 일반사항(1) 회사의 개요",
+ * "2. 중요한 회계정책회사의 별도재무제표는…"). 하위 번호나 본문이 시작하는 곳에서 자른다.
+ * shortcut: 본문 첫머리 낱말을 손으로 꼽았다 — 다른 첫머리로 붙는 회사가 나오면 목록에 더한다.
+ */
+const BODY_START =
+  /\s*(?:\(\d+\)|[①-⑳]|-\s|(?:회사|연결실체|지배기업|(?:연결|별도)?재무제표)(?:는|은|의)\s|당(?:기|반기|분기)(?:말|와|\s중)|전(?:기|반기|분기)말)/;
+function noteTitle(rest: string): string {
+  const i = rest.slice(2).search(BODY_START);
+  return (i < 0 ? rest : rest.slice(0, i + 2)).trim();
 }
 
 /** 첫 줄바꿈 전까지의 글자. 주석 머리와 본문이 한 문단에 `<BR>` 로만 나뉜 회사가 있다. */
