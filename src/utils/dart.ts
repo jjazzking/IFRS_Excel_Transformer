@@ -188,7 +188,10 @@ export function parseDartXml(name: string, xml: string): DartFile {
   let seq = 0;
   const section = (el: Element): TocNode => {
     const title = el.querySelector(':scope > DTITLE')?.textContent?.trim() || '(제목 없음)';
-    const subs = [...el.children].filter(c => /^SECTION-\d$/i.test(c.tagName));
+    // 장 아래 절을 LIBRARY 로 한 번 더 싸는 보고서가 있다 (한양디지텍 2026 3분기: II·III 장).
+    const subs = [...el.children]
+      .flatMap(c => (c.tagName === 'LIBRARY' ? [...c.children] : [c]))
+      .filter(c => /^SECTION-\d$/i.test(c.tagName));
     return {
       id: `${name}#${seq++}`,
       title,
@@ -220,11 +223,14 @@ function splitNotes(el: Element, idPrefix: string): TocNode[] {
   let next = 1;
   for (const child of el.children) {
     if (child.tagName === 'DTITLE') continue;
-    const m = child.tagName === 'P' && firstLine(child).match(/^(\d{1,3})\s*\.\s*(\S.*)$/);
+    // XBRL 주석은 주석마다 TABLE-GROUP 에 제목(DTITLE)을 단다 (한양디지텍 2026 3분기).
+    const group = child.tagName === 'TABLE-GROUP';
+    const head = child.tagName === 'P' ? firstLine(child) : group ? child.querySelector(':scope > DTITLE')?.textContent?.trim() ?? '' : '';
+    const m = head.match(/^(\d{1,3})\s*\.\s*(\S.*)$/);
     const n = m ? Number(m[1]) : 0;
     // 번호를 건너뛰는 회사가 있다 (진로발효 반기: 3 → 5). 굵은 제목이면 몇 번 건너뛰어도 받는다 —
-    // 본문 속 "4. …" 같은 목록을 주석 머리로 잘못 잡지 않게, 차례가 아니면 굵은 글씨만.
-    if (m && (n === next || (n > next && n <= next + 3 && isBold(child)))) {
+    // 본문 속 "4. …" 같은 목록을 주석 머리로 잘못 잡지 않게, 차례가 아니면 굵은 글씨(또는 표 묶음 제목)만.
+    if (m && (n === next || (n > next && n <= next + 3 && (group || isBold(child))))) {
       next = n + 1;
       notes.push({ id: `${idPrefix}.${n}`, title: `${n}. ${noteTitle(m[2])}`.slice(0, 60), els: [], children: [] });
     }
