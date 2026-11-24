@@ -54,14 +54,14 @@ const MAIN = `<?xml version="1.0" encoding="utf-8"?>
 <BODY><COVER><COVER-TITLE>사 업 보 고 서</COVER-TITLE></COVER>
 <SECTION-1><TITLE ATOCID="3">I. 회사의 개요</TITLE><P>R&D 투자 &cr;둘째 줄</P><PGBRK/></SECTION-1>
 <SECTION-1><TITLE ATOCID="9">III. 재무에 관한 사항</TITLE>
-<SECTION-2><TITLE ATOCID="10">3. 연결재무제표 주석</TITLE>
+<LIBRARY><SECTION-2><TITLE ATOCID="10">3. 연결재무제표 주석</TITLE>
 <P>1. 일반적 사항</P><P>회사는 1969년 설립되었습니다.</P>
 <P>2. 중요한 회계정책</P><P>(1) 측정기준</P>
 <TABLE-GROUP><TABLE BORDER="1"><COLGROUP><COL WIDTH="100"/><COL WIDTH="80"/></COLGROUP>
 <THEAD><TR><TH ROWSPAN="2">구분</TH><TH>당기</TH></TR><TR><TH>금액</TH></TR></THEAD>
 <TBODY><TR><TE>현금</TE><TE ALIGN="RIGHT">1,234</TE></TR><TR><TU COLSPAN="2">합계 <SPAN>(5)</SPAN></TU></TR></TBODY></TABLE></TABLE-GROUP>
-<P>5. 건너뛴 번호</P><P>3. 현금및현금성자산</P><P>내용<IMAGE><IMG>a.jpg</IMG></IMAGE></P>
-</SECTION-2></SECTION-1></BODY></DOCUMENT>`;
+<P>5. 건너뛴 번호</P><TABLE-GROUP><TITLE>3. 현금및현금성자산</TITLE></TABLE-GROUP><P>내용<IMAGE><IMG>a.jpg</IMG></IMAGE></P>
+</SECTION-2></LIBRARY></SECTION-1></BODY></DOCUMENT>`;
 // 첨부는 옛 공시처럼 EUC-KR 로 담되, 선언은 utf-8 이라고 잘못 적어 둔다 (실제 옛 공시에서 글자가 깨졌던 경우).
 const ATT_TEXT = '<?xml version="1.0" encoding="utf-8"?><DOCUMENT><DOCUMENT-NAME>감사보고서</DOCUMENT-NAME><BODY><SECTION-1><TITLE>독립된 감사인의 감사보고서</TITLE><P>적정</P><P><script>alert(1)</script>x</P></SECTION-1></BODY></DOCUMENT>';
 (async () => {
